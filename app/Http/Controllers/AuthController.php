@@ -247,7 +247,7 @@ class AuthController extends BaseController
     public function userProfile()
     {
         $user = auth()->user();
-        $user->load(['favourites', 'rating', 'commentsOfUser', 'commentsOnUser', 'contacts', 'addresses']);
+        $user->load(['favourites.favouritable', 'rating', 'commentsOfUser', 'commentsOnUser', 'contacts', 'addresses']);
         
         return $this->sendResponse($user, 'User Fetched..!');
     }
