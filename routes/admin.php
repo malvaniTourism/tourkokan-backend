@@ -12,7 +12,9 @@ use App\Http\Controllers\Admin\FoodController;
 use App\Http\Controllers\Admin\TourPackageController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\AccomodationCategoryController;
+use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BusTypeController;
+use App\Http\Controllers\Admin\DropDownController;
 
 /*
 |--------------------------------------------------------------------------
@@ -100,4 +102,17 @@ Route::group(['middleware' => ['admin', 'auth:api'], 'prefix' => 'api'], functio
     Route::get('/bustype/{id}', [BusTypeController::class, 'show']);
     Route::post('/bustype/{id}', [BusTypeController::class, 'update']);
     Route::delete('/bustype/{id}', [BusTypeController::class, 'destroy']);
+
+
+    Route::get('bannerDaysDD', [DropDownController::class, 'bannerDaysDD']);
+    Route::get('bannerImageOrientationDD', [DropDownController::class, 'bannerImageOrientationDD']);
+    Route::get('bannerLevelsDD', [DropDownController::class, 'bannerLevelsDD']);
+
+    
+    Route::post('addBanner', [BannerController::class, 'addBanner']);
+    Route::get('listBanners', [BannerController::class, 'listBanners']);
+    Route::get('getBanner/{id}', [BannerController::class, 'getBanner']);
+    Route::post('updateBanner', [BannerController::class, 'updateBanner']);
+    Route::delete('deleteBanner/{id}', [BannerController::class, 'deleteBanner']);
+    
 });

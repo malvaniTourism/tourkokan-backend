@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Validator;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\AppVersion;
+use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Projects;
 use App\Models\Products;
@@ -146,6 +147,7 @@ class LandingPageController extends BaseController
 
         $records =  array(
             'version' => AppVersion::latest()->first(),
+            'banners' => Banner::get(),
             'routes' => $routes,
             'stops' => $stops,
             'categories' => $categories,
