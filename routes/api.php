@@ -186,24 +186,24 @@ Route::group(['middleware' => 'auth:api', 'prefix' => 'v2'], function ($router) 
 
     Route::post('landingpage', [LandingPageController::class, 'index']);
 
-    Route::get('user-profile', [AuthController::class, 'userProfile']);
+    Route::post('user-profile', [AuthController::class, 'userProfile']);
     Route::post('updateProfile', [AuthController::class, 'updateProfile']);
     Route::post('logout', [AuthController::class, 'logout']);
 
-    Route::get('listroutes', [RouteController::class, 'listroutes']);
+    Route::post('listroutes', [RouteController::class, 'listroutes']);
     Route::post('routes', [RouteController::class, 'routes']);
 
-    Route::get('favourites', [FavouriteController::class, 'index']);
+    Route::post('favourites', [FavouriteController::class, 'index']);
     Route::post('favourite', [FavouriteController::class, 'store']);
-    Route::get('favourite/{user_id}', [AuthController::class, 'getAllFavourites']);
+    Route::post('favourite/{user_id}', [AuthController::class, 'postAllFavourites']);
     Route::delete('favourite/{id}', [FavouriteController::class, 'destroy']);
 
-    Route::get('contacts', [ContactController::class, 'index']);
+    Route::post('contacts', [ContactController::class, 'index']);
     Route::post('contact', [ContactController::class, 'store']);
-    Route::get('contact/{id}', [ContactController::class, 'show']);
+    Route::post('contact/{id}', [ContactController::class, 'show']);
     Route::put('contact/{id}', [ContactController::class, 'update']);
     Route::delete('contact/{id}', [ContactController::class, 'destroy']);
 
     Route::post('addAppVersion', [AppVersionController::class, 'addAppVersion']);
-    Route::get('getAppVersion', [AppVersionController::class, 'getAppVersion']);
+    Route::post('getAppVersion', [AppVersionController::class, 'getAppVersion']);
 });
