@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API\V1;
+namespace App\Http\Controllers\User\V2;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -17,6 +17,7 @@ use App\Models\Blog;
 use App\Models\Favourite;
 use App\Models\PlaceCategory;
 use App\Models\Route;
+use App\Models\Site;
 
 class LandingPageController extends BaseController
 {
@@ -44,34 +45,43 @@ class LandingPageController extends BaseController
         $user = auth()->user();
 
         #Services categories
-        $categories = Category::withCount('projects')
+        $categories = Category::whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
             ->latest()
             ->limit(8)
             ->get();
 
         #Top famouse cities
-        $cities = City::select('id', 'name', 'tag_line', 'image_url')
+        $cities = Site::select('id', 'name', 'tag_line', 'logo', 'icon', 'image')
             ->withAvg("rateable", 'rate')
             // ->having('rateable_avg_rate', '>', 3)
-            ->withCount('places', 'photos')
-            ->selectSub(function ($query) use ($user) {
-                $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
-                    ->from('favourites')
-                    ->whereColumn('cities.id', 'favourites.favouritable_id')
-                    ->where('favourites.favouritable_type', City::class)
-                    ->where('favourites.user_id', $user->id);
-            }, 'is_favorite')
+            ->withCount('photos', 'comments')
+            ->with(['category:id,name,code,parent_id,icon,status,is_hot_category']);
+
+        if ($request->has('category')) {
+            $cities = $cities->whereHas('category', function ($query) use ($request) {
+                $query->where('code', $request->category);
+            });
+        }
+
+        $cities = $cities->selectSub(function ($query) use ($user) {
+            $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
+                ->from('favourites')
+                ->whereColumn('sites.id', 'favourites.favouritable_id')
+                ->where('favourites.favouritable_type', Site::class)
+                ->where('favourites.user_id', $user->id);
+        }, 'is_favorite')
             ->latest()
             ->limit(4)
             ->get();
 
+
         # Top Projects
-        $projects = Projects::withAvg("rateable", 'rate')
-            // ->having('rateable_avg_rate', '>', 3) //this condition is working
-            ->withCount('photos')
-            ->latest()
-            ->limit(5)
-            ->get();
+        // $projects = Projects::withAvg("rateable", 'rate')
+        //     // ->having('rateable_avg_rate', '>', 3) //this condition is working
+        //     ->withCount('photos')
+        //     ->latest()
+        //     ->limit(5)
+        //     ->get();
 
         // $products = Products::withAvg("rateable", 'rate')
         //                     ->having('rateable_avg_rate', '>', 3)
@@ -104,42 +114,42 @@ class LandingPageController extends BaseController
             ->get();
 
         #Place Categories
-        $place_category = PlaceCategory::with(['places' => function ($query) {
-            $query->select('places.id', 'places.name', 'places.city_id', 'places.parent_id', 'places.place_category_id', 'places.image_url', 'places.bg_image_url', 'places.visitors_count')
-                ->leftJoin('places as p2', function ($join) {
-                    $join->on('places.place_category_id', '=', 'p2.place_category_id')
-                        ->whereRaw('places.id <= p2.id');
-                })
-                ->groupBy('places.id')
-                ->havingRaw('COUNT(*) <= 5');
-        }])
-            ->withCount('places')
-            ->limit(5)
-            ->get();
+        // $place_category = PlaceCategory::with(['places' => function ($query) {
+        //     $query->select('places.id', 'places.name', 'places.city_id', 'places.parent_id', 'places.place_category_id', 'places.image_url', 'places.bg_image_url', 'places.visitors_count')
+        //         ->leftJoin('places as p2', function ($join) {
+        //             $join->on('places.place_category_id', '=', 'p2.place_category_id')
+        //                 ->whereRaw('places.id <= p2.id');
+        //         })
+        //         ->groupBy('places.id')
+        //         ->havingRaw('COUNT(*) <= 5');
+        // }])
+        //     ->withCount('places')
+        //     ->limit(5)
+        //     ->get();
 
         // return $place_catgory;
         #Top Places
         //add location based filter near by famous locations
-        $places = Place::select('id', 'name', 'city_id', 'place_category_id', 'parent_id', 'rating', 'visitors_count')
-            ->withAvg("rateable", 'rate')
-            // ->having('rateable_avg_rate', '>', 3)
-            // ->orWhere('visitors_count', '>=', 5)
-            ->withCount('photos')
-            ->with(['placeCategory' => function ($query) {
-                $query->select('id', 'name', 'icon');
-            }, 'city' => function ($query) {
-                $query->select('id', 'name', 'image_url');
-            }])
-            ->selectSub(function ($query) use ($user) {
-                $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
-                    ->from('favourites')
-                    ->whereColumn('places.id', 'favourites.favouritable_id')
-                    ->where('favourites.favouritable_type', Place::class)
-                    ->where('favourites.user_id', $user->id);
-            }, 'is_favorite')
-            ->latest()
-            ->limit(5)
-            ->get();
+        // $places = Place::select('id', 'name', 'city_id', 'place_category_id', 'parent_id', 'rating', 'visitors_count')
+        //     ->withAvg("rateable", 'rate')
+        //     // ->having('rateable_avg_rate', '>', 3)
+        //     // ->orWhere('visitors_count', '>=', 5)
+        //     ->withCount('photos')
+        //     ->with(['placeCategory' => function ($query) {
+        //         $query->select('id', 'name', 'icon');
+        //     }, 'city' => function ($query) {
+        //         $query->select('id', 'name', 'image_url');
+        //     }])
+        //     ->selectSub(function ($query) use ($user) {
+        //         $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
+        //             ->from('favourites')
+        //             ->whereColumn('places.id', 'favourites.favouritable_id')
+        //             ->where('favourites.favouritable_type', Place::class)
+        //             ->where('favourites.user_id', $user->id);
+        //     }, 'is_favorite')
+        //     ->latest()
+        //     ->limit(5)
+        //     ->get();
 
         $blogs = Blog::latest()
             ->limit(5)
@@ -152,10 +162,10 @@ class LandingPageController extends BaseController
             'stops' => $stops,
             'categories' => $categories,
             'cities' => $cities,
-            'projects' => $projects,
+            // 'projects' => $projects,
             // 'products'=>$products,
-            'place_category' => $place_category,
-            'places' => $places,
+            // 'place_category' => $place_category,
+            // 'places' => $places,
             'blogs' => $blogs
         );
 

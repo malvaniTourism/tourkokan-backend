@@ -19,7 +19,6 @@ class CityImport implements ToCollection, WithHeadingRow
     {
         try {
             foreach ($data as $key => $value) {
-                logger($value);
                 $exist = City::where('name', $value['name'])
                     ->first();
 

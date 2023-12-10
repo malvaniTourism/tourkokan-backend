@@ -12,7 +12,11 @@ use App\Http\Controllers\Admin\FoodController;
 use App\Http\Controllers\Admin\TourPackageController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\AccomodationCategoryController;
+use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BusTypeController;
+use App\Http\Controllers\Admin\DropDownController;
+use App\Http\Controllers\Admin\V2\CategoryController;
+use App\Http\Controllers\Admin\V2\SiteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -100,4 +104,36 @@ Route::group(['middleware' => ['admin', 'auth:api'], 'prefix' => 'api'], functio
     Route::get('/bustype/{id}', [BusTypeController::class, 'show']);
     Route::post('/bustype/{id}', [BusTypeController::class, 'update']);
     Route::delete('/bustype/{id}', [BusTypeController::class, 'destroy']);
+
+
+    Route::get('bannerDaysDD', [DropDownController::class, 'bannerDaysDD']);
+    Route::get('bannerImageOrientationDD', [DropDownController::class, 'bannerImageOrientationDD']);
+    Route::get('bannerLevelsDD', [DropDownController::class, 'bannerLevelsDD']);
+
+    
+    Route::post('addBanner', [BannerController::class, 'addBanner']);
+    Route::get('listBanners', [BannerController::class, 'listBanners']);
+    Route::get('getBanner/{id}', [BannerController::class, 'getBanner']);
+    Route::post('updateBanner', [BannerController::class, 'updateBanner']);
+    Route::delete('deleteBanner/{id}', [BannerController::class, 'deleteBanner']);
+    
+});
+
+
+Route::group(['middleware' => 'api', 'prefix' => 'v2/auth'], function ($router) {
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('register', [AuthController::class, 'register']);
+    Route::post('refresh', [AuthController::class, 'refresh']);
+    Route::post('users', [AuthController::class, 'index']);
+    Route::post('sendOtp', [AuthController::class, 'sendOtp']);
+    Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
+}); 
+
+Route::group(['middleware' => 'auth:api', 'prefix' => 'v2'], function ($router) {
+    Route::post('listcategories', [CategoryController::class, 'listcategories']);
+    Route::post('getCategory', [CategoryController::class, 'getCategory']);
+
+    Route::post('sites', [SiteController::class, 'sites']);
+    Route::post('getSite', [SiteController::class, 'getSite']);
+
 });

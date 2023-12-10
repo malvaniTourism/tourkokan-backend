@@ -4,17 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Traits\Hashidable;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-
-class Category extends Model
+class Banner extends Model
 {
-    use HasFactory, Hashidable, HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Hashidable, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -22,14 +18,17 @@ class Category extends Model
      * @var string[]
      */
     protected $fillable = [
+        'id',
         'name',
-        'code',
-        'parent_id',
-        'description',
-        'icon',
+        'image',
+        'start_date',
+        'duration',
+        'level',
+        'image_orientation',
         'status',
-        'is_hot_category',
-        'meta_data',
+        'bannerable_type',
+        'bannerable_id',
+        'meta_data'
     ];
 
     /**
@@ -45,18 +44,14 @@ class Category extends Model
      * @var array
      */
     protected $casts = [
-        'status' => 'boolean',
-        'is_hot_category' => 'boolean',
         'meta_data' => 'array'
     ];
 
     /**
-     * Get all of the sites for the Category
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * Get all of the models that own comments.
      */
-    public function sites()
+    public function bannerable()
     {
-        return $this->hasMany(Site::class, 'category_id', 'id');
+        return $this->morphTo();
     }
 }

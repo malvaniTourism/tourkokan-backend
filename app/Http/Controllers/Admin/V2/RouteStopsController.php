@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\V2;
 
 use App\Models\RouteStops;
 use Illuminate\Http\Request;
@@ -13,9 +13,27 @@ class RouteStopsController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $data = $request->validate([
+            'source_place_id' => 'required|exists:places,id|required_with:destination_place_id',
+            'destination_place_id' => 'required|exists:places,id|required_with:source_place_id',
+        ]);
+
+        $places = RouteStops::with(['places'])
+            ->whereIn('place_id', $data)
+            // ->when($data['search'], function ($query, $search) {
+            //     $query->where('name', 'like', '%' . $search . '%');
+            // })
+            // ->when($data['type'] == 'bus', function ($query) {
+            //     $query->whereHas('placeCategory', function ($query) {
+            //         $query->whereIn('name', ['Bus Stop', 'Bus Depo']);
+            //     });
+            // })
+            ->select('*')
+            ->get();
+
+        return $this->sendResponse($places, 'avaible routes successfully Retrieved...!');
     }
 
     /**

@@ -11,7 +11,6 @@ use Laravel\Sanctum\HasApiTokens;
 use App\Traits\Hashidable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
 class Category extends Model
 {
     use HasFactory, Hashidable, HasFactory, Notifiable, SoftDeletes;
@@ -23,13 +22,9 @@ class Category extends Model
      */
     protected $fillable = [
         'name',
-        'code',
-        'parent_id',
         'description',
-        'icon',
-        'status',
-        'is_hot_category',
         'meta_data',
+        'image_url',
     ];
 
     /**
@@ -44,19 +39,45 @@ class Category extends Model
      *
      * @var array
      */
-    protected $casts = [
-        'status' => 'boolean',
-        'is_hot_category' => 'boolean',
-        'meta_data' => 'array'
-    ];
+    protected $casts = [];
+
 
     /**
-     * Get all of the sites for the Category
+     * Get all of the projects for the Category
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function sites()
+    public function projects()
     {
-        return $this->hasMany(Site::class, 'category_id', 'id');
+        return $this->hasMany(Projects::class, 'category_id');
+    }
+
+    /**
+     * Get all of the productCategory for the Category
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function allowedproductCategory()
+    {
+        return $this->hasMany(AllowedProductCategory::class, 'category_id');
+    }
+    /**
+     * Get all of the blogs for the Category
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function blogs()
+    {
+        return $this->hasMany(Blog::class, 'category_id');
+    }
+
+    /**
+     * Get all of the products for the Category
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough
+     */
+    public function products()
+    {
+        return $this->hasManyThrough(Products::class, Projects::class,'category_id', 'project_id');
     }
 }
