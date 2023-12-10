@@ -195,7 +195,7 @@ Route::group(['middleware' => 'auth:api', 'prefix' => 'v2'], function ($router) 
 
     Route::post('favourites', [FavouriteController::class, 'index']);
     Route::post('favourite', [FavouriteController::class, 'store']);
-    Route::post('favourite/{user_id}', [AuthController::class, 'postAllFavourites']);
+    Route::post('favourite/{user_id}', [AuthController::class, 'getAllFavourites']);
     Route::delete('favourite/{id}', [FavouriteController::class, 'destroy']);
 
     Route::post('contacts', [ContactController::class, 'index']);
