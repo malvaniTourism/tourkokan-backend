@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Imports\CategoryImport;
+use App\Imports\SiteImport;
 use Illuminate\Database\Seeder;
 use Maatwebsite\Excel\Facades\Excel;
 
-class CategorySeeder extends Seeder
+class SiteSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -15,7 +15,7 @@ class CategorySeeder extends Seeder
      */
     public function run()
     {
-        $path = 'excels/latest category structure.xls';
-		Excel::import(new CategoryImport, $path);
+        $path = 'excels/sites.xls';
+		Excel::import(new SiteImport, $path);
     }
 }

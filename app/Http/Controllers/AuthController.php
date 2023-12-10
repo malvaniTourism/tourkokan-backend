@@ -82,7 +82,10 @@ class AuthController extends BaseController
         try {
             $prefix = $request->route()->getPrefix();
 
-            // return [$prefix];
+            $prefixParts = explode('/', $request->route()->getPrefix());
+            $prefix = $prefixParts[0];
+
+            // there is error in validation for superadmin role return error
             $validator = Validator::make($request->all(), [
                 'role_id' => [
                     'required',
@@ -248,7 +251,7 @@ class AuthController extends BaseController
     {
         $user = auth()->user();
         $user->load(['favourites.favouritable', 'rating', 'commentsOfUser', 'commentsOnUser', 'contacts', 'addresses']);
-        
+
         return $this->sendResponse($user, 'User Fetched..!');
     }
 
