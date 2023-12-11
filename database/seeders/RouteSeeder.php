@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\BusType;
 use App\Models\Place;
 use App\Models\Route;
+use App\Models\Site;
 use DateTime;
 use Illuminate\Database\Seeder;
 
@@ -25,8 +26,8 @@ class RouteSeeder extends Seeder
             $start_time = new DateTime($faker->dateTimeThisCentury()->format('h:i:s A'));
             $end_time = new DateTime($faker->dateTimeThisCentury($start_time)->format('h:i:s A'));
 
-            $source_place =  Place::all()->random();
-            $destination_place = Place::all()->except($source_place->id)->random();
+            $source_place =  Site::whereIn('bus_stop_type', ['Depo', 'Stop'])->get()->random();
+            $destination_place = Site::whereIn('bus_stop_type', ['Depo', 'Stop'])->get()->except($source_place->id)->random();
 
             if ($source_place->id == null || $destination_place->id == null)
                 continue;

@@ -35,7 +35,7 @@ class BusTypeSeeder extends Seeder
             ],
             [
                 'type' => 'Night Express',
-                'path' => null,
+                'path' => '/AC-Ashwamedh.svg',
                 'logo' =>  $faker->imageUrl($width = 400, $height = 400),
                 'meta_data' => '[{"color_code":"#7d377f","Content":"172284201241"}]'
             ],
@@ -53,7 +53,7 @@ class BusTypeSeeder extends Seeder
             ],
             [
                 'type' => 'AC-Sheetal',
-                'path' => null,
+                'path' => '/AC-Ashwamedh.svg',
                 'logo' =>  $faker->imageUrl($width = 400, $height = 400),
                 'meta_data' => '[{"color_code":"#e7e8e7","Content":"172284201241"}]'
             ],
@@ -65,7 +65,7 @@ class BusTypeSeeder extends Seeder
             ],
             [
                 'type' => 'Volvo Ac',
-                'path' => null,
+                'path' => '/AC-Ashwamedh.svg',
                 'logo' =>  $faker->imageUrl($width = 400, $height = 400),
                 'meta_data' => '[{"color_code":"#e7e8e7","Content":"172284201241"}]'
             ],

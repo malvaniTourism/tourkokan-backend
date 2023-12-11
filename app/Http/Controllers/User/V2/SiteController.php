@@ -113,8 +113,9 @@ class SiteController extends BaseController
             'search' => 'sometimes|nullable|string|alpha|max:255',
             'type' => 'sometimes|required|string|max:255|in:bus',
             'apitype' => 'required|string|max:255|in:list,dropdown',
-            'category' => ($request->has('type')) ? 'nullable|exists:categories,code' : 'nullable|required_without:parent_id|exists:categories,code',
-            'parent_id' => 'nullable|required_with:parent_id|exists:sites,parent_id'
+            'category' => ($request->has('type') || $request->has('global')) ? 'nullable|exists:categories,code' : 'nullable|required_without:parent_id|exists:categories,code',
+            'parent_id' => 'nullable|required_with:parent_id|exists:sites,parent_id',
+            'global'    => 'sometimes|boolean'
         ]);
 
         if ($validator->fails()) {
@@ -123,7 +124,7 @@ class SiteController extends BaseController
 
         $sites = Site::withCount(['photos', 'comments'])
             ->with(['photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category']);
-            
+
         if ($request->has('category')) {
             $sites = $sites->whereHas('category', function ($query) use ($request) {
                 $query->where('code', $request->category);
@@ -132,6 +133,10 @@ class SiteController extends BaseController
 
         if ($request->has('parent_id')) {
             $sites = $sites->orWhere('parent_id', "=", $request->parent_id);
+        }
+
+        if ($request->has('global')) {
+            $sites = $sites->whereNotNull('parent_id');
         }
 
         if ($request->has('search')) {
@@ -144,7 +149,7 @@ class SiteController extends BaseController
         }
 
         $sites = $sites->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'))
-            ->paginate(10);
+            ->paginate(15);
 
         return $this->sendResponse($sites, 'Sites successfully Retrieved...!');
     }

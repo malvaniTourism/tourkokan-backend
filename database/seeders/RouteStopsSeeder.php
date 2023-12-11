@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Place;
 use App\Models\Route;
 use App\Models\RouteStops;
+use App\Models\Site;
 use Carbon\Carbon;
 use DateInterval;
 use DateTime;
@@ -41,7 +42,7 @@ class RouteStopsSeeder extends Seeder
                 }
 
                 if ($i != 0 && $i != 4) {
-                    $source_place =  Place::all()->random();
+                    $source_place =  Site::all()->random();
 
                     $place_id = $source_place->id;
                 }
