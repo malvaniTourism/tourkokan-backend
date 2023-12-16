@@ -140,6 +140,7 @@ class SiteController extends BaseController
                         'status',
                     )->limit(5);
                 },
+                'sites.comments',
                 'photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category'
             ]);
 
