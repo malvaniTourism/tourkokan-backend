@@ -19,7 +19,8 @@ return [
         'profile_picture'   => 'public/assets/profile_picture/',
         'tourpackage'       => 'public/assets/tourpackage/',
         'accomCategory'     => 'public/assets/accomCategory/',
-        'busType'           => 'public/assets/busType'
+        'busType'           => 'public/assets/busType',
+        'site'              => 'public/assets/site'
     ],
     'models' => [
         'City' => 'App\Models\City',
