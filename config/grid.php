@@ -4,6 +4,7 @@ return [
     'siteApiTypes' => [
         'list' => [
             "columns" => [
+                'id',
                 'name',
                 'parent_id',
                 'user_id',
@@ -28,7 +29,9 @@ return [
         ],
         'dropdown' =>  [
             "columns" => [
+                'id',
                 'name',
+                'parent_id',
                 'category_id',
                 'bus_stop_type',
                 'icon',

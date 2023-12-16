@@ -123,7 +123,25 @@ class SiteController extends BaseController
         }
 
         $sites = Site::withCount(['photos', 'comments'])
-            ->with(['photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category']);
+            ->with([
+                'sites' => function ($query) {
+                    $query->select(
+                        'id',
+                        'name',
+                        'name',
+                        'parent_id',
+                        'category_id',
+                        'image',
+                        'domain_name',
+                        'description',
+                        'tag_line',
+                        'bus_stop_type',
+                        'icon',
+                        'status',
+                    )->limit(5);
+                },
+                'photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category'
+            ]);
 
         if ($request->has('category')) {
             $sites = $sites->whereHas('category', function ($query) use ($request) {

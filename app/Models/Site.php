@@ -66,7 +66,7 @@ class Site extends Model
      */
     public function site()
     {
-        return $this->belongsTo(Site::class, 'parent_id', 'id');
+        return $this->belongsTo(Site::class);
     }
 
     /**
