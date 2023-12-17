@@ -55,21 +55,17 @@ class LandingPageController extends BaseController
             ->withAvg("rateable", 'rate')
             // ->having('rateable_avg_rate', '>', 3)
             ->withCount('photos', 'comments')
-            ->with(['category:id,name,code,parent_id,icon,status,is_hot_category']);
-
-        if ($request->has('category')) {
-            $cities = $cities->whereHas('category', function ($query) use ($request) {
+            ->with(['category:id,name,code,parent_id,icon,status,is_hot_category'])
+            ->whereHas('category', function ($query) {
                 $query->where('code', 'city');
-            });
-        }
-
-        $cities = $cities->selectSub(function ($query) use ($user) {
-            $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
-                ->from('favourites')
-                ->whereColumn('sites.id', 'favourites.favouritable_id')
-                ->where('favourites.favouritable_type', Site::class)
-                ->where('favourites.user_id', $user->id);
-        }, 'is_favorite')
+            })
+            ->selectSub(function ($query) use ($user) {
+                $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
+                    ->from('favourites')
+                    ->whereColumn('sites.id', 'favourites.favouritable_id')
+                    ->where('favourites.favouritable_type', Site::class)
+                    ->where('favourites.user_id', $user->id);
+            }, 'is_favorite')
             ->latest()
             ->limit(4)
             ->get();
