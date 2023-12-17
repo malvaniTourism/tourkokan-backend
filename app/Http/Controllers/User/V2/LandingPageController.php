@@ -59,7 +59,7 @@ class LandingPageController extends BaseController
 
         if ($request->has('category')) {
             $cities = $cities->whereHas('category', function ($query) use ($request) {
-                $query->where('code', $request->category);
+                $query->where('code', 'city');
             });
         }
 
