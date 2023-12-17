@@ -100,18 +100,19 @@ class LandingPageController extends BaseController
             ->get();
 
         $routes = Route::with([
-            'routeStops:id,serial_no,route_id,place_id,arr_time,dept_time,total_time,delayed_time',
-            'routeStops.place:id,name,place_category_id',
-            'routeStops.place.placeCategory:id,name,icon',
-            'sourcePlace:id,name,place_category_id',
-            'sourcePlace.placeCategory:id,name,icon',
-            'destinationPlace:id,name,place_category_id',
-            'destinationPlace.placeCategory:id,name,icon',
+            'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
+            'routeStops.site:id,name,category_id',
+            'routeStops.site.category:id,name,icon',
+            'sourcePlace:id,name,category_id',
+            'sourcePlace.category:id,name,icon',
+            'destinationPlace:id,name,category_id',
+            'destinationPlace.category:id,name,icon',
             'busType:id,type,logo,meta_data'
         ])->select('id', 'source_place_id', 'destination_place_id', 'bus_type_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time')
             ->latest()
             ->limit(5)
             ->get();
+
 
         #Place Categories
         // $place_category = PlaceCategory::with(['places' => function ($query) {
