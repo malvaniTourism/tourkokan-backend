@@ -27,8 +27,8 @@ class CreateRoutesTable extends Migration
             $table->time('delayed_time')->nullable();
             $table->timestamps();
 
-            $table->foreign('source_place_id')->references('id')->on('places')->onDelete('cascade')->onUpdate('cascade');
-            $table->foreign('destination_place_id')->references('id')->on('places')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreign('source_place_id')->references('id')->on('sites')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreign('destination_place_id')->references('id')->on('sites')->onDelete('cascade')->onUpdate('cascade');
             $table->foreign('bus_type_id')->references('id')->on('bus_types')->onDelete('cascade')->onUpdate('cascade');
         });
     }

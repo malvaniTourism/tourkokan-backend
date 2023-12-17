@@ -17,7 +17,7 @@ class CreateRouteStopsTable extends Migration
             $table->increments('id');
             $table->integer('serial_no')->unsigned();
             $table->integer('route_id')->unsigned();
-            $table->integer('place_id')->unsigned()->comment('Bus stop or Bus depo id');
+            $table->integer('site_id')->unsigned()->comment('Bus stop or Bus depo id');
             $table->time('arr_time');
             $table->time('dept_time');
             $table->time('total_time')->nullable();
@@ -26,7 +26,7 @@ class CreateRouteStopsTable extends Migration
             $table->timestamps();
 
             $table->foreign('route_id')->references('id')->on('routes')->onDelete('cascade')->onUpdate('cascade');
-            $table->foreign('place_id')->references('id')->on('places')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreign('site_id')->references('id')->on('sites')->onDelete('cascade')->onUpdate('cascade');
         });
     }
 

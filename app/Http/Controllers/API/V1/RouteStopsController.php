@@ -16,12 +16,12 @@ class RouteStopsController extends BaseController
     public function index(Request $request)
     {
         $data = $request->validate([
-            'source_place_id' => 'required|exists:places,id|required_with:destination_place_id',
-            'destination_place_id' => 'required|exists:places,id|required_with:source_place_id',
+            'source_place_id' => 'required|exists:sites,id|required_with:destination_place_id',
+            'destination_place_id' => 'required|exists:sites,id|required_with:source_place_id',
         ]);
 
-        $places = RouteStops::with(['places'])
-            ->whereIn('place_id', $data)
+        $places = RouteStops::with(['sites'])
+            ->whereIn('site_id', $data)
             // ->when($data['search'], function ($query, $search) {
             //     $query->where('name', 'like', '%' . $search . '%');
             // })

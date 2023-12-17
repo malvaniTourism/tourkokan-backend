@@ -28,27 +28,27 @@ class RouteStopsSeeder extends Seeder
 
         foreach ($routes as $key => $value) {
             for ($i = 0; $i < 5; $i++) {
-                $place_id = 0;
+                $site_id = 0;
 
                 $arr_time = new DateTime($faker->dateTimeThisCentury()->format('h:i:s A'));
                 $dept_time = new DateTime($faker->dateTimeThisCentury($arr_time)->format('h:i:s A'));
 
                 if ($i == 0) {
-                    $place_id = $value->source_place_id;
+                    $site_id = $value->source_place_id;
                 }
 
                 if ($i == 4) {
-                    $place_id = $value->destination_place_id;
+                    $site_id = $value->destination_place_id;
                 }
 
                 if ($i != 0 && $i != 4) {
                     $source_place =  Site::all()->random();
 
-                    $place_id = $source_place->id;
+                    $site_id = $source_place->id;
                 }
 
                 $exist = RouteStops::where("route_id", $value->id)
-                    ->where("place_id", $place_id)
+                    ->where("site_id", $site_id)
                     ->first();
 
                 if (!$exist) {
@@ -57,7 +57,7 @@ class RouteStopsSeeder extends Seeder
                     $data = array(
                         'serial_no' => $i + 1,
                         'route_id' => $value['id'],
-                        'place_id' => $place_id,
+                        'site_id' => $site_id,
                         'meta_data' => $string,
                         'arr_time' => $arr_time,
                         'dept_time' => $dept_time,

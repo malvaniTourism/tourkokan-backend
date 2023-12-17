@@ -55,7 +55,7 @@ class Route extends Model
      */
     public function sourcePlace()
     {
-        return $this->belongsTo(Place::class);
+        return $this->belongsTo(Site::class);
     }
 
     /**
@@ -65,7 +65,7 @@ class Route extends Model
      */
     public function destinationPlace()
     {
-        return $this->belongsTo(Place::class);
+        return $this->belongsTo(Site::class);
     }
 
     /**

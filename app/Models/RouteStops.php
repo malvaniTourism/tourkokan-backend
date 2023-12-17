@@ -19,7 +19,7 @@ class RouteStops extends Model
     protected $fillable = [
         'serial_no',
         'route_id',
-        'place_id',
+        'site_id',
         'arr_time',
         'dept_time',
         'total_time',
@@ -48,9 +48,9 @@ class RouteStops extends Model
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function places()
+    public function sites()
     {
-        return $this->belongsTo(Place::class, 'place_id');
+        return $this->belongsTo(Site::class, 'site_id');
     }
 
     /**
@@ -60,7 +60,7 @@ class RouteStops extends Model
      */
     public function routes()
     {
-        return $this->belongsTo(Route::class, 'place_id');
+        return $this->belongsTo(Route::class, 'site_id');
     }
 
     /**
@@ -68,8 +68,8 @@ class RouteStops extends Model
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function place()
+    public function site()
     {
-        return $this->belongsTo(Place::class, 'place_id');
+        return $this->belongsTo(Site::class, 'site_id');
     }
 }
