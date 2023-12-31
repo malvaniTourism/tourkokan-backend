@@ -138,7 +138,8 @@ class SiteController extends BaseController
                         'bus_stop_type',
                         'icon',
                         'status',
-                    )->limit(5);
+                        'is_hot_place'
+                    )->where('is_hot_place', true);
                 },
                 'sites.comments',
                 'photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category'
