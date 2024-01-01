@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin\V2;
 
 use App\Models\Favourite;
 use Illuminate\Http\Request;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;

@@ -2,6 +2,7 @@
 
 namespace App\Imports;
 
+use App\Models\Address;
 use App\Models\Category;
 use App\Models\Site;
 use Illuminate\Support\Collection;
@@ -17,6 +18,11 @@ class SiteImport implements ToCollection, WithHeadingRow
     {
         try {
             foreach ($data as $key => $value) {
+
+                if (Site::where('name', $value['name'])->first()) {
+                    continue;
+                }
+
                 $siteRecord = array();
                 $siteRecord['name'] = $value['name'];
                 $siteRecord['user_id'] = isValidReturn($value, 'user_id');
@@ -36,15 +42,19 @@ class SiteImport implements ToCollection, WithHeadingRow
                 $siteRecord['parent_id'] = isValidReturn($parent, 'id');
 
                 $category = [];
-                if ($value['category_code'] != NULL) {
-                    $where_category = array(
-                        'code' => $value['category_code']
-                    );
+                if ($value['category_code'] == null || $value['category_code'] == "") {
+                    logger("blank category");
+                    continue;
+                }
 
-                    $category = Category::where($where_category)->first();
-                    if (!$category) {
-                        logger("blank category");
-                    }
+                $where_category = array(
+                    'code' => $value['category_code']
+                );
+
+                $category = Category::where($where_category)->first();
+                if (!$category) {
+                    logger("invalid category");
+                    continue;
                 }
 
                 $siteRecord['category_id'] = isValidReturn($category, 'id');
@@ -64,10 +74,19 @@ class SiteImport implements ToCollection, WithHeadingRow
                 $siteRecord['rules'] = $value['rules'];
                 $siteRecord['social_media'] = $value['social_media'];
                 $siteRecord['meta_data'] = $value['meta_data'];
-                Site::create($siteRecord);
+                $site = Site::create($siteRecord);
+
+                if (
+                    ($value['email'] !== null && $value['email'] !== "")  ||
+                    ($value['phone'] !== null && $value['phone'] == "")
+                ) {
+                    $site->address()->create([
+                        'email' => $value['email'],
+                        'phone' =>  "" . $value['phone']
+                    ]);
+                }
             }
         } catch (\Throwable $th) {
-            logger($th->getMessage());
             throw $th();
         }
     }

@@ -129,4 +129,9 @@ class Site extends Model
     {
         return $this->morphMany(Favourite::class, 'favouritable');
     }
+
+    public function address()
+    {
+        return $this->morphMany(Address::class, 'addressable');
+    }
 }
