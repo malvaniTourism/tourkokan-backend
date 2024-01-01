@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User\V2;
 use App\Models\Site;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
+use App\Models\Category;
 use Illuminate\Support\Facades\Validator;
 
 class SiteController extends BaseController
@@ -156,9 +157,17 @@ class SiteController extends BaseController
             ]);
 
         if ($request->has('category')) {
-            $sites = $sites->whereHas('category', function ($query) use ($request) {
-                $query->where('code', $request->category);
-            });
+            if ($request->has('category') == 'emergency') {
+                $category = Category::where('code', 'emergency')->pluck('id');
+
+                $category_ids =  Category::where('parent_id', $category)->get()->pluck('id');
+
+                $sites = $sites->whereIn('category_id', $category_ids);
+            } else {
+                $sites = $sites->whereHas('category', function ($query) use ($request) {
+                    $query->where('code', $request->category);
+                });
+            }
         }
 
         if ($request->has('parent_id')) {
