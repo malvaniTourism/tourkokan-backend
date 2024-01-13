@@ -53,6 +53,16 @@ return [
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
         ],
 
+        'ftp' => [
+            'driver' => 'ftp',
+            'host' => env('FTP_HOST'),
+            'username' => env('FTP_USERNAME'),
+            'password' => env('FTP_PASSWORD'),
+            'port'     => env('FTP_PORT'),
+            'root'     => env('FTP_ROOT'),
+            'ssl'      => env('FTP_SSL', false),
+            'timeout'  => env('FTP_TIMEOUT', 30)
+        ]
     ],
 
     /*

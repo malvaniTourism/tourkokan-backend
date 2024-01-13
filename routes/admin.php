@@ -136,4 +136,6 @@ Route::group(['middleware' => 'auth:api', 'prefix' => 'v2'], function ($router) 
     Route::post('sites', [SiteController::class, 'sites']);
     Route::post('getSite', [SiteController::class, 'getSite']);
 
+    Route::post('addSite', [SiteController::class, 'addSite']);
+    Route::delete('deleteSite/{id}', [SiteController::class, 'deleteSite']);
 });

@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Support\Facades\DB;
 use App\Models\City;
 use App\Models\User;
@@ -9,6 +10,7 @@ use App\Models\Photos;
 use App\Models\Blog;
 use App\Models\Food;
 use App\Models\Site;
+use Illuminate\Support\Facades\Storage;
 
 function currentDate()
 {
@@ -18,7 +20,7 @@ function currentDate()
 
 function getDbColumns($tableName)
 {
-   return DB::getSchemaBuilder()->getColumnListing($tableName);
+    return DB::getSchemaBuilder()->getColumnListing($tableName);
 }
 
 function getData($id, $model)
@@ -26,49 +28,50 @@ function getData($id, $model)
     switch ($model) {
         case 'City':
             $data = City::find($id);
-        break;
-        
+            break;
+
         case 'User':
             $data = User::find($id);
-        break;
-        
+            break;
+
         case 'Projects':
             $data = Projects::find($id);
-        break;
+            break;
 
         case 'Products':
             $data = Product::find($id);
-        break;
+            break;
 
         case 'Place':
             $data = Place::find($id);
-        break;
+            break;
 
         case 'Photos':
             $data = Photos::find($id);
-        break;
+            break;
 
         case 'Blog':
             $data = Blog::find($id);
-        break;
+            break;
 
         case 'Food':
             $data = Food::find($id);
-        break;
+            break;
 
         case 'Sites':
             $data = Site::find($id);
-        break;
+            break;
 
         default:
             # code...
-        break;
+            break;
     }
 
     return $data;
 }
 
-function getModels($path){
+function getModels($path)
+{
     $out = [];
     $results = scandir($path);
     foreach ($results as $result) {
@@ -77,8 +80,8 @@ function getModels($path){
         logger($filename);
         if (is_dir($filename)) {
             $out = array_merge($out, getModels($filename));
-        }else{
-            $out[] = substr($filename,0,-4);
+        } else {
+            $out[] = substr($filename, 0, -4);
         }
     }
     return $out;
@@ -106,6 +109,13 @@ function isValidReturn($value, $key = null, $ret = null)
             : $value[$key]));
 }
 
-function uploadFile(){
-    
+function uploadFile($file, $destination)
+{
+    $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+
+    Storage::put($destination . '/' . $filename, file_get_contents($file));
+
+    $url = Storage::url($destination . '/' . $filename);
+
+    return ['path' => $url];
 }

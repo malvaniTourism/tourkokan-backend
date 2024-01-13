@@ -110,7 +110,6 @@ class SiteController extends BaseController
      */
     public function sites(Request $request)
     {
-
         $user = auth()->user();
 
         $validator = Validator::make($request->all(), [
