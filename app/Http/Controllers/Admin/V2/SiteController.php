@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin\V2;
 use App\Models\Site;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
+use App\Models\Category;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class SiteController extends BaseController
@@ -16,13 +18,13 @@ class SiteController extends BaseController
      */
     public function sites(Request $request) //cities
     {
-        // $user = auth()->user();
         $validator = Validator::make($request->all(), [
             'search' => 'sometimes|nullable|string|alpha|max:255',
             'type' => 'sometimes|required|string|max:255|in:bus',
             'apitype' => 'required|string|max:255|in:list,dropdown',
-            'category' => ($request->has('type')) ? 'nullable|exists:categories,code' : 'nullable|required_without:parent_id|exists:categories,code',
-            'parent_id' => 'nullable|required_with:parent_id|exists:sites,parent_id'
+            'category' => ($request->has('type') || $request->has('global')) ? 'nullable|exists:categories,code' : 'nullable|required_without:parent_id|exists:categories,code',
+            'parent_id' => 'nullable|required_with:parent_id|exists:sites,parent_id',
+            'global'    => 'sometimes|boolean'
         ]);
 
         if ($validator->fails()) {
@@ -30,16 +32,48 @@ class SiteController extends BaseController
         }
 
         $sites = Site::withCount(['photos', 'comments'])
-            ->with(['photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category']);
-            
+            ->with([
+                'sites' => function ($query) {
+                    $query->select(
+                        'id',
+                        'name',
+                        'name',
+                        'parent_id',
+                        'category_id',
+                        'image',
+                        'domain_name',
+                        'description',
+                        'tag_line',
+                        'bus_stop_type',
+                        'icon',
+                        'status',
+                    )
+                        ->where('is_hot_place', true);
+                },
+                'sites.comments',
+                'photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category'
+            ]);
+
         if ($request->has('category')) {
-            $sites = $sites->whereHas('category', function ($query) use ($request) {
-                $query->where('code', $request->category);
-            });
+            if ($request->has('category') == 'emergency') {
+                $category = Category::where('code', 'emergency')->pluck('id');
+
+                $category_ids =  Category::where('parent_id', $category)->get()->pluck('id');
+
+                $sites = $sites->whereIn('category_id', $category_ids);
+            } else {
+                $sites = $sites->whereHas('category', function ($query) use ($request) {
+                    $query->where('code', $request->category);
+                });
+            }
         }
 
         if ($request->has('parent_id')) {
             $sites = $sites->orWhere('parent_id', "=", $request->parent_id);
+        }
+
+        if ($request->has('global')) {
+            $sites = $sites->whereNotNull('parent_id');
         }
 
         if ($request->has('search')) {
@@ -52,11 +86,10 @@ class SiteController extends BaseController
         }
 
         $sites = $sites->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'))
-            ->paginate(10);
+            ->paginate(15);
 
         return $this->sendResponse($sites, 'Sites successfully Retrieved...!');
     }
-
 
     /**
      * Display the specified resource.
@@ -176,31 +209,51 @@ class SiteController extends BaseController
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function addSite(Request $request)
     {
-        //
-    }
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|unique:sites,name|string|between:2,100',
+            'parent_id' => 'nullable|exists:sites,id',
+            'user_id' => 'nullable|exists:users,id',
+            'category_id' => 'required|string|exists:categories,id',
+            'bus_stop_type' => 'nullable|in:Stop,Depo',
+            'tag_line' => 'required|string|between:2,100',
+            'description' => 'required|string',
+            'domain_name' => 'nullable|string',
+            'logo' => 'nullable|mimes:jpeg,jpg,png|max:1024',
+            'icon' => 'nullable|mimes:jpeg,jpg,png|max:512',
+            'image' => 'nullable|mimes:jpeg,jpg,png|max:512',
+            'status' => 'boolean:true,false',
+            'latitude' => 'nullable|required_with:longitude|between:-90,90',
+            'longitude' => 'nullable|required_with:latitude|between:-90,90',
+            'pin_code' => 'nullable|numeric',
+            'speciality' => 'nullable|json',
+            'rules' => 'nullable|json',
+            'social_media' => 'nullable|json',
+            'meta_data' => 'nullable|json',
+        ]);
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Site  $site
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Site $site)
-    {
-        //
-    }
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Site  $site
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Site $site)
-    {
-        //
+        $input = $request->all();
+
+        $uploadPath = config('constants.upload_path.site');
+
+        if ($image = $request->file('logo')) {
+            $input['logo'] = uploadFile($image,  $uploadPath)['path'];
+        }
+        if ($image = $request->file('icon')) {
+            $input['icon'] = uploadFile($image,  $uploadPath)['path'];
+        }
+        if ($image = $request->file('image')) {
+            $input['image'] = uploadFile($image,  $uploadPath)['path'];
+        }
+
+        $site = Site::create($input);
+
+        return $this->sendResponse($site, 'Site added successfully...!');
     }
 
     /**
@@ -210,7 +263,7 @@ class SiteController extends BaseController
      * @param  \App\Models\Site  $site
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Site $site)
+    public function updateSite(Request $request, Site $site)
     {
         //
     }
@@ -221,8 +274,28 @@ class SiteController extends BaseController
      * @param  \App\Models\Site  $site
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Site $site)
+    public function deleteSite($id)
     {
-        //
+        $site = Site::find($id);
+
+        if (!$site) {
+            return $this->sendError('Empty', [], 404);
+        }
+
+        if (Storage::exists($site->logo)) {
+            Storage::delete($site->logo);
+        }
+
+        if (Storage::exists($site->icon)) {
+            Storage::delete($site->icon);
+        }
+
+        if (Storage::exists($site->image)) {
+            Storage::delete($site->image);
+        }
+
+        $site->delete($id);
+
+        return $this->sendResponse($site, 'Site deleted successfully...!');
     }
 }
