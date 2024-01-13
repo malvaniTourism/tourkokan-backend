@@ -241,16 +241,14 @@ class SiteController extends BaseController
 
         $uploadPath = config('constants.upload_path.site');
 
-        if ($image = $request->file('logo')) {
-            $input['logo'] = uploadFile($image,  $uploadPath)['path'];
-        }
-        if ($image = $request->file('icon')) {
-            $input['icon'] = uploadFile($image,  $uploadPath)['path'];
-        }
-        if ($image = $request->file('image')) {
-            $input['image'] = uploadFile($image,  $uploadPath)['path'];
-        }
+        $fileFields = ['logo', 'icon', 'image'];
 
+        foreach ($fileFields as $field) {
+            if ($image = $request->file($field)) {
+                $input[$field] = uploadFile($image, $uploadPath)['path'];
+            }
+        }
+        
         $site = Site::create($input);
 
         return $this->sendResponse($site, 'Site added successfully...!');
@@ -260,12 +258,60 @@ class SiteController extends BaseController
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Site  $site
      * @return \Illuminate\Http\Response
      */
-    public function updateSite(Request $request, Site $site)
+    public function updateSite(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:sites,id',
+            'name' => 'sometimes|required|unique:sites,name|string|between:2,100',
+            'parent_id' => 'sometimes|required|exists:sites,id',
+            'user_id' => 'sometimes|required|exists:users,id',
+            'category_id' => 'sometimes|required|string|exists:categories,id',
+            'bus_stop_type' => 'sometimes|required|in:Stop,Depo',
+            'tag_line' => 'sometimes|required|string|between:2,100',
+            'description' => 'sometimes|required|string',
+            'domain_name' => 'sometimes|required|string',
+            'logo' => 'sometimes|required|mimes:jpeg,jpg,png|max:1024',
+            'icon' => 'sometimes|required|mimes:jpeg,jpg,png|max:512',
+            'image' => 'sometimes|required|mimes:jpeg,jpg,png|max:512',
+            'status' => 'sometimes|required|boolean:true,false',
+            'latitude' => 'sometimes|required|required_with:longitude|between:-90,90',
+            'longitude' => 'sometimes|required|required_with:latitude|between:-90,90',
+            'pin_code' => 'sometimes|required|numeric',
+            'speciality' => 'sometimes|required|json',
+            'rules' => 'sometimes|required|json',
+            'social_media' => 'sometimes|required|json',
+            'meta_data' => 'sometimes|required|json',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        $input = $request->all();
+
+        $site = Site::find($request->id);
+
+        $uploadPath = config('constants.upload_path.site');
+
+        $fileFields = ['logo', 'icon', 'image'];
+
+        foreach ($fileFields as $field) {
+            if ($image = $request->file($field)) {
+                $currentFilePath = $site->$field;
+
+                if (Storage::exists($currentFilePath)) {
+                    Storage::delete($currentFilePath);
+                }
+
+                $input[$field] = uploadFile($image, $uploadPath)['path'];
+            }
+        }
+
+        $site->update($input);
+
+        return $this->sendResponse($site, 'Site added successfully...!');
     }
 
     /**
