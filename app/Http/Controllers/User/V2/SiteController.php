@@ -6,6 +6,7 @@ use App\Models\Site;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\Category;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 class SiteController extends BaseController
@@ -125,6 +126,7 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
+<<<<<<< Updated upstream
         $sites = Site::withCount(['photos', 'comments'])
             ->with([
                 'sites' => function ($query) use ($user) {
@@ -153,48 +155,87 @@ class SiteController extends BaseController
                 'sites.comments',
                 'photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category'
             ]);
+=======
+        if (!Cache::has('sites')) {
+            $sites = Cache::remember('sites', 60, function () use ($request, $user) {
+                $sites = Site::withCount(['photos', 'comments'])
+                    ->with([
+                        'sites' => function ($query) use ($user) {
+                            $query->select(
+                                'id',
+                                'name',
+                                'name',
+                                'parent_id',
+                                'category_id',
+                                'image',
+                                'domain_name',
+                                'description',
+                                'tag_line',
+                                'bus_stop_type',
+                                'icon',
+                                'status',
+                            )
+                                ->where('is_hot_place', true)
+                                ->selectSub(function ($query) use ($user) {
+                                    $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
+                                        ->from('favourites')
+                                        ->whereColumn('sites.id', 'favourites.favouritable_id')
+                                        ->where('favourites.favouritable_type', Site::class)
+                                        ->where('favourites.user_id', $user->id);
+                                }, 'is_favorite');
+                        },
+                        'sites.comments',
+                        'photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category'
+                    ]);
+>>>>>>> Stashed changes
 
 
-        if ($request->has('category')) {
-            if ($request->category == 'emergency') {
-                $category = Category::where('code', 'emergency')->pluck('id');
+                if ($request->has('category')) {
+                    if ($request->category == 'emergency') {
+                        $category = Category::where('code', 'emergency')->pluck('id');
 
-                $category_ids =  Category::where('parent_id', $category)->get()->pluck('id');
+                        $category_ids =  Category::where('parent_id', $category)->get()->pluck('id');
 
-                $sites = $sites->whereIn('category_id', $category_ids);
-            } else {
-                $sites = $sites->whereHas('category', function ($query) use ($request) {
-                    $query->where('code', $request->category);
-                });
-            }
+                        $sites = $sites->whereIn('category_id', $category_ids);
+                    } else {
+                        $sites = $sites->whereHas('category', function ($query) use ($request) {
+                            $query->where('code', $request->category);
+                        });
+                    }
+                }
+
+                if ($request->has('parent_id')) {
+                    $sites = $sites->orWhere('parent_id', "=", $request->parent_id);
+                }
+
+                if ($request->has('global')) {
+                    $sites = $sites->whereNotNull('parent_id');
+                }
+
+                if ($request->has('search')) {
+                    $search = $request->input('search');
+                    $sites = $sites->where('name', 'like', '%' . $search . '%');
+                }
+
+                if ($request->has('type') && $request->input('type') == 'bus') {
+                    $sites =  $sites->whereIn('bus_stop_type', ['Depo', 'Stop']);
+                }
+
+                $sites = $sites->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'))
+                    ->selectSub(function ($query) use ($user) {
+                        $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
+                            ->from('favourites')
+                            ->whereColumn('sites.id', 'favourites.favouritable_id')
+                            ->where('favourites.favouritable_type', Site::class)
+                            ->where('favourites.user_id', $user->id);
+                    }, 'is_favorite')
+                    ->paginate(15);
+
+                return $sites;
+            });
         }
 
-        if ($request->has('parent_id')) {
-            $sites = $sites->orWhere('parent_id', "=", $request->parent_id);
-        }
-
-        if ($request->has('global')) {
-            $sites = $sites->whereNotNull('parent_id');
-        }
-
-        if ($request->has('search')) {
-            $search = $request->input('search');
-            $sites = $sites->where('name', 'like', '%' . $search . '%');
-        }
-
-        if ($request->has('type') && $request->input('type') == 'bus') {
-            $sites =  $sites->whereIn('bus_stop_type', ['Depo', 'Stop']);
-        }
-
-        $sites = $sites->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'))
-            ->selectSub(function ($query) use ($user) {
-                $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
-                    ->from('favourites')
-                    ->whereColumn('sites.id', 'favourites.favouritable_id')
-                    ->where('favourites.favouritable_type', Site::class)
-                    ->where('favourites.user_id', $user->id);
-            }, 'is_favorite')
-            ->paginate(15);
+        $sites = Cache::get('sites');
 
         return $this->sendResponse($sites, 'Sites successfully Retrieved...!');
     }
