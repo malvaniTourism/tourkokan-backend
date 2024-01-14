@@ -126,37 +126,6 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-<<<<<<< Updated upstream
-        $sites = Site::withCount(['photos', 'comments'])
-            ->with([
-                'sites' => function ($query) use ($user) {
-                    $query->select(
-                        'id',
-                        'name',
-                        'name',
-                        'parent_id',
-                        'category_id',
-                        'image',
-                        'domain_name',
-                        'description',
-                        'tag_line',
-                        'bus_stop_type',
-                        'icon',
-                        'status',
-                    )
-                        ->where('is_hot_place', true)
-                        ->selectSub(function ($query) use ($user) {
-                            $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
-                                ->from('favourites')
-                                ->whereColumn('sites.id', 'favourites.favouritable_id')
-                                ->where('favourites.favouritable_type', Site::class)
-                                ->where('favourites.user_id', $user->id);
-                        }, 'is_favorite');
-                },
-                'sites.comments',
-                'photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category'
-            ]);
-=======
         if (!Cache::has('sites')) {
             $sites = Cache::remember('sites', 60, function () use ($request, $user) {
                 $sites = Site::withCount(['photos', 'comments'])
@@ -188,7 +157,6 @@ class SiteController extends BaseController
                         'sites.comments',
                         'photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category'
                     ]);
->>>>>>> Stashed changes
 
 
                 if ($request->has('category')) {
