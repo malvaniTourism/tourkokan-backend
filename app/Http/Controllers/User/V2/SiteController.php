@@ -155,8 +155,9 @@ class SiteController extends BaseController
                 'photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category'
             ]);
 
+
         if ($request->has('category')) {
-            if ($request->has('category') == 'emergency') {
+            if ($request->category == 'emergency') {
                 $category = Category::where('code', 'emergency')->pluck('id');
 
                 $category_ids =  Category::where('parent_id', $category)->get()->pluck('id');
