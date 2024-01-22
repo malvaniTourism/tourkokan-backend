@@ -320,9 +320,17 @@ class SiteController extends BaseController
      * @param  \App\Models\Site  $site
      * @return \Illuminate\Http\Response
      */
-    public function deleteSite($id)
+    public function deleteSite(Request $request)
     {
-        $site = Site::find($id);
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:categories,id'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        $site = Site::find($request->id);
 
         if (!$site) {
             return $this->sendError('Empty', [], 404);
@@ -340,7 +348,7 @@ class SiteController extends BaseController
             Storage::delete($site->image);
         }
 
-        $site->delete($id);
+        $site->delete($request->id);
 
         return $this->sendResponse($site, 'Site deleted successfully...!');
     }

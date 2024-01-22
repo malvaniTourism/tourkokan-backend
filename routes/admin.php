@@ -132,11 +132,14 @@ Route::group(['middleware' => 'api', 'prefix' => 'v2/auth'], function ($router) 
 Route::group(['middleware' => 'auth:api', 'prefix' => 'v2'], function ($router) {
     Route::post('listcategories', [CategoryController::class, 'listcategories']);
     Route::post('getCategory', [CategoryController::class, 'getCategory']);
-
+    Route::post('addCategory', [CategoryController::class, 'addCategory']);
+    Route::post('updateCategory', [CategoryController::class, 'updateCategory']);
+    Route::post('deleteCategory', [CategoryController::class, 'deleteCategory']);
+    
     Route::post('sites', [SiteController::class, 'sites']);
     Route::post('getSite', [SiteController::class, 'getSite']);
 
     Route::post('addSite', [SiteController::class, 'addSite']);
     Route::post('updateSite', [SiteController::class, 'updateSite']);
-    Route::delete('deleteSite/{id}', [SiteController::class, 'deleteSite']);
+    Route::delete('deleteSite', [SiteController::class, 'deleteSite']);
 });
