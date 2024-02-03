@@ -55,7 +55,7 @@ class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChun
                     $stopSite = $this->addSite($value['bstop_name']);
                 }
 
-                if ($sourceSite == 0 || $destinationSite == 0 || $stopSite == 0) {
+                if ($sourceSite == null || $destinationSite == null || $stopSite == null) {
                     continue;
                 }
 
@@ -130,7 +130,7 @@ class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChun
         $category = Category::where($where_category)->first();
         if (!$category) {
             logger("invalid category");
-            return 0;
+            return null;
         }
 
         $siteRecord['category_id'] = isValidReturn($category, 'id');
