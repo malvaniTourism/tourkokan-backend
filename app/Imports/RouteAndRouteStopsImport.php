@@ -108,7 +108,7 @@ class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChun
             }
         } catch (\Throwable $th) {
             logger($th->getMessage());
-            throw $th();
+            throw $th;
         }
     }
 
