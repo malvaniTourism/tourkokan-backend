@@ -13,8 +13,9 @@ use App\Models\RouteStops;
 use App\Models\Site;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use DateTime;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 
-class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow
+class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChunkReading
 {
     /**
      * @param Collection $collection
@@ -99,6 +100,11 @@ class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow
             logger($th->getMessage());
             throw $th();
         }
+    }
+
+    public function chunkSize(): int
+    {
+        return 50; // Adjust the chunk size as needed
     }
 
     public function addSite($name)
