@@ -55,7 +55,7 @@ class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChun
                     $stopSite = $this->addSite($value['bstop_name']);
                 }
 
-                if ($sourceSite == null || $destinationSite == null || $stopSite == null) {
+                if (!$sourceSite || !$destinationSite || !$stopSite) {
                     continue;
                 }
 
