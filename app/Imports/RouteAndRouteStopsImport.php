@@ -17,6 +17,12 @@ use Maatwebsite\Excel\Concerns\WithChunkReading;
 
 class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChunkReading
 {
+
+    public function chunkSize(): int
+    {
+        return 50; // Adjust the chunk size as needed
+    }
+
     /**
      * @param Collection $collection
      */
@@ -47,6 +53,10 @@ class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChun
 
                 if (!$stopSite) {
                     $stopSite = $this->addSite($value['bstop_name']);
+                }
+
+                if ($sourceSite == 0 || $destinationSite == 0 || $stopSite == 0) {
+                    continue;
                 }
 
                 $start_time = new DateTime($faker->dateTimeThisCentury()->format('h:i:s A'));
@@ -100,11 +110,6 @@ class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChun
             logger($th->getMessage());
             throw $th();
         }
-    }
-
-    public function chunkSize(): int
-    {
-        return 50; // Adjust the chunk size as needed
     }
 
     public function addSite($name)
