@@ -24,8 +24,8 @@ class DatabaseSeeder extends Seeder
         // $this->call(ProjectSeeder::class);
         $this->call(SiteSeeder::class);
         $this->call(BusTypeSeeder::class);
-        $this->call(RouteSeeder::class);
-        $this->call(RouteStopsSeeder::class);
+        // $this->call(RouteSeeder::class);
+        $this->call(RouteAndRouteStopsSeeder::class);
         $this->call(ProductCategorySeeder::class);
 
     }
