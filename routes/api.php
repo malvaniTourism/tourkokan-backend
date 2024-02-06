@@ -4,27 +4,38 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 
-use App\Http\Controllers\API\V1\{
+// use App\Http\Controllers\API\V1\{
+//     AppVersionController,
+//     ContactController,
+//     RatingController,
+//     RouteController,
+//     // CategoryController,
+//     ProjectsController,
+//     ProductController,
+//     RolesController,
+//     PhotosController,
+//     // LandingPageController,
+//     PlaceController,
+//     BlogController,
+//     // HomeController,
+//     CityController,
+//     CommentController,
+//     FavouriteController,
+//     AddressController,
+//     PlaceCategoryController,
+//     FoodController,
+//     SiteController
+// };
+
+use App\Http\Controllers\User\V2\{
     AppVersionController,
-    ContactController,
-    RatingController,
-    RouteController,
+    SiteController,
+    LandingPageController,
     CategoryController,
-    ProjectsController,
-    ProductController,
-    RolesController,
-    PhotosController,
-    // LandingPageController,
-    PlaceController,
-    BlogController,
-    // HomeController,
-    CityController,
-    CommentController,
+    ContactController,
     FavouriteController,
-    AddressController,
-    PlaceCategoryController,
-    FoodController,
-    SiteController
+    RolesController,
+    RouteController,
 };
 
 /*
@@ -162,10 +173,7 @@ Route::group(['middleware' => 'api', 'prefix' => 'v1'], function ($router) {
 // });
 
 // New Structure API
-use App\Http\Controllers\User\V2\{
-    SiteController as SiteController2,
-    LandingPageController,
-};
+
 
 Route::group(['middleware' => 'api', 'prefix' => 'v2'], function ($router) {
     Route::get('roleDD', [RolesController::class, 'roleDD']);
@@ -181,8 +189,8 @@ Route::group(['middleware' => 'api', 'prefix' => 'v2/auth'], function ($router) 
 });
 
 Route::group(['middleware' => 'auth:api', 'prefix' => 'v2'], function ($router) {
-    Route::post('sites', [SiteController2::class, 'sites']);
-    Route::post('getSite', [SiteController2::class, 'getSite']);
+    Route::post('sites', [SiteController::class, 'sites']);
+    Route::post('getSite', [SiteController::class, 'getSite']);
 
     Route::post('landingpage', [LandingPageController::class, 'index']);
 
@@ -206,4 +214,7 @@ Route::group(['middleware' => 'auth:api', 'prefix' => 'v2'], function ($router) 
 
     Route::post('addAppVersion', [AppVersionController::class, 'addAppVersion']);
     Route::post('getAppVersion', [AppVersionController::class, 'getAppVersion']);
+
+    Route::post('listcategories', [CategoryController::class, 'listcategories']);
+    Route::post('getCategory', [CategoryController::class, 'getCategory']);
 });

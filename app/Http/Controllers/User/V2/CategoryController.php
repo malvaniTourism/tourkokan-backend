@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Admin\V2;
+namespace App\Http\Controllers\User\V2;
 
 use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends BaseController
@@ -16,7 +17,24 @@ class CategoryController extends BaseController
      */
     public function listcategories()
     {
-        $categories = Category::whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])->paginate(10);
+        if (!Cache::has('categories')) {
+            $categories = Cache::remember('categories', 60, function () {
+                $categories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category'])
+                    ->select('*')
+                    ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
+                    ->whereNull('parent_id')
+                    ->paginate(10);
+
+                return $categories;
+            });
+        }
+
+        $categories = Cache::get('categories');
+
+        if (!$categories) {
+            return $this->sendError('Empty', [], 404);
+        }
+
         return $this->sendResponse($categories, 'Categories successfully Retrieved...!');
     }
 
@@ -29,19 +47,28 @@ class CategoryController extends BaseController
     public function getCategory(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'id' => 'required|exists:new_categories,id'
+            'id' => 'required|exists:categories,id'
         ]);
 
-        if($validator->fails()){
-            return $this->sendError($validator->errors(), '', 200);       
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
         }
 
-        $categories = Category::find($request->id);
+        if (!Cache::has('subCategories')) {
+            $subCategories = Cache::remember('subCategories', 60, function () use ($request) {
+                $subCategories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category'])
+                    ->find($request->id);
 
-        if (!$categories) {
+                return $subCategories;
+            });
+        }
+
+        $subCategories = Cache::get('subCategories');
+
+        if (!$subCategories) {
             return $this->sendError('Empty', [], 404);
         }
 
-        return $this->sendResponse($categories, 'Categories successfully Retrieved...!');
+        return $this->sendResponse($subCategories, 'Sub Categories successfully Retrieved...!');
     }
 }

@@ -5,33 +5,46 @@ namespace App\Http\Controllers\Admin\V2;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends BaseController
 {
     /**
+     * Create a new AuthController instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+    }
+
+    /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function listcategories(Request $request)
+    public function listcategories()
     {
-        $validator = Validator::make($request->all(), [
-            'parent_list' => 'required|boolean:true,false'
-        ]);
+        if (!Cache::has('categories')) {
+            $categories = Cache::remember('categories', 60, function () {
+                $categories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category'])
+                    ->select('*')
+                    ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
+                    ->whereNull('parent_id')
+                    ->paginate(10);
 
-        if ($validator->fails()) {
-            return $this->sendError($validator->errors(), '', 200);
+                return $categories;
+            });
         }
 
-        $categories = Category::select('*')->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area']);
+        $categories = Cache::get('categories');
 
-        if ($request->parent_list) {
-            $categories = $categories->whereNull('parent_id');
+        if (!$categories) {
+            return $this->sendError('Empty', [], 404);
         }
-
-        $categories = $categories->paginate(10);
 
         return $this->sendResponse($categories, 'Categories successfully Retrieved...!');
     }
@@ -52,13 +65,22 @@ class CategoryController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $categories = Category::find($request->id);
+        if (!Cache::has('subCategories')) {
+            $subCategories = Cache::remember('subCategories', 60, function () use ($request) {
+                $subCategories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category'])
+                    ->find($request->id);
 
-        if (!$categories) {
+                return $subCategories;
+            });
+        }
+
+        $subCategories = Cache::get('subCategories');
+
+        if (!$subCategories) {
             return $this->sendError('Empty', [], 404);
         }
 
-        return $this->sendResponse($categories, 'Categories successfully Retrieved...!');
+        return $this->sendResponse($subCategories, 'Sub Categories successfully Retrieved...!');
     }
 
     /**
@@ -98,10 +120,12 @@ class CategoryController extends BaseController
 
         $category = Category::create($input);
 
+        Cache::forget(['categories', 'subCategories']);
+
         return $this->sendResponse($category, 'Category added successfully...!');
     }
 
-     /**
+    /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -149,10 +173,12 @@ class CategoryController extends BaseController
 
         $category->update($input);
 
+        Cache::forget(['categories', 'subCategories']);
+
         return $this->sendResponse($category, 'Category updated successfully...!');
     }
 
-    
+
     /**
      * Remove the specified resource from storage.
      *
@@ -180,6 +206,8 @@ class CategoryController extends BaseController
         }
 
         $category->delete($request->id);
+
+        Cache::forget(['categories', 'subCategories']);
 
         return $this->sendResponse($category, 'Category deleted successfully...!');
     }

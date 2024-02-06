@@ -59,4 +59,14 @@ class Category extends Model
     {
         return $this->hasMany(Site::class, 'category_id', 'id');
     }
+
+        /**
+     * Get all of the subCategories for the Category
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function subCategories()
+    {
+        return $this->hasMany(Category::class, 'parent_id', 'id')->where('status', true);
+    }
 }

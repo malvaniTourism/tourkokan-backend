@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\V2;
+namespace App\Http\Controllers\User\V2;
 
 use App\Models\Route;
 use Illuminate\Http\Request;
@@ -29,10 +29,10 @@ class RouteController extends BaseController
     {
         $routes = Route::withCount(['routeStops'])
             ->with([
-                'sourcePlace:id,name,place_category_id',
-                'sourcePlace.placeCategory:id,name,icon',
-                'destinationPlace:id,name,place_category_id',
-                'destinationPlace.placeCategory:id,name,icon'
+                'sourcePlace:id,name,category_id',
+                'sourcePlace.category:id,name,icon',
+                'destinationPlace:id,name,category_id',
+                'destinationPlace.category:id,name,icon'
             ])
             ->select('id', 'source_place_id', 'destination_place_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time')
             ->paginate();
@@ -48,8 +48,8 @@ class RouteController extends BaseController
     public function routes(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'source_place_id' => 'nullable|required_with:destination_place_id|exists:places,id',
-            'destination_place_id' => 'nullable|required_with:source_place_id|exists:places,id',
+            'source_place_id' => 'nullable|required_with:destination_place_id|exists:sites,id',
+            'destination_place_id' => 'nullable|required_with:source_place_id|exists:sites,id',
         ]);
 
         if ($validator->fails()) {
@@ -58,23 +58,22 @@ class RouteController extends BaseController
 
         $routeIds = Route::whereHas('routeStops', function ($query) use ($request) {
             $query->when($request->has('source_place_id') && $request->has('destination_place_id'), function ($subquery) use ($request) {
-               $subquery->where('place_id', $request->source_place_id)
-               ->whereBetween('serial_no', [
-                            DB::raw("(SELECT MIN(serial_no) FROM route_stops WHERE route_id = routes.id AND place_id IN ($request->source_place_id, $request->destination_place_id))"),
-                            DB::raw("(SELECT MAX(serial_no) FROM route_stops WHERE route_id = routes.id AND place_id IN ($request->source_place_id, $request->destination_place_id))"),
-                        ]);
-
+                $subquery->where('site_id', $request->source_place_id)
+                    ->whereBetween('serial_no', [
+                        DB::raw("(SELECT MIN(serial_no) FROM route_stops WHERE route_id = routes.id AND site_id IN ($request->source_place_id, $request->destination_place_id))"),
+                        DB::raw("(SELECT MAX(serial_no) FROM route_stops WHERE route_id = routes.id AND site_id IN ($request->source_place_id, $request->destination_place_id))"),
+                    ]);
             });
         })->pluck('id');
 
         $routes = Route::with([
-            'routeStops:id,serial_no,route_id,place_id,arr_time,dept_time,total_time,delayed_time',
-            'routeStops.place:id,name,place_category_id',
-            'routeStops.place.placeCategory:id,name,icon',
-            'sourcePlace:id,name,place_category_id',
-            'sourcePlace.placeCategory:id,name,icon',
-            'destinationPlace:id,name,place_category_id',
-            'destinationPlace.placeCategory:id,name,icon',
+            'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
+            'routeStops.site:id,name,category_id',
+            'routeStops.site.category:id,name,icon',
+            'sourcePlace:id,name,category_id',
+            'sourcePlace.category:id,name,icon',
+            'destinationPlace:id,name,category_id',
+            'destinationPlace.category:id,name,icon',
             'busType:id,type,logo,meta_data'
         ])->select('id', 'source_place_id', 'destination_place_id', 'bus_type_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time');
 
@@ -95,11 +94,11 @@ class RouteController extends BaseController
         // $routes = Route::with([
         //     'routeStops:id,serial_no,route_id,place_id,arr_time,dept_time,total_time,delayed_time',
         //     'routeStops.place:id,name,place_category_id',
-        //     'routeStops.place.placeCategory:id,name,icon',
+        //     'routeStops.place.category:id,name,icon',
         //     'sourcePlace:id,name,place_category_id',
-        //     'sourcePlace.placeCategory:id,name,icon',
+        //     'sourcePlace.category:id,name,icon',
         //     'destinationPlace:id,name,place_category_id',
-        //     'destinationPlace.placeCategory:id,name,icon',
+        //     'destinationPlace.category:id,name,icon',
         //     'busType:id,type,logo'
         // ])->select('id', 'source_place_id', 'destination_place_id', 'bus_type_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time')
         //     ->whereHas('routeStops', function ($query) use ($request) {
@@ -124,7 +123,6 @@ class RouteController extends BaseController
 
         return $this->sendResponse($routes, 'available routes successfully Retrieved...!');
     }
-
     /**
      * Show the form for creating a new resource.
      *

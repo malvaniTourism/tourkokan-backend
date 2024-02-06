@@ -32,20 +32,15 @@ class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChun
 
         try {
             foreach ($data as $key => $value) {
-
-                #add routes in route table
                 $sourceSite = Site::where('name', $value['from_stop_name'])->first();
 
                 if (!$sourceSite) {
-                    logger(1);
                     $sourceSite = $this->addSite($value['from_stop_name']);
                 }
 
                 $destinationSite = Site::where('name', $value['till_stop_name'])->first();
 
                 if (!$destinationSite) {
-                    logger(2);
-
                     $destinationSite = $this->addSite($value['till_stop_name']);
                 }
 
@@ -60,10 +55,11 @@ class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChun
                 }
 
                 $start_time = new DateTime($faker->dateTimeThisCentury()->format('h:i:s A'));
+              
                 $end_time = new DateTime($faker->dateTimeThisCentury($start_time)->format('h:i:s A'));
 
                 $route = Route::where('name', $value['route_name'])->first();
-                // logger($key);
+
                 if (!$route) {
                     $route = array(
                         'source_place_id' => $sourceSite->id,
@@ -124,7 +120,8 @@ class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChun
         $siteRecord['parent_id'] = null;
 
         $where_category = array(
-            'code' => 'Other'
+            'code' => 'other',
+            'code' => 'destination'
         );
 
         $category = Category::where($where_category)->first();
