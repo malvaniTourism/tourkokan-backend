@@ -110,6 +110,25 @@ class RouteController extends BaseController
         // Get the route_ids of the filtered routes
         $routeIds = $validRoutes->keys()->toArray();
 
+        // $routeIds = Route::whereHas('routeStops', function ($query) use ($request) {
+        //     if ($request->source_place_id && $request->destination_place_id) {
+        //         $query->whereIn('site_id', [$request->source_place_id, $request->destination_place_id])
+        //             ->where(function ($q) use ($request) {
+        //                 $q->where('serial_no', '>', function ($subQuery) use ($request) {
+        //                     $subQuery->select(DB::raw('MIN(serial_no)'))
+        //                         ->from('route_stops')
+        //                         ->whereColumn('route_stops.route_id', 'routes.id')
+        //                         ->whereIn('site_id', [$request->source_place_id, $request->destination_place_id]);
+        //                 })->where('serial_no', '<', function ($subQuery) use ($request) {
+        //                     $subQuery->select(DB::raw('MAX(serial_no)'))
+        //                         ->from('route_stops')
+        //                         ->whereColumn('route_stops.route_id', 'routes.id')
+        //                         ->whereIn('site_id', [$request->source_place_id, $request->destination_place_id]);
+        //                 });
+        //             });
+        //     }
+        // })->pluck('id');
+
         $routes = Route::with([
             'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
             'routeStops.site:id,name,category_id',

@@ -18,8 +18,26 @@ class SiteImport implements ToCollection, WithHeadingRow
     {
         try {
             foreach ($data as $key => $value) {
+                $parent = [];
+                if ($value['parent_code'] != NULL) {
+                    $where_parent = array(
+                        'name' => $value['parent_code']
+                    );
 
-                if (Site::where('name', $value['name'])->first()) {
+                    $parent = Site::where($where_parent)->first();
+                    if (!$parent) {
+                        logger("blank parent");
+                    }
+                }
+
+                $where_site = array(
+                    'name' => $value['name'],
+                    'parent_id' => isValidReturn($parent, 'id')
+                );
+
+                $siteExist = Site::where(array_filter($where_site))->first();
+
+                if ($siteExist) {
                     continue;
                 }
 
