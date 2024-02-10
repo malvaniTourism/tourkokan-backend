@@ -181,7 +181,7 @@ class SiteController extends BaseController
 
         if ($request->has('search')) {
             $search = $request->input('search');
-            $sites = $sites->where('name', 'like', '%' . $search . '%');
+            $sites = $sites->where('name', 'like', $search . '%');
         }
 
         if ($request->has('type') && $request->input('type') == 'bus') {
