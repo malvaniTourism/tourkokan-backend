@@ -101,7 +101,7 @@ class RouteController extends BaseController
             // Check if both source and destination stops exist in the route
             if ($sourceStop && $destinationStop) {
                 // Ensure source stop's serial number is less than destination stop's serial number
-                return $sourceStop->serial_no > $destinationStop->serial_no;
+                return $sourceStop->serial_no < $destinationStop->serial_no;
             }
 
             return false; // Return false if any of the stops is missing
