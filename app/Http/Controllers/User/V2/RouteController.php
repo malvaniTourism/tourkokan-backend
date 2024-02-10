@@ -56,8 +56,13 @@ class RouteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
+        // if ($request->source_place_id) {
+        //    return 5;
+        // }
+        // return $request->all();
+
         $routeIds = Route::whereHas('routeStops', function ($query) use ($request) {
-            $query->when($request->has('source_place_id') && $request->has('destination_place_id'), function ($subquery) use ($request) {
+            $query->when($request->source_place_id && $request->destination_place_id, function ($subquery) use ($request) {
                 $subquery->where('site_id', $request->source_place_id)
                     ->whereBetween('serial_no', [
                         DB::raw("(SELECT MIN(serial_no) FROM route_stops WHERE route_id = routes.id AND site_id IN ($request->source_place_id, $request->destination_place_id))"),
@@ -77,11 +82,11 @@ class RouteController extends BaseController
             'busType:id,type,logo,meta_data'
         ])->select('id', 'source_place_id', 'destination_place_id', 'bus_type_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time');
 
-        $routes->when($request->has('source_place_id') && $request->has('destination_place_id'), function ($query) use ($routeIds) {
+        $routes->when($request->source_place_id && $request->destination_place_id, function ($query) use ($routeIds) {
             $query->whereIn('id', $routeIds);
         });
 
-        $routes = $routes->paginate(5);
+        $routes = $routes->paginate(10);
 
         #need to test on both query for performance
 
