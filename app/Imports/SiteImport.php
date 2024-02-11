@@ -57,6 +57,7 @@ class SiteImport implements ToCollection, WithHeadingRow
                     }
                 }
 
+                $siteRecord['mr_name'] = isValidReturn($value, 'mr_name');
                 $siteRecord['parent_id'] = isValidReturn($parent, 'id');
 
                 $category = [];
@@ -105,6 +106,7 @@ class SiteImport implements ToCollection, WithHeadingRow
                 }
             }
         } catch (\Throwable $th) {
+            logger($th->getMessage());
             throw $th();
         }
     }

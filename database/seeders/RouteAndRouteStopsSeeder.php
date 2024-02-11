@@ -15,7 +15,7 @@ class RouteAndRouteStopsSeeder extends Seeder
      */
     public function run()
     {
-        $path = 'excels/AllRoutesWithStopsTesting.xls';
+        $path = 'excels/AllRoutesWithStopsCSV.csv';
 		Excel::import(new RouteAndRouteStopsImport, $path);
         // $faker = \Faker\Factory::create();
 

@@ -19,6 +19,7 @@ class Site extends Model
      */
     protected $fillable = [
         'name',
+        'mr_name',
         'parent_id',
         'user_id',
         'category_id',
