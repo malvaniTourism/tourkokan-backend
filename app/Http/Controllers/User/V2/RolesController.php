@@ -61,7 +61,7 @@ class RolesController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|unique:roles|between:2,100',
-            'display_name' => 'required|string|unique:roles|between:2,100',
+            'code' => 'required|string|unique:roles|between:2,100',
         ]);
 
         if ($validator->fails()) {
@@ -129,7 +129,7 @@ class RolesController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|between:2,100',
-            'display_name' => 'required|string|between:2,100',
+            'code' => 'required|string|between:2,100',
         ]);
 
         if ($validator->fails()) {

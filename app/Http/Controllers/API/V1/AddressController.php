@@ -40,13 +40,14 @@ class AddressController extends BaseController
      */
     public function store(Request $request)
     {
+         return "add this from register user with relation";
         $validator = Validator::make($request->all(), [
-            'address1' => 'required|string',
+            'address1' => 'nullable|string',
             'address2' => 'nullable|string',
             'address3' => 'nullable|string',
             'block' => 'nullable|string',
             'landmark' => 'nullable|string',
-            'type' => 'string',
+            'type' => 'nullable|string',
             'country' => 'nullable|string',
             'state' => 'nullable|string',
             'district' => 'nullable|string',

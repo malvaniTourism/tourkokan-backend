@@ -20,11 +20,13 @@ class CreateRoutesTable extends Migration
             $table->integer('bus_type_id')->unsigned()->nullable();
             $table->string('name')->nullable();
             $table->string('description')->nullable();
+            $table->double('distance')->nullable();
             $table->json('meta_data')->nullable();
             $table->time('start_time');
             $table->time('end_time');
             $table->time('total_time')->nullable();
             $table->time('delayed_time')->nullable();
+            $table->string('working_days')->nullable();
             $table->timestamps();
 
             $table->foreign('source_place_id')->references('id')->on('sites')->onDelete('cascade')->onUpdate('cascade');

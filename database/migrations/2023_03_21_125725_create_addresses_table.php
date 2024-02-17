@@ -22,16 +22,20 @@ class CreateAddressesTable extends Migration
             $table->string('phone')->nullable();
             $table->string('block')->nullable();
             $table->string('landmark')->nullable();
-            $table->enum('type', ['Home', 'Work', 'Other'])->default('Other');
+            $table->enum('type', ['Home', 'Work', 'Other'])->default('Home');
             $table->string('country')->nullable();
             $table->string('state')->nullable();
             $table->string('district')->nullable();
             $table->string('city')->nullable();
-            $table->string('zip')->nullable();
+            $table->string('place')->nullable();
+            $table->string('pincode')->nullable();
             $table->string('latitude')->nullable();
             $table->string('longitude')->nullable();
+            $table->integer('site_id')->unsigned()->nullable();
             $table->morphs('addressable');
             $table->timestamps();
+
+            $table->foreign('site_id')->references('id')->on('sites')->onDelete('cascade')->onUpdate('cascade');
         });
     }
 

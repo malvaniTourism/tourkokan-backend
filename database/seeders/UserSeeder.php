@@ -18,7 +18,7 @@ class UserSeeder extends Seeder
     {
         $array = array(
             [
-                'role_id' => Roles::where("name","SuperAdmin")->first()->id,
+                'role_id' => Roles::where("code", "SuperAdmin")->first()->id,
                 'project_id' => null, //Projects::all()->random()->id,
                 'name' => 'test',
                 'email' => 'test@gmail.com',

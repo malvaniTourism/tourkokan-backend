@@ -22,6 +22,7 @@ class CreateRouteStopsTable extends Migration
             $table->time('dept_time');
             $table->time('total_time')->nullable();
             $table->time('delayed_time')->nullable();
+            $table->double('distance')->nullable();
             $table->json('meta_data')->nullable();
             $table->timestamps();
 

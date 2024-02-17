@@ -20,37 +20,39 @@ class RoleSeeder extends Seeder
     {
         $array = array(
             [
-                'name' => 'superadmin',
-                'display_name' => 'Super Admin'
+                'code' => 'superadmin',
+                'name' => 'Super Admin'
             ],
             [
-                'name' => 'admin',
-                'display_name' => 'Admin'
+                'code' => 'admin',
+                'name' => 'Admin'
             ],
             [
-                'name' => 'user',
-                'display_name' => 'User'
+                'code' => 'user',
+                'name' => 'User'
             ],
             [
-                'name' => 'tourist',
-                'display_name' => 'Tourist'
+                'code' => 'tourist',
+                'name' => 'Tourist'
             ],
             [
-                'name' => 'tour_guide',
-                'display_name' => 'Tour Guide'
+                'code' => 'tour_guide',
+                'name' => 'Tour Guide'
             ],
             [
-                'name' => 'blogger',
-                'display_name' => 'Blogger'
+                'code' => 'blogger',
+                'name' => 'Blogger'
             ],
             [
-                'name' => 'vlogger',
-                'display_name' => 'Vlogger'
+                'code' => 'vlogger',
+                'name' => 'Vlogger'
             ]
         );
 
         foreach ($array as $key => $value) {
-            $exist = Roles::where([['name', $value['name']], ['display_name', $value['display_name']]])->first();
+            $exist = Roles::where([
+                ['code', $value['code']], ['name', $value['name']]
+            ])->first();
 
             if (!$exist)
                 Roles::create($value);

@@ -11,6 +11,7 @@ use App\Models\Blog;
 use App\Models\Food;
 use App\Models\Site;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 function currentDate()
 {
@@ -118,4 +119,56 @@ function uploadFile($file, $destination)
     $url = Storage::url($destination . '/' . $filename);
 
     return ['path' => $url];
+}
+
+function callExternalAPI($method, $url, $payload)
+{
+    $response = Http::$method($url, $payload);
+
+    $data = $response->json();
+
+    if ($data['status'] == 'OK') {
+        return $data;
+    }
+
+    return null;
+}
+
+function getLocationDetails($location)
+{
+    $result = $location['results'][0];
+
+    $country = null;
+    $state = null;
+    $block = null;
+    $district = null;
+    $place = null;
+    $pincode = null;
+
+    foreach ($result['address_components'] as $component) {
+        if (in_array('administrative_area_level_1', $component['types'])) {
+            $state = $component['long_name'];
+        }if (in_array('administrative_area_level_2', $component['types'])) {
+            $block = $component['long_name'];
+        }if (in_array('administrative_area_level_3', $component['types'])) {
+            $district = $component['long_name'];
+        } elseif (in_array('country', $component['types'])) {
+            $country = $component['long_name'];
+        } elseif (in_array('locality', $component['types'])) {
+            $place = $component['long_name'];
+        } elseif (in_array('postal_code', $component['types'])) {
+            $pincode = $component['long_name'];
+        }
+    }
+
+    $locationDetails = array(
+        'country' => $country,
+        'state' => $state,
+        'block' => $block,
+        'district' => $district,
+        'place' => $place,
+        'pincode' => $pincode
+    );
+
+    return $locationDetails;
 }

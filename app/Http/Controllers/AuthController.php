@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\Roles;
+use App\Models\Site;
 use Illuminate\Support\Facades\Auth;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Str;
@@ -111,6 +112,8 @@ class AuthController extends BaseController
                 'password' => 'nullable|string|required_with:email|confirmed|min:6',
                 // 'profile_picture' => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
                 'profile_picture' => 'nullable|string',
+                'latitude' => 'required_with:longitude|string',
+                'longitude' => 'required_with:latitude|string'
             ]);
 
             if ($validator->fails()) {
@@ -154,6 +157,34 @@ class AuthController extends BaseController
             $input['password'] = bcrypt($password);
 
             $user = User::create(array_filter($input));
+
+            $payload =  array(
+                'latlng' => $request->latitude . ',' . $request->longitude,
+                'key' => 'AIzaSyArluwc4abyz8Uxuwqh7WZxLWjRGGgV9K0',
+                'result_type' => 'locality'
+            );
+
+            $location = callExternalAPI('GET', 'https://maps.googleapis.com/maps/api/geocode/json', $payload);
+
+            if ($location) {
+                $locationDetails = getLocationDetails($location);
+
+                $site = Site::select('id', 'name', 'parent_id')->where('name', $locationDetails['place'])->first();
+
+                $address = array(
+                    'country' => $locationDetails['country'],
+                    'state' => $locationDetails['state'],
+                    'block' => $locationDetails['block'],
+                    'district' => $locationDetails['district'],
+                    'place' => $locationDetails['place'],
+                    'site_id' => isValidReturn($site, 'id'),
+                    'pincode' => $locationDetails['pincode'],
+                    'latitude' => $request->latitude,
+                    'longitude' => $request->longitude
+                );
+
+                $user->address()->create($address);
+            }
 
             return $this->sendResponse($user, 'User successfully registered');
         } catch (\Throwable $th) {

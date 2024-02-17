@@ -154,4 +154,9 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Rating::class, 'user_id');
     }
+
+    public function address()
+    {
+        return $this->morphMany(Address::class, 'addressable');
+    }
 }
