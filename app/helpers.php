@@ -10,8 +10,10 @@ use App\Models\Photos;
 use App\Models\Blog;
 use App\Models\Food;
 use App\Models\Site;
+use GuzzleHttp\Exception\ClientException;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
+use Spatie\Geocoder\Geocoder;
 
 function currentDate()
 {
@@ -134,41 +136,70 @@ function callExternalAPI($method, $url, $payload)
     return null;
 }
 
-function getLocationDetails($location)
+function getLocationDetails($latitude, $longitude)
 {
-    $result = $location['results'][0];
+    try {
 
-    $country = null;
-    $state = null;
-    $block = null;
-    $district = null;
-    $place = null;
-    $pincode = null;
+        $country = null;
+        $state = null;
+        $block = null;
+        $district = null;
+        $city = null;
+        $place = null;
+        $pincode = null;
 
-    foreach ($result['address_components'] as $component) {
-        if (in_array('administrative_area_level_1', $component['types'])) {
-            $state = $component['long_name'];
-        }if (in_array('administrative_area_level_2', $component['types'])) {
-            $block = $component['long_name'];
-        }if (in_array('administrative_area_level_3', $component['types'])) {
-            $district = $component['long_name'];
-        } elseif (in_array('country', $component['types'])) {
-            $country = $component['long_name'];
-        } elseif (in_array('locality', $component['types'])) {
-            $place = $component['long_name'];
-        } elseif (in_array('postal_code', $component['types'])) {
-            $pincode = $component['long_name'];
+        $client = new \GuzzleHttp\Client();
+
+        $geocoder = new Geocoder($client);
+
+        $geocoder->setLanguage('en');
+
+        $geocoder->setApiKey(config('geocoder.key'));
+
+        $location =  $geocoder->getAddressForCoordinates($latitude, $longitude);
+
+        if ($location) {
+            $place = $location['formatted_address'];
+
+            foreach ($location['address_components'] as $component) {
+                $types = $component->types;
+                if (in_array('country', $types) && in_array('political', $types)) {
+                    $country = $component->long_name;
+                } elseif (in_array('administrative_area_level_1', $types) && in_array('political', $types)) {
+                    $state = $component->long_name;
+                } elseif (in_array('administrative_area_level_2', $types) && in_array('political', $types)) {
+                    $block = $component->long_name;
+                } elseif (in_array('administrative_area_level_3', $types) && in_array('political', $types)) {
+                    $district = $component->long_name;
+                } elseif (in_array('locality', $types) && in_array('political', $types)) {
+                    $city = $component->long_name;
+                } elseif (in_array('postal_code', $types)) {
+                    $pincode = $component->long_name;
+                }
+            }
+
+            $site = Site::select('id', 'name', 'parent_id')->where('name', $city)->first();
+
+            $address = array(
+                'country' => $country,
+                'state' => $state,
+                'block' => $block,
+                'district' => $district,
+                'place' => $place,
+                'site_id' => isValidReturn($site, 'id'),
+                'pincode' => $pincode,
+                'latitude' => $latitude,
+                'longitude' => $longitude
+            );
+
+            return $address;
         }
+    } catch (ClientException $e) {
+        $response = $e->getResponse();
+        $statusCode = $response->getStatusCode();
+        // $reasonPhrase = $response->getReasonPhrase();
+        return  $statusCode;
+    } catch (\Exception $e) {
+        return  $e->getMessage();
     }
-
-    $locationDetails = array(
-        'country' => $country,
-        'state' => $state,
-        'block' => $block,
-        'district' => $district,
-        'place' => $place,
-        'pincode' => $pincode
-    );
-
-    return $locationDetails;
 }
