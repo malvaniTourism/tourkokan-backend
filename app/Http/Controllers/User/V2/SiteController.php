@@ -20,8 +20,8 @@ class SiteController extends BaseController
     {
         $user = auth()->user();
 
-        $city = Site::withCount(['photos', 'comments'])
-            ->with(['photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category'])
+        $city = Site::withCount(['photos', 'comment'])
+            ->with(['photos', 'comment', 'category:id,name,code,parent_id,icon,status,is_hot_category'])
             ->selectSub(function ($query) use ($user) {
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
@@ -55,26 +55,26 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $city   =   Site::withCount(['sites', 'photos', 'comments'])
-            ->withAvg('rateable', 'rate')
+        $city   =   Site::withCount(['sites', 'photos', 'comment'])
+            ->withAvg('rating', 'rate')
             ->with([
                 'category:id,name,code,parent_id,icon,status,is_hot_category',
                 'sites' => function ($query) {
                     $query->with('category:id,name,code,parent_id,icon,status,is_hot_category')
                         ->limit(5);
                 },
-                'comments' => function ($query) {
+                'comment' => function ($query) {
                     $query->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
                         ->limit(5);
                 },
-                'comments.comments' => function ($query) {
+                'comment.comments' => function ($query) {
                     $query->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
                         ->limit(5);
                 },
-                'comments.users' => function ($query) {
+                'comment.users' => function ($query) {
                     $query->select('id', 'name', 'email', 'profile_picture');
                 },
-                'comments.comments.users' => function ($query) {
+                'comment.comments.users' => function ($query) {
                     $query->select('id', 'name', 'email', 'profile_picture');
                 },
                 'photos'
@@ -126,7 +126,7 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $sites = Site::withCount(['photos', 'comments'])
+        $sites = Site::withCount(['photos', 'comment'])
             ->with([
                 'sites' => function ($query) use ($user) {
                     $query->select(
@@ -152,8 +152,8 @@ class SiteController extends BaseController
                                 ->where('favourites.user_id', $user->id);
                         }, 'is_favorite');
                 },
-                'sites.comments',
-                'photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category'
+                'sites.comment',
+                'photos', 'comment', 'category:id,name,code,parent_id,icon,status,is_hot_category'
             ]);
 
 

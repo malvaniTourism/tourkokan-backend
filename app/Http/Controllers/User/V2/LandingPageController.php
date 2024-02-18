@@ -51,9 +51,9 @@ class LandingPageController extends BaseController
 
                 #Top famouse cities
                 $cities = Site::select('id', 'name', 'tag_line', 'logo', 'icon', 'image')
-                    ->withAvg("rateable", 'rate')
-                    // ->having('rateable_avg_rate', '>', 3)
-                    ->withCount('photos', 'comments')
+                    ->withAvg("rating", 'rate')
+                    // ->having('rating_avg_rate', '>', 3)
+                    ->withCount('photos', 'comment')
                     ->with(['category:id,name,code,parent_id,icon,status,is_hot_category'])
                     ->whereHas('category', function ($query) {
                         $query->where('code', 'city');
@@ -66,18 +66,18 @@ class LandingPageController extends BaseController
                             ->where('favourites.user_id', $user->id);
                     }, 'is_favorite')
                     ->latest()
-                    ->limit(4)
+                    // ->limit(8)
                     ->get();
 
 
-                #Bus Stops / Depos
-                $stops = Place::withAvg("rateable", 'rate')
-                    ->select('id', 'name', 'city_id', 'parent_id', 'place_category_id', 'image_url', 'bg_image_url', 'visitors_count')
-                    ->orWhere('visitors_count', '>=', 5)
-                    ->whereIn('place_category_id', [3, 4])
-                    ->latest()
-                    ->limit(5)
-                    ->get();
+                // #Bus Stops / Depos
+                // $stops = Place::withAvg("rating", 'rate')
+                //     ->select('id', 'name', 'city_id', 'parent_id', 'place_category_id', 'image_url', 'bg_image_url', 'visitors_count')
+                //     ->orWhere('visitors_count', '>=', 5)
+                //     ->whereIn('place_category_id', [3, 4])
+                //     ->latest()
+                //     ->limit(5)
+                //     ->get();
 
                 $routes = Route::with([
                     'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
@@ -101,7 +101,7 @@ class LandingPageController extends BaseController
                     'version' => AppVersion::latest()->first(),
                     'banners' => Banner::get(),
                     'routes' => $routes,
-                    'stops' => $stops,
+                    // 'stops' => $stops,
                     'categories' => $categories,
                     'cities' => $cities,
                     // 'projects' => $projects,

@@ -101,11 +101,11 @@ class Site extends Model
     }
 
     /**
-     * Get all of the comments for the Site
+     * Get all of the comment for the Site
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function comments()
+    public function comment()
     {
         return $this->morphMany(Comment::class, 'commentable')->whereNull('parent_id');
     }
@@ -113,7 +113,7 @@ class Site extends Model
     /**
      * Get all of the address's projects.
      */
-    public function rateable()
+    public function rating()
     {
         return $this->morphMany(Rating::class, 'rateable');
     }

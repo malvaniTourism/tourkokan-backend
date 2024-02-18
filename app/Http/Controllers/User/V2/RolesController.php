@@ -22,7 +22,7 @@ class RolesController extends BaseController
     public function roleDD()
     {
         try {
-            $roles = Roles::whereNotIn('name', ["SuperAdmin", "Admin", "User"])->get();;
+            $roles = Roles::whereNotIn('code', ["SuperAdmin", "Admin", "User"])->get();;
 
             return $this->sendResponse($roles, 'Roles Dropdown');
         } catch (\Throwable $th) {

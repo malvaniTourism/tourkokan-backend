@@ -4,7 +4,7 @@ namespace App\Http\Controllers\User\V2;
 
 use App\Models\Favourite;
 use Illuminate\Http\Request;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\BaseController;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 

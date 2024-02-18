@@ -32,8 +32,10 @@ use App\Http\Controllers\User\V2\{
     SiteController,
     LandingPageController,
     CategoryController,
+    CommentController,
     ContactController,
     FavouriteController,
+    RatingController,
     RolesController,
     RouteController,
 };
@@ -160,10 +162,10 @@ Route::group(['middleware' => 'api', 'prefix' => 'v1'], function ($router) {
 //     // Route::put('/favourite/{id}', [FavouriteController::class, 'update']);   
 //     Route::delete('/favourite/{id}', [FavouriteController::class, 'destroy']);
 
-//     Route::get('/ratings', [RatingController::class, 'index']);
-//     Route::post('/rating', [RatingController::class, 'store']);
-//     Route::put('/rating/{id}', [RatingController::class, 'update']);
-//     Route::delete('/rating/{id}', [RatingController::class, 'destroy']);
+//     Route::get('ratings', [RatingController::class, 'index']);
+//     Route::post('rating', [RatingController::class, 'store']);
+//     Route::put('rating/{id}', [RatingController::class, 'update']);
+//     Route::delete('rating/{id}', [RatingController::class, 'destroy']);
 
 //     // New Structure API
 //     Route::post('listCities', [SiteController::class, 'listCities']);
@@ -203,8 +205,9 @@ Route::group(['middleware' => 'auth:api', 'prefix' => 'v2'], function ($router) 
 
     Route::post('favourites', [FavouriteController::class, 'index']);
     Route::post('favourite', [FavouriteController::class, 'store']);
-    Route::post('favourite/{user_id}', [AuthController::class, 'getAllFavourites']);
     Route::delete('favourite/{id}', [FavouriteController::class, 'destroy']);
+
+    Route::post('favourite/{user_id}', [AuthController::class, 'getAllFavourites']);
 
     Route::post('contacts', [ContactController::class, 'index']);
     Route::post('contact', [ContactController::class, 'store']);
@@ -217,4 +220,15 @@ Route::group(['middleware' => 'auth:api', 'prefix' => 'v2'], function ($router) 
 
     Route::post('listcategories', [CategoryController::class, 'listcategories']);
     Route::post('getCategory', [CategoryController::class, 'getCategory']);
+
+    Route::post('ratings', [RatingController::class, 'index']);
+    Route::post('addUpdateRating', [RatingController::class, 'addUpdateRating']);
+    // Route::put('rating/{id}', [RatingController::class, 'update']);
+    Route::delete('rating/{id}', [RatingController::class, 'destroy']);
+
+    Route::post('comments', [CommentController::class, 'index']);
+    Route::post('comment', [CommentController::class, 'store']);
+    Route::post('getComment', [CommentController::class, 'getComment']);
+    Route::post('updateComment', [CommentController::class, 'updateComment']);
+    Route::post('deleteComment', [CommentController::class, 'deleteComment']);
 });

@@ -61,7 +61,7 @@ function getData($id, $model)
             $data = Food::find($id);
             break;
 
-        case 'Sites':
+        case 'Site':
             $data = Site::find($id);
             break;
 

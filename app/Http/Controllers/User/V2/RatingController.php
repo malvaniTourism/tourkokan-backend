@@ -4,10 +4,8 @@ namespace App\Http\Controllers\User\V2;
 
 use App\Models\Rating;
 use Illuminate\Http\Request;
-use Validator;
 use App\Http\Controllers\BaseController as BaseController;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class RatingController extends BaseController
 {
@@ -28,11 +26,11 @@ class RatingController extends BaseController
     public function index()
     {
         $ratings = Rating::with(['user' =>  function ($query) {
-                                $query->select('id', 'name', 'email', 'profile_picture');
-                            }])
-                         ->paginate(10);
+            $query->select('id', 'name', 'email', 'profile_picture');
+        }])
+            ->paginate(10);
 
-        return $this->sendResponse($ratings, 'All Ratings successfully Retrieved...!');   
+        return $this->sendResponse($ratings, 'All Ratings successfully Retrieved...!');
     }
 
     /**
@@ -51,49 +49,44 @@ class RatingController extends BaseController
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function addUpdateRating(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|numeric|exists:users,id',
-            'rate' => 'required|numeric|in:1,2,3,4,5',
+            'rate' => 'required|numeric|between:0,5',
             'rateable_type' => 'required|string',
-            'rateable_id' => 'required|numeric',
-            'status' => 'boolean',
+            'rateable_id' => 'required|numeric'
         ]);
 
-        if($validator->fails()){
-            return $this->sendError($validator->errors(), '', 200);       
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
         }
-        // make sure that ratings could not rpeate on same project producty city or any propery7
-        // $rating = Rating::where([['user_id', $request->user_id], 
-        //                         ['rateable_type',  $request->rateable_type],
-        //                         ['rateable_id', $request->rateable_id]])
-        //                 ->first();
-       
-
-        // if (!empty($rating)) {
-        //     return $this->sendError("Already rating is given", 'Already rated', 400);       
-        // }
 
         $data = getData($request->rateable_id, $request->rateable_type);
 
         if (!$data) {
-            return $this->sendError($request->rateable_type.' Not Exist..!', '', 400);       
+            return $this->sendError($request->rateable_type . ' Not Exist..!', '', 400);
         }
 
-        $rating = new Rating;
-        
-        $rating->user_id = $request->user_id;
-        
-        $rating->rating = $request->rate;
+        $rateableType = "App\\Models\\" . $request->rateable_type;
 
-        $rating->status = $request->status;
+        $existingRating = $data->rating()->where('user_id', $request->user_id)
+            ->whereHasMorph('rateable', $rateableType, function ($subquery) use ($request) {
+                $subquery->where('id', $request->rateable_id);
+            })->first();
 
-        $rating->rateable()->associate($data);
+        if ($existingRating) {
+            $rating = $existingRating->update(['rate' => $request->rate]);
+        } else {
+            $rating = [
+                'user_id' => $request->user_id,
+                'rate' => $request->rate
+            ];
 
-        $rating = Rating::create(json_decode($rating, true));       
+            $data->rating()->create($rating);
+        }
 
-        return $this->sendResponse($rating, 'Rating added successfully...!');    
+        return $this->sendResponse($rating, 'Rating added successfully...!');
     }
 
     /**
@@ -130,10 +123,10 @@ class RatingController extends BaseController
         $validator = Validator::make($request->all(), [
             'rate' => 'nullable|numeric|in:1,2,3,4,5',
             'status' => 'nullable|boolean',
-        ]);            
+        ]);
 
-        if($validator->fails()){
-            return $this->sendError($validator->errors(), '', 200);       
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
         }
 
         $rate = Rating::find($id);
@@ -144,7 +137,7 @@ class RatingController extends BaseController
 
         $rate->update($request->all());
 
-        return $this->sendResponse($rate, 'rate updated successfully...!');          
+        return $this->sendResponse($rate, 'rate updated successfully...!');
     }
 
     /**
@@ -163,6 +156,6 @@ class RatingController extends BaseController
 
         $rate->delete($id);
 
-        return $this->sendResponse($rate, 'Rating deleted successfully...!');   
+        return $this->sendResponse($rate, 'Rating deleted successfully...!');
     }
 }
