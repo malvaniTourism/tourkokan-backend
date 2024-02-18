@@ -40,82 +40,74 @@ class LandingPageController extends BaseController
     public function index(Request $request)
     {
         $user = auth()->user();
+        
+        #Services categories
+        $categories = Category::whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
+            ->latest()
+            ->limit(8)
+            ->get();
 
-        if (!Cache::has('records')) {
-            $records = Cache::remember('records', 60, function () use ($request, $user) {
-                #Services categories
-                $categories = Category::whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
-                    ->latest()
-                    ->limit(8)
-                    ->get();
-
-                #Top famouse cities
-                $cities = Site::select('id', 'name', 'tag_line', 'logo', 'icon', 'image')
-                    ->withAvg("rating", 'rate')
-                    // ->having('rating_avg_rate', '>', 3)
-                    ->withCount('photos', 'comment')
-                    ->with(['category:id,name,code,parent_id,icon,status,is_hot_category'])
-                    ->whereHas('category', function ($query) {
-                        $query->where('code', 'city');
-                    })
-                    ->selectSub(function ($query) use ($user) {
-                        $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
-                            ->from('favourites')
-                            ->whereColumn('sites.id', 'favourites.favouritable_id')
-                            ->where('favourites.favouritable_type', Site::class)
-                            ->where('favourites.user_id', $user->id);
-                    }, 'is_favorite')
-                    ->latest()
-                    // ->limit(8)
-                    ->get();
+        #Top famouse cities
+        $cities = Site::select('id', 'name', 'tag_line', 'logo', 'icon', 'image')
+            ->withAvg("rating", 'rate')
+            // ->having('rating_avg_rate', '>', 3)
+            ->withCount('photos', 'comment')
+            ->with(['category:id,name,code,parent_id,icon,status,is_hot_category'])
+            ->whereHas('category', function ($query) {
+                $query->where('code', 'city');
+            })
+            ->selectSub(function ($query) use ($user) {
+                $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
+                    ->from('favourites')
+                    ->whereColumn('sites.id', 'favourites.favouritable_id')
+                    ->where('favourites.favouritable_type', Site::class)
+                    ->where('favourites.user_id', $user->id);
+            }, 'is_favorite')
+            ->latest()
+            // ->limit(8)
+            ->get();
 
 
-                // #Bus Stops / Depos
-                // $stops = Place::withAvg("rating", 'rate')
-                //     ->select('id', 'name', 'city_id', 'parent_id', 'place_category_id', 'image_url', 'bg_image_url', 'visitors_count')
-                //     ->orWhere('visitors_count', '>=', 5)
-                //     ->whereIn('place_category_id', [3, 4])
-                //     ->latest()
-                //     ->limit(5)
-                //     ->get();
+        // #Bus Stops / Depos
+        // $stops = Place::withAvg("rating", 'rate')
+        //     ->select('id', 'name', 'city_id', 'parent_id', 'place_category_id', 'image_url', 'bg_image_url', 'visitors_count')
+        //     ->orWhere('visitors_count', '>=', 5)
+        //     ->whereIn('place_category_id', [3, 4])
+        //     ->latest()
+        //     ->limit(5)
+        //     ->get();
 
-                $routes = Route::with([
-                    'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
-                    'routeStops.site:id,name,category_id',
-                    'routeStops.site.category:id,name,icon',
-                    'sourcePlace:id,name,category_id',
-                    'sourcePlace.category:id,name,icon',
-                    'destinationPlace:id,name,category_id',
-                    'destinationPlace.category:id,name,icon',
-                    'busType:id,type,logo,meta_data'
-                ])->select('id', 'source_place_id', 'destination_place_id', 'bus_type_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time')
-                    ->latest()
-                    ->limit(5)
-                    ->get();
+        $routes = Route::with([
+            'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
+            'routeStops.site:id,name,category_id',
+            'routeStops.site.category:id,name,icon',
+            'sourcePlace:id,name,category_id',
+            'sourcePlace.category:id,name,icon',
+            'destinationPlace:id,name,category_id',
+            'destinationPlace.category:id,name,icon',
+            'busType:id,type,logo,meta_data'
+        ])->select('id', 'source_place_id', 'destination_place_id', 'bus_type_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time')
+            ->latest()
+            ->limit(5)
+            ->get();
 
-                $blogs = Blog::latest()
-                    ->limit(5)
-                    ->get();
+        $blogs = Blog::latest()
+            ->limit(5)
+            ->get();
 
-                $records =  array(
-                    'version' => AppVersion::latest()->first(),
-                    'banners' => Banner::get(),
-                    'routes' => $routes,
-                    // 'stops' => $stops,
-                    'categories' => $categories,
-                    'cities' => $cities,
-                    // 'projects' => $projects,
-                    // 'products'=>$products,
-                    // 'place_category' => $place_category,
-                    // 'places' => $places,
-                    'blogs' => $blogs
-                );
-
-                return $records;
-            });
-        }
-
-        $records = Cache::get('records');
+        $records =  array(
+            'version' => AppVersion::latest()->first(),
+            'banners' => Banner::get(),
+            'routes' => $routes,
+            // 'stops' => $stops,
+            'categories' => $categories,
+            'cities' => $cities,
+            // 'projects' => $projects,
+            // 'products'=>$products,
+            // 'place_category' => $place_category,
+            // 'places' => $places,
+            'blogs' => $blogs
+        );
 
         return $this->sendResponse($records, 'Landing page data successfully Retrieved...!');
     }
