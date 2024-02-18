@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User\V2;
 use App\Models\Comment;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class CommentController extends BaseController
@@ -16,7 +17,8 @@ class CommentController extends BaseController
      */
     public function index()
     {
-        $comments = Comment::latest()
+        $comments = Comment::where('user_id', config('user_id'))
+            ->latest()
             ->paginate(10);
 
         return $this->sendResponse($comments, 'Comments successfully Retrieved...!');
@@ -42,7 +44,6 @@ class CommentController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'parent_id' => 'nullable|numeric|exists:comments,id',
-            'user_id' => 'nullable|numeric|exists:users,id',
             'comment' => 'required|string',
             'commentable_type' => 'required|string',
             'commentable_id' => 'required|numeric',
@@ -62,7 +63,7 @@ class CommentController extends BaseController
 
         $existingComment = $data->comment()
             ->where([
-                'user_id' => $request->user_id,
+                'user_id' => config('user_id'),
                 'comment' => $request->comment
             ])
             ->whereHasMorph('commentable', $commentableType, function ($subquery) use ($request) {
@@ -73,7 +74,7 @@ class CommentController extends BaseController
             return $this->sendResponse(null, 'Same comment is not allowed');
         } else {
             $comment = [
-                'user_id' => $request->user_id,
+                'user_id' => config('user_id'),
                 'comment' => $request->comment,
                 'parent_id' => $request->parent_id
             ];
@@ -101,7 +102,8 @@ class CommentController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $comment = Comment::find($request->id);
+        $comment = Comment::where('user_id', config('user_id'))
+            ->find($request->id);
 
         return $this->sendResponse($comment, 'Comment successfully Retrieved...!');
     }
@@ -123,7 +125,9 @@ class CommentController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $comment = Comment::where(['id' => $request->id])->update($request->all());
+        $comment = Comment::where([
+            'id' => $request->id, 'user_id' => config('user_id')
+        ])->update($request->all());
 
         return $this->sendResponse($comment, 'Comment updated successfully...!');
     }
@@ -143,7 +147,10 @@ class CommentController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $comment = Comment::where(['id' => $request->id])->delete();
+        $comment = Comment::where([
+            'id' => $request->id,
+            'user_id' => config('user_id')
+        ])->delete();
 
         return $this->sendResponse($comment, 'Comment deleted successfully...!');
     }

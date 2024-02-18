@@ -190,7 +190,7 @@ Route::group(['middleware' => 'api', 'prefix' => 'v2/auth'], function ($router) 
     Route::post('/verifyOtp', [AuthController::class, 'verifyOtp']);
 });
 
-Route::group(['middleware' => 'auth:api', 'prefix' => 'v2'], function ($router) {
+Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], function ($router) {
     Route::post('sites', [SiteController::class, 'sites']);
     Route::post('getSite', [SiteController::class, 'getSite']);
 
@@ -204,10 +204,7 @@ Route::group(['middleware' => 'auth:api', 'prefix' => 'v2'], function ($router) 
     Route::post('routes', [RouteController::class, 'routes']);
 
     Route::post('favourites', [FavouriteController::class, 'index']);
-    Route::post('favourite', [FavouriteController::class, 'store']);
-    Route::delete('favourite/{id}', [FavouriteController::class, 'destroy']);
-
-    Route::post('favourite/{user_id}', [AuthController::class, 'getAllFavourites']);
+    Route::post('addDeleteFavourite', [FavouriteController::class, 'addDeleteFavourite']);
 
     Route::post('contacts', [ContactController::class, 'index']);
     Route::post('contact', [ContactController::class, 'store']);

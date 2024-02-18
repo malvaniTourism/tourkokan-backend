@@ -12,7 +12,7 @@ class AdminAccessMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        $roles = Roles::select('id', 'name')->whereIn('name', ['superadmin', 'admin'])->get();
+        $roles = Roles::select('id', 'code')->whereIn('code', ['superadmin', 'admin'])->get();
         $user = Auth::user();
 
         if (

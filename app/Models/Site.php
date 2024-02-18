@@ -126,7 +126,7 @@ class Site extends Model
         return $this->morphMany(Contact::class, 'contactable');
     }
 
-    public function favorites()
+    public function favourites()
     {
         return $this->morphMany(Favourite::class, 'favouritable');
     }

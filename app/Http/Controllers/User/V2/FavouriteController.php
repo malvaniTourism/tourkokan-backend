@@ -17,7 +17,8 @@ class FavouriteController extends BaseController
      */
     public function index()
     {
-        $favourite =  Favourite::paginate(10);
+        $favourite =  Favourite::where('user_id', config('user_id'))
+            ->paginate(10);
 
         return $this->sendResponse($favourite, 'Favourites successfully Retrieved...!');
     }
@@ -38,10 +39,9 @@ class FavouriteController extends BaseController
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function addDeleteFavourite(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'user_id' => 'nullable|numeric',
             'favouritable_type' => 'required|string',
             'favouritable_id' => 'required|numeric',
         ]);
@@ -56,95 +56,27 @@ class FavouriteController extends BaseController
             return $this->sendError($request->favouritable_type . ' Not Exist..!', '', 400);
         }
 
-        try {
-            $favouritableType = "App\\Models\\" . $request->favouritable_type;
-            $favourite = Favourite::where('user_id', $request->user_id)
-                ->where('favouritable_id', $request->favouritable_id)
-                ->where('favouritable_type', $favouritableType)
-                ->firstOrFail();
+        $favouritableType = "App\\Models\\" . $request->favouritable_type;
 
+        $favourite = $data->favourites()
+            ->where([
+                'user_id' => config('user_id')
+            ])
+            ->whereHasMorph('favouritable', $favouritableType, function ($subquery) use ($request) {
+                $subquery->where('id', $request->favouritable_id);
+            })->first();
 
-            if (class_exists($favouritableType) && $favourite->favouritable instanceof $favouritableType) {
-                $favourite->delete();
-                return $this->sendResponse(null, 'Favourite deleted successfully...!');
-            }
-        } catch (ModelNotFoundException $exception) {
-            $favourite = new Favourite;
+        if ($favourite) {
+            $favourite->delete();
+            return $this->sendResponse(null, 'Favourite deleted successfully...!');
+        } else {
+            $favourite = [
+                'user_id' => config('user_id')
+            ];
 
-            $favourite->user_id = $request->get('user_id');
-
-            $favourite->favouritable()->associate($data);
-
-            $favourite = Favourite::create(json_decode($favourite, true));
+            $favourite = $data->favourites()->create(array_filter($favourite));
         }
 
         return $this->sendResponse($favourite, 'Favourite created successfully...!');
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Favourite  $favourite
-     * @return \Illuminate\Http\Response
-     */
-    public function show($user_id)
-    {
-        $favourites  = Favourite::
-            // select(\DB::raw('favouritable_id, favouritable_id'))
-            with('favouritable')
-            // ->groupBy('favouritable_id')
-            // ->groupBy('favouritable_type')
-            // ->orderBy('created_at', 'desc')
-            // ->latest()      
-            ->where('user_id', $user_id)
-            ->get();
-
-        if (is_null($favourites)) {
-            return $this->sendError('Empty', [], 404);
-        }
-
-        return $this->sendResponse($favourites, 'Favourites successfully Retrieved...!');
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Favourite  $favourite
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Favourite $favourite)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Favourite  $favourite
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Favourite $favourite)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Favourite  $favourite
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        $favourite = Favourite::find($id);
-
-        if (is_null($favourite)) {
-            return $this->sendError('Empty', [], 404);
-        }
-
-        $favourite->delete($id);
-
-        return $this->sendResponse($favourite, 'Favourite deleted successfully...!');
     }
 }
