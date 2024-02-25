@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Auth;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
+use DB;
+use Carbon\Carbon;
+use Hash;
 
 class AuthController extends BaseController
 {
@@ -158,11 +161,14 @@ class AuthController extends BaseController
 
             $user = User::create(array_filter($input));
 
-            $locationDetails = getLocationDetails($request->latitude, $request->longitude);
+            if ($request->has(['latitude', 'longitude'])) {
+                $locationDetails = getLocationDetails($request->latitude, $request->longitude);
 
-            if ($locationDetails && $locationDetails != 400) {
-                $user->address()->create($locationDetails);
+                if ($locationDetails && $locationDetails != 400) {
+                    $user->address()->create($locationDetails);
+                }
             }
+
 
             return $this->sendResponse($user, 'User successfully registered');
         } catch (\Throwable $th) {
@@ -312,8 +318,9 @@ class AuthController extends BaseController
 
             if ($request->has('email')) {
                 Mail::send('email-template', $data, function ($message) use ($data) {
-                    $message->to($data['email'])->subject($data['subject']);
-                    $message->from('kamblepranav460@gmail.com', 'Pranav Kamble');
+                    $message->to($data['email'])
+                        ->subject($data['subject'])
+                        ->from('no-reply@tourkokan.com', 'Tourkokan');
                 });
             }
 
