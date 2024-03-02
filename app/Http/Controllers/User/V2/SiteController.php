@@ -126,7 +126,10 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $sites = Site::withCount(['photos', 'comment'])
+        $sites = Site::withCount([
+            'photos',
+            'comment'
+        ])
             ->with([
                 'sites' => function ($query) use ($user) {
                     $query->select(
@@ -153,7 +156,8 @@ class SiteController extends BaseController
                         }, 'is_favorite');
                 },
                 'sites.comment',
-                'photos', 'comment', 'category:id,name,code,parent_id,icon,status,is_hot_category'
+                'photos', 'comment', 'category:id,name,code,parent_id,icon,status,is_hot_category',
+                'rate:id,user_id,rate,rateable_type,rateable_id,status',
             ]);
 
 

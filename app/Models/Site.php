@@ -118,6 +118,14 @@ class Site extends Model
         return $this->morphMany(Rating::class, 'rateable');
     }
 
+     /**
+     * Get all of the address's projects.
+     */
+    public function rate()
+    {
+        return $this->morphOne(Rating::class, 'rateable')->where('user_id', config('user_id'));
+    }
+
     /**
      * Get all of the contact's comments.
      */

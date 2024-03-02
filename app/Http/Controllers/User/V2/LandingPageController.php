@@ -40,7 +40,12 @@ class LandingPageController extends BaseController
     public function index(Request $request)
     {
         $user = auth()->user();
-        
+
+        #Banners
+        $banners = Banner::latest()
+            ->limit(5)
+            ->get();
+
         #Services categories
         $categories = Category::whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
             ->latest()
@@ -97,7 +102,7 @@ class LandingPageController extends BaseController
 
         $records =  array(
             'version' => AppVersion::latest()->first(),
-            'banners' => Banner::get(),
+            'banners' => $banners,
             'routes' => $routes,
             // 'stops' => $stops,
             'categories' => $categories,

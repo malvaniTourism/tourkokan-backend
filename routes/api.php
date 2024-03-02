@@ -182,12 +182,13 @@ Route::group(['middleware' => 'api', 'prefix' => 'v2'], function ($router) {
 });
 
 Route::group(['middleware' => 'api', 'prefix' => 'v2/auth'], function ($router) {
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/refresh', [AuthController::class, 'refresh']);
-    Route::post('/users', [AuthController::class, 'index']);
-    Route::post('/sendOtp', [AuthController::class, 'sendOtp']);
-    Route::post('/verifyOtp', [AuthController::class, 'verifyOtp']);
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('register', [AuthController::class, 'register']);
+    Route::post('refresh', [AuthController::class, 'refresh']);
+    Route::post('users', [AuthController::class, 'index']);
+    Route::post('sendOtp', [AuthController::class, 'sendOtp']);
+    Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
+    Route::post('updateEmail', [AuthController::class, 'updateEmail']);
 });
 
 Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], function ($router) {

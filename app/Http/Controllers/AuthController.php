@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Mail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\BaseController as BaseController;
+use App\Mail\SendOTP;
 use App\Models\Roles;
 use App\Models\Site;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\File;
 use DB;
 use Carbon\Carbon;
 use Hash;
+use Illuminate\Support\Facades\Mail;
 
 class AuthController extends BaseController
 {
@@ -28,7 +29,7 @@ class AuthController extends BaseController
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail']]);
     }
 
     public function index(Request $request)
@@ -64,6 +65,10 @@ class AuthController extends BaseController
         }
 
         $user = Auth::user();
+
+        if ($user && !$user->isVerified) {
+            return $this->sendError('Please verify your email for login', '', 200);
+        }
 
         $roles = Roles::whereIn('name', ['superadmin', 'admin'])->get();
         if (
@@ -169,6 +174,7 @@ class AuthController extends BaseController
                 }
             }
 
+            $otpSent = SendOTP(['email' => $user->email]);
 
             return $this->sendResponse($user, 'User successfully registered');
         } catch (\Throwable $th) {
@@ -232,7 +238,43 @@ class AuthController extends BaseController
         }
     }
 
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function updateEmail(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'id' => 'required|exists:users,id,email,' . $request->email,
+                'email' => 'required|email',
+                'new_email' => 'required|email|different:email',
+            ]);
 
+            if ($validator->fails()) {
+                return $this->sendError($validator->errors(), '', 200);
+            }
+
+            $whereIdEmail = array(
+                'id' => $request->id,
+                'email' => $request->email
+            );
+            $user = User::where($whereIdEmail)->update(['email' => $request->new_email]);
+
+            if (!$user) {
+                return $this->sendError('Unable to change email', '', 200);
+            }
+
+            $otpSent = SendOTP(['email' => $request->new_email]);
+
+            return $this->sendResponse($otpSent, 'Email successfully changed & OTP has been sent to your new email ..!');
+        } catch (\Throwable $th) {
+            throw $th;
+            Log::error($th->getMessage());
+        }
+    }
     /**
      * Log the user out (Invalidate the token).
      *
@@ -300,35 +342,7 @@ class AuthController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $otp =  random_int(100000, 999999);
-
-        $data = [
-            'subject' => 'otp',
-            'mobile' => $request->mobile,
-            'email' =>  $request->email,
-            'content' => 'Hello your otp is ' . $otp
-        ];
-
-        $where_condition = array_filter($request->all());
-
-        $user = User::where($where_condition)->first();
-
-        if ($user) {
-            User::where($where_condition)->update(array('otp' => $otp));
-
-            if ($request->has('email')) {
-                Mail::send('email-template', $data, function ($message) use ($data) {
-                    $message->to($data['email'])
-                        ->subject($data['subject'])
-                        ->from('no-reply@tourkokan.com', 'Tourkokan');
-                });
-            }
-
-            if ($request->has('mobile')) {
-                #send otp using sms gateway
-                // return $otp;
-            }
-        }
+        $data = sendOTP(array_filter($request->all()));
 
         return $this->sendResponse($data, 'OTP successfully sent!');
     }
@@ -351,7 +365,7 @@ class AuthController extends BaseController
             $user = User::where($where_condition)->first();
 
             if ($user)
-                User::where($where_condition)->update(array('otp' => null));
+                User::where($where_condition)->update(array('otp' => null, 'email_verified_at' => Carbon::now(), 'isVerified' => true));
             else
                 return $this->sendError('Invalid OTP', [], 400);
 

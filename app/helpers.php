@@ -14,6 +14,7 @@ use GuzzleHttp\Exception\ClientException;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 use Spatie\Geocoder\Geocoder;
+use Illuminate\Support\Facades\Mail;
 
 function currentDate()
 {
@@ -201,5 +202,38 @@ function getLocationDetails($latitude, $longitude)
         return  $statusCode;
     } catch (\Exception $e) {
         return  $e->getMessage();
+    }
+}
+
+
+function sendOTP($destination)
+{
+    $user = User::where($destination)->first();
+
+    if ($user) {
+        $otp =  random_int(100000, 999999);
+
+        User::where($destination)->update(array('otp' => $otp));
+
+        $data = [
+            'subject' => 'otp',
+            'content' => 'Hello your otp is ' . $otp
+        ];
+
+        if (array_key_first($destination) == 'email') {
+            $data['email'] = $destination['email'];
+
+            Mail::send('email-template', $data, function ($message) use ($data, $destination) {
+                $message->to($destination['email'])
+                    ->subject($data['subject'])
+                    ->from('no-reply@tourkokan.com', 'Tourkokan');
+            });
+        }
+
+        if (array_key_first($destination) == 'mobile') {
+            #send otp using sms gateway
+        }
+
+        return 1;
     }
 }
