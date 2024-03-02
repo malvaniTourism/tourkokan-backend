@@ -20,7 +20,8 @@ return [
         'tourpackage'       => 'public/assets/tourpackage',
         'accomCategory'     => 'public/assets/accomCategory',
         'busType'           => 'public/assets/busType',
-        'site'              => 'public/assets/site'
+        'site'              => 'public/assets/site',
+        'banner'              => 'public/assets/banner'
     ],
     'models' => [
         'City' => 'App\Models\City',

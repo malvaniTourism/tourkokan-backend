@@ -135,4 +135,9 @@ class Site extends Model
     {
         return $this->morphMany(Address::class, 'addressable');
     }
+
+    public function banners()
+    {
+        return $this->morphMany(Banner::class, 'bannerable');
+    }
 }

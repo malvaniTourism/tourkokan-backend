@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\V2;
 
 use App\Models\Banner;
 use Illuminate\Http\Request;
@@ -22,7 +22,7 @@ class BannerController extends BaseController
         $banner = Banner::with(['bannerable' =>  function ($query) {
             $query->select('id', 'name', 'category_id');
         }, 'bannerable.category' =>  function ($query) {
-            $query->select('id', 'name', 'image_url');
+            $query->select('id', 'name', 'code');
         }])
             ->paginate(10);
 
@@ -64,48 +64,25 @@ class BannerController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $image = null;
-        Log::info("upload file starting");
-        //Image 1 store      
-        if ($image = $request->file('image')) {
-            Log::info("inside upload image");
+        $input = $request->all();
+       
+        $uploadPath = config('constants.upload_path.banner');
 
-            $image = date('YmdHis') . "." . $image->getClientOriginalExtension();
+        $fileFields = ['logo', 'icon', 'image'];
 
-            $path = $request->file('image')->store(config('constants.upload_path.banners') . $request->bannerable_type . '/' . $request->name);
-
-            $image = Storage::url($path);
-
-            Log::info("FILE STORED" . $image);
+        foreach ($fileFields as $field) {
+            if ($image = $request->file($field)) {
+                $input[$field] = uploadFile($image, $uploadPath)['path'];
+            }
         }
-
+        
         $data = getData($request->bannerable_id, $request->bannerable_type);
 
         if (!$data) {
             return $this->sendError($request->bannerable_type . ' Not Exist..!', '', 400);
         }
 
-        $banner = new Banner;
-
-        $banner->name = $request->name;
-
-        $banner->image = $image;
-
-        $banner->start_date = $request->start_date;
-
-        $banner->duration = $request->duration;
-
-        $banner->level = $request->level;
-
-        $banner->image_orientation = $request->image_orientation;
-
-        $banner->status = $request->status;
-
-        $banner->meta_data = $request->meta_data;
-
-        $banner->bannerable()->associate($data);
-
-        $banner = Banner::create(json_decode($banner, true));
+        $banner = $data->banners()->create($input);
 
         return $this->sendResponse($banner, 'Banner added successfully...!');
     }
@@ -116,14 +93,22 @@ class BannerController extends BaseController
      * @param  \App\Models\Banner  $banner
      * @return \Illuminate\Http\Response
      */
-    public function getBanner($id)
+    public function getBanner(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:banners,id'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
         $banner = Banner::with(['bannerable' =>  function ($query) {
             $query->select('id', 'name', 'category_id');
         }, 'bannerable.category' =>  function ($query) {
-            $query->select('id', 'name', 'image_url');
+            $query->select('id', 'name', 'code');
         }])
-            ->find($id);
+            ->find($request->id);
 
         return $this->sendResponse($banner, 'Banner successfully Retrieved...!');
     }

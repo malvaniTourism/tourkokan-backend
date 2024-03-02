@@ -12,7 +12,7 @@ use App\Http\Controllers\Admin\FoodController;
 use App\Http\Controllers\Admin\TourPackageController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\AccomodationCategoryController;
-use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\V2\BannerController;
 use App\Http\Controllers\Admin\BusTypeController;
 use App\Http\Controllers\Admin\DropDownController;
 use App\Http\Controllers\Admin\V2\CategoryController;
@@ -106,22 +106,13 @@ Route::group(['middleware' => ['admin', 'auth:api'], 'prefix' => 'api'], functio
     Route::delete('/bustype/{id}', [BusTypeController::class, 'destroy']);
 
 
-    Route::get('bannerDaysDD', [DropDownController::class, 'bannerDaysDD']);
-    Route::get('bannerImageOrientationDD', [DropDownController::class, 'bannerImageOrientationDD']);
-    Route::get('bannerLevelsDD', [DropDownController::class, 'bannerLevelsDD']);
 
-    
-    Route::post('addBanner', [BannerController::class, 'addBanner']);
-    Route::get('listBanners', [BannerController::class, 'listBanners']);
-    Route::get('getBanner/{id}', [BannerController::class, 'getBanner']);
-    Route::post('updateBanner', [BannerController::class, 'updateBanner']);
-    Route::delete('deleteBanner/{id}', [BannerController::class, 'deleteBanner']);
     
 });
 
 
 Route::group(['middleware' => 'api', 'prefix' => 'v2/auth'], function ($router) {
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::post('users', [AuthController::class, 'index']);
@@ -142,4 +133,15 @@ Route::group(['middleware' => 'auth:api', 'prefix' => 'v2'], function ($router) 
     Route::post('addSite', [SiteController::class, 'addSite']);
     Route::post('updateSite', [SiteController::class, 'updateSite']);
     Route::delete('deleteSite', [SiteController::class, 'deleteSite']);
+
+    Route::post('bannerDaysDD', [DropDownController::class, 'bannerDaysDD']);
+    Route::post('bannerImageOrientationDD', [DropDownController::class, 'bannerImageOrientationDD']);
+    Route::post('bannerLevelsDD', [DropDownController::class, 'bannerLevelsDD']);
+
+    
+    Route::post('addBanner', [BannerController::class, 'addBanner']);
+    Route::post('listBanners', [BannerController::class, 'listBanners']);
+    Route::post('getBanner', [BannerController::class, 'getBanner']);
+    Route::post('updateBanner', [BannerController::class, 'updateBanner']);
+    Route::post('deleteBanner', [BannerController::class, 'deleteBanner']);
 });
