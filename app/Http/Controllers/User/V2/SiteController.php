@@ -196,6 +196,7 @@ class SiteController extends BaseController
                     ->where('favourites.favouritable_type', Site::class)
                     ->where('favourites.user_id', $user->id);
             }, 'is_favorite')
+            ->withAvg("rating", 'rate')
             ->paginate(15);
 
 
