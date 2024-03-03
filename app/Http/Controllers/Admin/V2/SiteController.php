@@ -109,30 +109,30 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $city   =   Site::withCount(['sites', 'photos', 'comments'])
-            ->withAvg('rateable', 'rate')
+        $city   =   Site::withCount(['sites', 'photos', 'comment'])
             ->with([
                 'category:id,name,code,parent_id,icon,status,is_hot_category',
                 'sites' => function ($query) {
                     $query->with('category:id,name,code,parent_id,icon,status,is_hot_category')
                         ->limit(5);
                 },
-                'comments' => function ($query) {
+                'comment' => function ($query) {
                     $query->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
                         ->limit(5);
                 },
-                'comments.comments' => function ($query) {
+                'comment.comment' => function ($query) {
                     $query->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
                         ->limit(5);
                 },
-                'comments.users' => function ($query) {
+                'comment.users' => function ($query) {
                     $query->select('id', 'name', 'email', 'profile_picture');
                 },
-                'comments.comments.users' => function ($query) {
+                'comment.comment.users' => function ($query) {
                     $query->select('id', 'name', 'email', 'profile_picture');
                 },
                 'photos'
             ])
+            ->withAvg("rating", 'rate')
             ->latest()
             ->limit(5)
             ->find($request->id);
