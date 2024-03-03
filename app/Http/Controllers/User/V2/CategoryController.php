@@ -19,9 +19,7 @@ class CategoryController extends BaseController
     {
         if (!Cache::has('categories')) {
             $categories = Cache::remember('categories', 60, function () {
-                $categories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category' => function ($query) {
-                    $query->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area']);
-                }])
+                $categories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category'])
                     ->select('*')
                     ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
                     ->whereNull('parent_id')

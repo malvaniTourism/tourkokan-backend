@@ -31,7 +31,7 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $sites = Site::withCount(['photos', 'comments'])
+        $sites = Site::withCount(['photos', 'comment'])
             ->with([
                 'sites' => function ($query) {
                     $query->select(
@@ -51,7 +51,7 @@ class SiteController extends BaseController
                         ->where('is_hot_place', true);
                 },
                 'sites.comments',
-                'photos', 'comments', 'category:id,name,code,parent_id,icon,status,is_hot_category'
+                'photos', 'comment', 'category:id,name,code,parent_id,icon,status,is_hot_category'
             ]);
 
         if ($request->has('category')) {
