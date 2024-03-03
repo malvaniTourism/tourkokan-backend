@@ -216,9 +216,55 @@ function sendOTP($destination)
         User::where($destination)->update(array('otp' => $otp));
 
         $data = [
-            'subject' => 'otp',
-            'content' => 'Hello your otp is ' . $otp
+            'subject' => 'Tourkokan OTP',
+            'content' => '
+                <html>
+                <head>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            line-height: 1.6;
+                            margin: 0;
+                            padding: 0;
+                        }
+                        .container {
+                            max-width: 600px;
+                            margin: auto;
+                            padding: 20px;
+                            border: 1px solid #ccc;
+                            border-radius: 5px;
+                        }
+                        h2 {
+                            color: #333;
+                        }
+                        p {
+                            margin-bottom: 15px;
+                        }
+                        .otp {
+                            font-size: 24px;
+                            font-weight: bold;
+                            color: #007bff;
+                        }
+                        .signature {
+                            margin-top: 20px;
+                            color: #666;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h2> Tourkokan </h2>
+                        <p>Hello,</p>
+                        <p>Your One-Time Password (OTP) for accessing Tourkokan is: <span class="otp">' . $otp . '</span></p>
+                        <p>Please use this OTP to complete your login process. If you did not request this OTP, please ignore this message.</p>
+                        <p>Thank you,</p>
+                        <p class="signature">Team Tourkokan</p>
+                    </div>
+                </body>
+                </html>
+            ',
         ];
+
 
         if (array_key_first($destination) == 'email') {
             $data['email'] = $destination['email'];

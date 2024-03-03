@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\BaseController as BaseController;
-use App\Mail\SendOTP;
 use App\Models\Roles;
 use App\Models\Site;
 use Illuminate\Support\Facades\Auth;
@@ -120,8 +119,8 @@ class AuthController extends BaseController
                 'password' => 'nullable|string|required_with:email|confirmed|min:6',
                 // 'profile_picture' => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
                 'profile_picture' => 'nullable|string',
-                'latitude' => 'required_with:longitude',
-                'longitude' => 'required_with:latitude'
+                'latitude' => 'required|required_with:longitude',
+                'longitude' => 'required|required_with:latitude'
             ]);
 
             if ($validator->fails()) {
@@ -174,7 +173,7 @@ class AuthController extends BaseController
                 }
             }
 
-            $otpSent = SendOTP(['email' => $user->email]);
+            $otpSent = sendOTP(['email' => $user->email]);
 
             return $this->sendResponse($user, 'User successfully registered');
         } catch (\Throwable $th) {
@@ -267,7 +266,7 @@ class AuthController extends BaseController
                 return $this->sendError('Unable to change email', '', 200);
             }
 
-            $otpSent = SendOTP(['email' => $request->new_email]);
+            $otpSent = sendOTP(['email' => $request->new_email]);
 
             return $this->sendResponse($otpSent, 'Email successfully changed & OTP has been sent to your new email ..!');
         } catch (\Throwable $th) {
