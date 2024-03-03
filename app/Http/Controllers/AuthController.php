@@ -65,16 +65,17 @@ class AuthController extends BaseController
 
         $user = Auth::user();
 
-        if ($user && !$user->isVerified) {
-            return $this->sendError('Please verify your email for login', '', 200);
-        }
-
         $roles = Roles::whereIn('name', ['superadmin', 'admin'])->get();
         if (
+            $user &&
             Str::startsWith($request->route()->getPrefix(), 'admin') &&
             !in_array($user->roles->id, array_column($roles->toArray(), 'id'))
         ) {
             return $this->sendError('Unauthorized', '', 401);
+        }
+
+        if ($user && !$user->isVerified && !in_array($user->roles->id, array_column($roles->toArray(), 'id'))) {
+            return $this->sendError('Please verify your email for login', '', 200);
         }
 
         return $this->createNewToken($token, 'Logged In...!');
@@ -119,8 +120,8 @@ class AuthController extends BaseController
                 'password' => 'nullable|string|required_with:email|confirmed|min:6',
                 // 'profile_picture' => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
                 'profile_picture' => 'nullable|string',
-                'latitude' => 'required|required_with:longitude',
-                'longitude' => 'required|required_with:latitude'
+                'latitude' => 'sometimes|required_with:longitude',
+                'longitude' => 'sometimes|required_with:latitude'
             ]);
 
             if ($validator->fails()) {
@@ -173,7 +174,16 @@ class AuthController extends BaseController
                 }
             }
 
-            $otpSent = sendOTP(['email' => $user->email]);
+
+            $roles = Roles::whereIn('name', ['superadmin', 'admin'])->get();
+
+            if (
+                $user &&
+                !Str::startsWith($request->route()->getPrefix(), 'admin') &&
+                !in_array($user->roles->id, array_column($roles->toArray(), 'id'))
+            ) {
+                $otpSent = sendOTP(['email' => $user->email]);
+            }
 
             return $this->sendResponse($user, 'User successfully registered');
         } catch (\Throwable $th) {
