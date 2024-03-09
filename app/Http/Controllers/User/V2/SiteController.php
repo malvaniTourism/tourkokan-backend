@@ -146,6 +146,7 @@ class SiteController extends BaseController
                         'icon',
                         'status',
                     )
+                        ->with(['rate:id,user_id,rate,rateable_type,rateable_id,status'])
                         ->where('is_hot_place', true)
                         ->selectSub(function ($query) use ($user) {
                             $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
@@ -153,7 +154,8 @@ class SiteController extends BaseController
                                 ->whereColumn('sites.id', 'favourites.favouritable_id')
                                 ->where('favourites.favouritable_type', Site::class)
                                 ->where('favourites.user_id', $user->id);
-                        }, 'is_favorite');
+                        }, 'is_favorite')
+                        ->withAvg("rating", 'rate');
                 },
                 'sites.comment',
                 'photos', 'comment', 'category:id,name,code,parent_id,icon,status,is_hot_category',
