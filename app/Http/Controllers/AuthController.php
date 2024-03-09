@@ -380,7 +380,7 @@ class AuthController extends BaseController
 
             $token = JWTAuth::fromUser($user);
 
-            return $this->createNewToken($token, 'Refreshed token...!');
+            return $this->createNewToken($token, 'Loged In Succesfull!');
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
