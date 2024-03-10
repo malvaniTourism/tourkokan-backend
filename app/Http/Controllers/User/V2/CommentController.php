@@ -15,11 +15,27 @@ class CommentController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $comments = Comment::where('user_id', config('user_id'))
+        $validator = Validator::make($request->all(), [
+            'commentable_type' => 'required|string',
+            'commentable_id' => 'required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        $data = getData($request->commentable_id, $request->commentable_type);
+
+        if (!$data) {
+            return $this->sendError($request->commentable_type . ' Not Exist..!', '', 400);
+        }
+
+        $comments = $data->comment()
             ->latest()
-            ->paginate(10);
+            ->paginate($request->per_page);
+
 
         return $this->sendResponse($comments, 'Comments successfully Retrieved...!');
     }
