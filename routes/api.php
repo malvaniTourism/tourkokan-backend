@@ -207,11 +207,11 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('favourites', [FavouriteController::class, 'index']);
     Route::post('addDeleteFavourite', [FavouriteController::class, 'addDeleteFavourite']);
 
-    Route::post('contacts', [ContactController::class, 'index']);
-    Route::post('contact', [ContactController::class, 'store']);
-    Route::post('contact/{id}', [ContactController::class, 'show']);
-    Route::put('contact/{id}', [ContactController::class, 'update']);
-    Route::delete('contact/{id}', [ContactController::class, 'destroy']);
+    Route::post('getQueries', [ContactController::class, 'getQueries']);
+    Route::post('addQuery', [ContactController::class, 'addQuery']);
+    Route::post('getQuery', [ContactController::class, 'getQuery']);
+    Route::post('updateQuery', [ContactController::class, 'updateQuery']);
+    Route::post('deleteQuery', [ContactController::class, 'deleteQuery']);
 
     Route::post('addAppVersion', [AppVersionController::class, 'addAppVersion']);
     Route::post('getAppVersion', [AppVersionController::class, 'getAppVersion']);

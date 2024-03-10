@@ -4,30 +4,21 @@ namespace App\Http\Controllers\User\V2;
 
 use App\Models\Contact;
 use Illuminate\Http\Request;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\BaseController as BaseController;
 
 class ContactController extends BaseController
 {
     /**
-     * Create a new AuthController instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        $this->middleware('auth:api');
-    }
-
-    /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function getQueries()
     {
-        $contacts = Contact::paginate(10);
+        $contacts = Contact::where('user_id', config('user_id'))
+            ->paginate(10);
 
         return $this->sendResponse($contacts, 'Contacts successfully Retrieved...!');
     }
@@ -48,10 +39,9 @@ class ContactController extends BaseController
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function addQuery(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'user_id' => 'required|numeric|exists:users,id',
             'name' => 'required|string|between:2,100',
             'email' => 'sometimes|string|email|between:2,200',
             'phone' => 'sometimes|numeric',
@@ -64,20 +54,15 @@ class ContactController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $contact = new Contact;
+        $contact = array(
+            'user_id' => config('user_id'),
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'message' => $request->message,
+        );
 
-        $contact->user_id = $request->get('user_id');
-
-        $contact->name = $request->get('name');
-
-        $contact->email = $request->get('email');
-
-        $contact->phone = $request->get('phone');
-
-        $contact->message = $request->get('message');
-
-        if ($request->has('contactable_id') && $request->has('contactable_type')) {
-            // $data = json_encode(DB::table($request->contactable_type)->find($request->contactable_id));//getData($request->commentable_id, $request->commentable_type);
+        if ($request->has(['contactable_type', 'contactable_id'])) {
 
             $data = getData($request->contactable_id, $request->contactable_type);
 
@@ -85,11 +70,12 @@ class ContactController extends BaseController
                 return $this->sendError($request->contactable_type . ' Not Exist..!', '', 400);
             }
 
-            $contact->contactable()->associate($data);
+            $contact =  $data->contacts()->create($contact);
+
+            return $this->sendResponse($contact, 'Query submited successfully...!');
         }
 
-        // $contact = $contact->save();       
-        $contact = Contact::create(json_decode($contact, true));
+        $contact = Contact::create($contact);
 
         return $this->sendResponse($contact, 'Query submited successfully...!');
     }
@@ -100,9 +86,9 @@ class ContactController extends BaseController
      * @param  \App\Models\Contact  $contact
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function getQuery(Request $request)
     {
-        $contact = Contact::find($id);
+        $contact = Contact::find($request->id);
 
         if (is_null($contact)) {
             return $this->sendError('Empty', [], 404);
@@ -129,11 +115,9 @@ class ContactController extends BaseController
      * @param  \App\Models\Contact  $contact
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function updateQuery(Request $request)
     {
-        //add polymorphic relationship 
         $validator = Validator::make($request->all(), [
-            'user_id' => 'numeric|exists:users,id',
             'name' => 'string|between:2,100',
             'email' => 'sometimes|string|email|between:2,200',
             'phone' => 'sometimes|numeric',
@@ -144,7 +128,7 @@ class ContactController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $contact = Contact::find($id);
+        $contact = Contact::find($request->id);
 
         if (is_null($contact)) {
             return $this->sendError('Empty', [], 404);
@@ -161,15 +145,15 @@ class ContactController extends BaseController
      * @param  \App\Models\Contact  $contact
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function deleteQuery(Request $request)
     {
-        $contact = Contact::find($id);
+        $contact = Contact::find($request->id);
 
         if (is_null($contact)) {
             return $this->sendError('Empty', [], 404);
         }
 
-        $contact->delete($id);
+        $contact->delete($request->id);
 
         return $this->sendResponse($contact, 'contact deleted successfully...!');
     }
