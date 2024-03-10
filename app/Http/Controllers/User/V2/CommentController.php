@@ -33,6 +33,7 @@ class CommentController extends BaseController
         }
 
         $comments = $data->comment()
+            ->with(['users:id,name,email,profile_picture'])
             ->latest()
             ->paginate($request->per_page);
 
