@@ -33,6 +33,16 @@ class CommentController extends BaseController
         }
 
         $comments = $data->comment()
+            ->with([
+                'users:id,name,email,profile_picture',
+                'comments' => function ($query) {
+                    $query->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
+                        ->limit(5);
+                }, 
+                'comments.users' => function ($query) {
+                    $query->select('id', 'name', 'email', 'profile_picture');
+                },
+            ])
             ->latest()
             ->paginate($request->per_page);
 
