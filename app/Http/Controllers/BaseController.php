@@ -15,6 +15,7 @@ class BaseController extends Controller
     public function sendResponse($result, $message)
     {
     	$response = [
+            'version' => config('app_version')->version_number,
             'success' => true,
             'message' => $message,
             'data'    => $result,

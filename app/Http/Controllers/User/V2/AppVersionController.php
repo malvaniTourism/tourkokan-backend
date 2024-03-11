@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\BaseController as BaseController;
+use Illuminate\Support\Facades\Cache;
 
 class AppVersionController extends BaseController
 {
@@ -53,6 +54,8 @@ class AppVersionController extends BaseController
         }
 
         $app_version = AppVersion::create($request->all());
+
+        Cache::forget('app_version');
 
         return $this->sendResponse($app_version, 'App version successfully added');
     }
