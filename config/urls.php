@@ -1,7 +1,15 @@
 <?php
 
 return [
-    'except_token_endpoint' => [
-        'updateProfile'
+    'non_session_url' => [
+        'updateProfile',
+        'roleDD',
+        'login',
+        'register',
+        'refresh',
+        'users',
+        'sendOtp',
+        'verifyOtp',
+        'updateEmail'
     ]
 ];

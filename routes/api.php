@@ -181,7 +181,7 @@ Route::group(['middleware' => 'api', 'prefix' => 'v2'], function ($router) {
     Route::get('roleDD', [RolesController::class, 'roleDD']);
 });
 
-Route::group(['middleware' => 'api', 'prefix' => 'v2/auth'], function ($router) {
+Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2/auth'], function ($router) {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('refresh', [AuthController::class, 'refresh']);
