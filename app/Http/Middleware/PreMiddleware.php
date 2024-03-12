@@ -19,7 +19,14 @@ class PreMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        config(['user_id' => Auth::user()->id]);
+        $request_path = $request->path();
+        $parts = explode('/', $request_path);
+        $endpoint = end($parts);
+
+        if (!in_array($endpoint, config('urls')['non_session_url'])) {
+            config(['user_id' => Auth::user()->id]);
+        }
+
         config(['app_version' => Cache::has('app_version') ?  Cache::get('app_version') : AppVersion::latest()->first()]);
 
         return $next($request);
