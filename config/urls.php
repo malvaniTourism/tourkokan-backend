@@ -11,6 +11,7 @@ return [
         'sendOtp',
         'verifyOtp',
         'updateEmail',
-        'addAppVersion'
+        'addAppVersion',
+        'isVerifiedEmail'
     ]
 ];
