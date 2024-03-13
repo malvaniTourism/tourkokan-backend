@@ -189,6 +189,7 @@ Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2/auth'], function 
     Route::post('sendOtp', [AuthController::class, 'sendOtp']);
     Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
     Route::post('updateEmail', [AuthController::class, 'updateEmail']);
+    Route::post('isVerifiedEmail', [AuthController::class, 'isVerifiedEmail']);
 });
 
 Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], function ($router) {

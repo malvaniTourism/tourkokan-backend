@@ -28,7 +28,7 @@ class AuthController extends BaseController
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail', 'isVerifiedEmail']]);
     }
 
     public function index(Request $request)
@@ -258,6 +258,35 @@ class AuthController extends BaseController
             $user->update(array_filter($input));
 
             return $this->sendResponse($user, 'User successfully updated');
+        } catch (\Throwable $th) {
+            throw $th;
+            Log::error($th->getMessage());
+        }
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function isVerifiedEmail(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email|unique:users,email',
+            ]);
+
+            if ($validator->fails()) {
+                $errors = $validator->errors();
+
+                if ($errors->has('email') && $errors->get('email')[0] === 'The email has already been taken.')
+                    $data = ['isVerified' => User::where('email', $request->email)->first()->isVerified];
+
+                return $this->sendError($validator->errors(), $data, 200);
+            }
+
+            return $this->sendResponse(true, 'Please register for login');
         } catch (\Throwable $th) {
             throw $th;
             Log::error($th->getMessage());
