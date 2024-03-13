@@ -95,37 +95,45 @@ class AuthController extends BaseController
             $prefix = $prefixParts[0];
 
             // there is error in validation for superadmin role return error
-            $validator = Validator::make($request->all(), [
-                'role_id' => [
-                    'required',
-                    'exists:roles,id',
-                    function ($attribute, $value, $fail) use ($prefix) {
-                        if ($value == Roles::where("name", "superadmin")->pluck('id')->first()) { // Change 1 to the ID of your superadmin role
-                            $fail('The selected :attribute is invalid. 1');
-                        }
+            $validator = Validator::make(
+                $request->all(),
+                [
+                    // 'role_id' => [
+                    //     'required',
+                    //     'exists:roles,id',
+                    //     function ($attribute, $value, $fail) use ($prefix) {
+                    //         if ($value == Roles::where("name", "superadmin")->pluck('id')->first()) { // Change 1 to the ID of your superadmin role
+                    //             $fail('The selected :attribute is invalid. 1');
+                    //         }
 
-                        if ($prefix === 'admin' && $value !== Roles::where("name", $prefix)->pluck('id')->first()) {
-                            $fail('The selected :attribute is invalid. 2');
-                        }
+                    //         if ($prefix === 'admin' && $value !== Roles::where("name", $prefix)->pluck('id')->first()) {
+                    //             $fail('The selected :attribute is invalid. 2');
+                    //         }
 
-                        if ($prefix !== 'admin' && in_array($value, array_column(Roles::whereIn('name', ['superadmin', 'admin'])->get()->toArray(), 'id'))) {
-                            $fail('The selected :attribute is invalid. 5');
-                        }
-                    },
-                ],
-                'project_id' => 'nullable|numeric|exists:projects,id',
-                'name' => 'required|string|between:2,60',
-                'email' => 'required_if:mobile,null|nullable|string|email|max:100|unique:users',
-                'mobile' => 'required_if:email,null|nullable|string|unique:users,mobile|digits:10',
-                'password' => 'nullable|string|required_with:email|confirmed|min:6',
-                // 'profile_picture' => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
-                'profile_picture' => 'nullable|string',
-                'latitude' => 'sometimes|required_with:longitude',
-                'longitude' => 'sometimes|required_with:latitude'
-            ]);
+                    //         if ($prefix !== 'admin' && in_array($value, array_column(Roles::whereIn('name', ['superadmin', 'admin'])->get()->toArray(), 'id'))) {
+                    //             $fail('The selected :attribute is invalid. 5');
+                    //         }
+                    //     },
+                    // ],
+                    // 'project_id' => 'nullable|numeric|exists:projects,id',
+                    'name' => 'required|string|between:2,60',
+                    'email' => 'required_if:mobile,null|nullable|string|email|max:100|unique:users',
+                    'mobile' => 'required_if:email,null|nullable|string|unique:users,mobile|digits:10',
+                    'password' => 'nullable|string|required_with:email|confirmed|min:6',
+                    // 'profile_picture' => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
+                    'profile_picture' => 'nullable|string',
+                    'latitude' => 'sometimes|required_with:longitude',
+                    'longitude' => 'sometimes|required_with:latitude'
+                ]
+            );
 
             if ($validator->fails()) {
-                return $this->sendError($validator->errors(), '', 200);
+                $errors = $validator->errors();
+
+                if ($errors->has('email') && $errors->get('email')[0] === 'The email has already been taken.') {
+                    $data = ['isVerified' => User::where('email', $request->email)->first()->isVerified];
+                }
+                return $this->sendError($validator->errors(), $data, 200);
             }
 
             if ($request->password == "") {
@@ -164,7 +172,17 @@ class AuthController extends BaseController
 
             $input['password'] = bcrypt($password);
 
-            $user = User::create(array_filter($input));
+            if (
+                !Str::startsWith($request->route()->getPrefix(), 'admin')
+            ) {
+                $roles = Roles::whereIn('code', ['tourist'])->first();
+
+                $input['role_id'] = $roles->id;
+            }
+
+            $user = User::create($input);
+
+            $user = User::select('id', 'role_id', 'name', 'email', 'isVerified', 'profile_picture', 'gender')->find($user->id);
 
             if ($request->has(['latitude', 'longitude'])) {
                 $locationDetails = getLocationDetails($request->latitude, $request->longitude);
@@ -174,8 +192,7 @@ class AuthController extends BaseController
                 }
             }
 
-
-            $roles = Roles::whereIn('name', ['superadmin', 'admin'])->get();
+            $roles = Roles::whereIn('code', ['superadmin', 'admin'])->get();
 
             if (
                 $user &&
