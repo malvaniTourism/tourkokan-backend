@@ -10,6 +10,7 @@ return [
         'users',
         'sendOtp',
         'verifyOtp',
-        'updateEmail'
+        'updateEmail',
+        'addAppVersion'
     ]
 ];
