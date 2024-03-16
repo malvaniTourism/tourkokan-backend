@@ -204,9 +204,6 @@ class AuthController extends BaseController
                 !in_array($user->roles->id, array_column($roles->toArray(), 'id'))
             ) {
                 Mail::to($user->email)->send(new WelcomeEmail($user, $password));
-
-                // send Welcome email and with uid and default password
-                $otpSent = sendOTP(['email' => $user->email]);
             }
 
             return $this->sendResponse($user, 'User successfully registered');
@@ -397,7 +394,7 @@ class AuthController extends BaseController
         $response = [
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => auth()->factory()->getTTL() * 60 * 24 * 1,
+            'expires_in' => null,
             'user' => JWTAuth::setToken($token)->authenticate()
         ];
 
