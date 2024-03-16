@@ -230,6 +230,7 @@ class AuthController extends BaseController
             // Validate the incoming request data
             $validator = Validator::make($request->all(), [
                 'email' => 'sometimes|nullable|email|unique:users,email,' . $user->id,
+                'password' => 'sometimes|string|confirmed|min:6',
                 'profile_picture' => 'sometimes|nullable|string'
             ]);
 
