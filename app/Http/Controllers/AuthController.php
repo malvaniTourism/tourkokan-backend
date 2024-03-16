@@ -139,7 +139,7 @@ class AuthController extends BaseController
             }
 
             if ($request->password == "") {
-                $password = "password";
+                $password = Str::random(10);
             } else {
                 $password = $request->password;
             }
@@ -203,7 +203,7 @@ class AuthController extends BaseController
                 !Str::startsWith($request->route()->getPrefix(), 'admin') &&
                 !in_array($user->roles->id, array_column($roles->toArray(), 'id'))
             ) {
-                Mail::to($user->email)->send(new WelcomeEmail($user));
+                Mail::to($user->email)->send(new WelcomeEmail($user, $password));
 
                 // send Welcome email and with uid and default password
                 $otpSent = sendOTP(['email' => $user->email]);
