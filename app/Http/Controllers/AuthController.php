@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\BaseController as BaseController;
+use App\Mail\WelcomeEmail;
 use App\Models\Roles;
 use App\Models\Site;
 use Illuminate\Support\Facades\Auth;
@@ -133,7 +134,7 @@ class AuthController extends BaseController
                 $data = [];
                 if ($errors->has('email') && $errors->get('email')[0] === 'The email has already been taken.')
                     $data = ['isVerified' => User::where('email', $request->email)->first()->isVerified];
-                
+
                 return $this->sendError($validator->errors(), $data, 200);
             }
 
@@ -181,9 +182,11 @@ class AuthController extends BaseController
                 $input['role_id'] = $roles->id;
             }
 
+            $input['uid'] = Str::random(10);
+
             $user = User::create($input);
 
-            $user = User::select('id', 'role_id', 'name', 'email', 'isVerified', 'profile_picture', 'gender')->find($user->id);
+            $user = User::select('id', 'role_id', 'name', 'email', 'isVerified', 'profile_picture', 'gender', 'uid')->find($user->id);
 
             if ($request->has(['latitude', 'longitude'])) {
                 $locationDetails = getLocationDetails($request->latitude, $request->longitude);
@@ -200,6 +203,9 @@ class AuthController extends BaseController
                 !Str::startsWith($request->route()->getPrefix(), 'admin') &&
                 !in_array($user->roles->id, array_column($roles->toArray(), 'id'))
             ) {
+                Mail::to($user->email)->send(new WelcomeEmail($user));
+
+                // send Welcome email and with uid and default password
                 $otpSent = sendOTP(['email' => $user->email]);
             }
 
@@ -303,11 +309,20 @@ class AuthController extends BaseController
     public function updateEmail(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'id' => 'required|exists:users,id,email,' . $request->email,
-                'email' => 'required|email',
-                'new_email' => 'required|email|different:email',
-            ]);
+            $validator = Validator::make(
+                $request->all(),
+                [
+                    'id' => 'required|exists:users,id,email,' . $request->email,
+                    'email' => 'required|email',
+                    'new_email' => 'required|email|different:email',
+                    'uid' => 'required|string|exists:users,uid',
+                ],
+                [
+                    'id.exists' => 'Unauthorized action.',
+                    'uid.required' => 'The user id field is required.',
+                    'uid.exists' => 'Invalid User Id...! Please check your email for user id..!'
+                ]
+            );
 
             if ($validator->fails()) {
                 return $this->sendError($validator->errors(), '', 200);
@@ -317,6 +332,7 @@ class AuthController extends BaseController
                 'id' => $request->id,
                 'email' => $request->email
             );
+
             $user = User::where($whereIdEmail)->update(['email' => $request->new_email]);
 
             if (!$user) {
