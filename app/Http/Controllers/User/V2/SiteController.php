@@ -126,41 +126,37 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $sites = Site::withCount([
-            'photos',
-            'comment'
-        ])
-            ->with([
-                'sites' => function ($query) use ($user) {
-                    $query->select(
-                        'id',
-                        'name',
-                        'name',
-                        'parent_id',
-                        'category_id',
-                        'image',
-                        'domain_name',
-                        'description',
-                        'tag_line',
-                        'bus_stop_type',
-                        'icon',
-                        'status',
-                    )
-                        ->with(['rate:id,user_id,rate,rateable_type,rateable_id,status'])
-                        ->where('is_hot_place', true)
-                        ->selectSub(function ($query) use ($user) {
-                            $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
-                                ->from('favourites')
-                                ->whereColumn('sites.id', 'favourites.favouritable_id')
-                                ->where('favourites.favouritable_type', Site::class)
-                                ->where('favourites.user_id', $user->id);
-                        }, 'is_favorite')
-                        ->withAvg("rating", 'rate');
-                },
-                'sites.comment',
-                'photos', 'comment', 'category:id,name,code,parent_id,icon,status,is_hot_category',
-                'rate:id,user_id,rate,rateable_type,rateable_id,status',
-            ]);
+        $sites = Site::with([
+            'sites' => function ($query) use ($user) {
+                $query->select(
+                    'id',
+                    'name',
+                    'name',
+                    'parent_id',
+                    'category_id',
+                    'image',
+                    'domain_name',
+                    'description',
+                    'tag_line',
+                    'bus_stop_type',
+                    'icon',
+                    'status',
+                )
+                    ->with(['rate:id,user_id,rate,rateable_type,rateable_id,status'])
+                    ->where('is_hot_place', true)
+                    ->selectSub(function ($query) use ($user) {
+                        $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
+                            ->from('favourites')
+                            ->whereColumn('sites.id', 'favourites.favouritable_id')
+                            ->where('favourites.favouritable_type', Site::class)
+                            ->where('favourites.user_id', $user->id);
+                    }, 'is_favorite')
+                    ->withAvg("rating", 'rate');
+            },
+            'sites.comment',
+            'photos', 'comment', 'category:id,name,code,parent_id,icon,status,is_hot_category',
+            'rate:id,user_id,rate,rateable_type,rateable_id,status',
+        ]);
 
 
         if ($request->has('category')) {
@@ -203,6 +199,10 @@ class SiteController extends BaseController
                     ->where('favourites.user_id', $user->id);
             }, 'is_favorite')
             ->withAvg("rating", 'rate')
+            ->withCount([
+                'photos',
+                'comment'
+            ])
             ->paginate(15);
 
 

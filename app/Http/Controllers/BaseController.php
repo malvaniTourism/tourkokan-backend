@@ -12,11 +12,11 @@ class BaseController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function sendResponse($result, $message)
+    public function sendResponse($result, $message, $status = true)
     {
     	$response = [
             'version' => config('app_version')->version_number,
-            'success' => true,
+            'success' => $status,
             'message' => $message,
             'data'    => $result,
         ];

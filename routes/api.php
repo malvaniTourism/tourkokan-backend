@@ -55,18 +55,18 @@ use App\Http\Controllers\User\V2\{
 //     return $request->user();
 // });
 
-Route::group(['middleware' => 'api', 'prefix' => 'auth'], function ($router) {
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/refresh', [AuthController::class, 'refresh']);
-    Route::post('/users', [AuthController::class, 'index']);
-    Route::post('/sendOtp', [AuthController::class, 'sendOtp']);
-    Route::post('/verifyOtp', [AuthController::class, 'verifyOtp']);
-});
+// Route::group(['middleware' => 'api', 'prefix' => 'auth'], function ($router) {
+//     Route::post('/login', [AuthController::class, 'login']);
+//     Route::post('/register', [AuthController::class, 'register']);
+//     Route::post('/refresh', [AuthController::class, 'refresh']);
+//     Route::post('/users', [AuthController::class, 'index']);
+//     Route::post('/sendOtp', [AuthController::class, 'sendOtp']);
+//     Route::post('/verifyOtp', [AuthController::class, 'verifyOtp']);
+// });
 
-Route::group(['middleware' => 'api', 'prefix' => 'v1'], function ($router) {
-    Route::get('roleDD', [RolesController::class, 'roleDD']);
-});
+// Route::group(['middleware' => 'api', 'prefix' => 'v1'], function ($router) {
+//     Route::get('roleDD', [RolesController::class, 'roleDD']);
+// });
 
 // Route::group(['middleware' => 'auth:api', 'prefix' => 'v1'], function ($router) {
 

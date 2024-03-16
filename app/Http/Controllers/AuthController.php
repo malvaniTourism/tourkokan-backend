@@ -119,7 +119,7 @@ class AuthController extends BaseController
                     'name' => 'required|string|between:2,60',
                     'email' => 'required_if:mobile,null|nullable|string|email|max:100|unique:users',
                     'mobile' => 'required_if:email,null|nullable|string|unique:users,mobile|digits:10',
-                    'password' => 'nullable|string|required_with:email|confirmed|min:6',
+                    'password' => 'sometimes|string|required_with:email|confirmed|min:6',
                     // 'profile_picture' => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
                     'profile_picture' => 'nullable|string',
                     'latitude' => 'sometimes|required_with:longitude',
@@ -130,9 +130,10 @@ class AuthController extends BaseController
             if ($validator->fails()) {
                 $errors = $validator->errors();
 
-                if ($errors->has('email') && $errors->get('email')[0] === 'The email has already been taken.') {
+                $data = [];
+                if ($errors->has('email') && $errors->get('email')[0] === 'The email has already been taken.')
                     $data = ['isVerified' => User::where('email', $request->email)->first()->isVerified];
-                }
+                
                 return $this->sendError($validator->errors(), $data, 200);
             }
 
@@ -279,14 +280,14 @@ class AuthController extends BaseController
 
             if ($validator->fails()) {
                 $errors = $validator->errors();
-
+                $data = [];
                 if ($errors->has('email') && $errors->get('email')[0] === 'The email has already been taken.')
                     $data = ['isVerified' => User::where('email', $request->email)->first()->isVerified];
 
-                return $this->sendError($validator->errors(), $data, 200);
+                return $this->sendResponse($data, $validator->errors());
             }
 
-            return $this->sendResponse(true, 'Please register for login');
+            return $this->sendResponse(true, 'Please register for login', false);
         } catch (\Throwable $th) {
             throw $th;
             Log::error($th->getMessage());
