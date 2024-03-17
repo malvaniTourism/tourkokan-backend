@@ -24,6 +24,7 @@ class Contact extends Model
         'message',
         'contactable_id',
         'contactable_type',
+        'status'
     ];
 
     /**

@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         // \App\Models\User::factory(10)->create();
-
+        $this->call(AppVersionSeeder::class);
         $this->call(RoleSeeder::class);
         $this->call(UserSeeder::class);
         // $this->call(CitySeeder::class);
@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
         $this->call(BusTypeSeeder::class);
         // $this->call(RouteSeeder::class);
         $this->call(RouteAndRouteStopsSeeder::class);
-        $this->call(ProductCategorySeeder::class);
+        // $this->call(ProductCategorySeeder::class);
 
     }
 }

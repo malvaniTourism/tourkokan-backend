@@ -437,7 +437,7 @@ class AuthController extends BaseController
             if ($user)
                 User::where($where_condition)->update(array('otp' => null, 'email_verified_at' => Carbon::now(), 'isVerified' => true));
             else
-                return $this->sendError('Invalid OTP', [], 400);
+                return $this->sendError('Invalid OTP', [], 200);
 
             $token = JWTAuth::fromUser($user);
 

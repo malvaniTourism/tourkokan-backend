@@ -15,6 +15,7 @@ class CreateRouteStopsTable extends Migration
     {
         Schema::create('route_stops', function (Blueprint $table) {
             $table->increments('id');
+            $table->integer('route_no')->unsigned();
             $table->integer('serial_no')->unsigned();
             $table->integer('route_id')->unsigned();
             $table->integer('site_id')->unsigned()->comment('Bus stop or Bus depo id');

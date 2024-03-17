@@ -23,6 +23,7 @@ class CreateUsersTable extends Migration
             $table->string('mobile', 16)->unique()->nullable();
             $table->boolean('isVerified')->default(false);
             $table->string('password');
+            $table->string('uid')->nullable();
             $table->integer('otp')->unsigned()->nullable();
             $table->string('code')->nullable();
             $table->string('gender')->nullable();

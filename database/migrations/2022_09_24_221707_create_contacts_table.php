@@ -20,6 +20,7 @@ class CreateContactsTable extends Migration
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->string('message');
+            $table->enum('status', ['read', 'unread', 'replied'])->default('unread');
             $table->morphs('contactable');
             $table->timestamps();
 

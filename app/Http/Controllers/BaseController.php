@@ -4,18 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class BaseController extends Controller
 {
-     /**
+    /**
      * success response method.
      *
      * @return \Illuminate\Http\Response
      */
     public function sendResponse($result, $message, $status = true)
     {
-    	$response = [
-            'version' => config('app_version')->version_number,
+        $response = [
+            'version' => (Cache::has('app_version')) ? config('app_version.version_number') : null,
             'success' => $status,
             'message' => $message,
             'data'    => $result,
@@ -30,14 +31,14 @@ class BaseController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function sendError($error, $errorMessages = [], $code )
+    public function sendError($error, $errorMessages = [], $code)
     {
-    	$response = [
+        $response = [
             'success' => false,
             'message' => $error,
         ];
 
-        if(!empty($errorMessages)){
+        if (!empty($errorMessages)) {
             $response['data'] = $errorMessages;
         }
 

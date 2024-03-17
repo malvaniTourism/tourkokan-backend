@@ -35,7 +35,17 @@ class RouteController extends BaseController
                 'destinationPlace:id,name,category_id',
                 'destinationPlace.category:id,name,icon'
             ])
-            ->select('id', 'source_place_id', 'destination_place_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time')
+            ->select(
+                'id',
+                'source_place_id',
+                'destination_place_id',
+                'name',
+                'start_time',
+                'end_time',
+                'total_time',
+                'delayed_time',
+                DB::raw('(SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id) AS distance')
+            )
             ->paginate();
 
         return $this->sendResponse($routes, 'Routes successfully Retrieved...!');
@@ -130,7 +140,7 @@ class RouteController extends BaseController
         // })->pluck('id');
 
         $routes = Route::with([
-            'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
+            'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time,distance',
             'routeStops.site:id,name,mr_name,category_id',
             'routeStops.site.category:id,name,icon',
             'sourcePlace:id,name,category_id',
@@ -138,7 +148,18 @@ class RouteController extends BaseController
             'destinationPlace:id,name,category_id',
             'destinationPlace.category:id,name,icon',
             'busType:id,type,logo,meta_data'
-        ])->select('id', 'source_place_id', 'destination_place_id', 'bus_type_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time');
+        ])->select(
+            'id',
+            'source_place_id',
+            'destination_place_id',
+            'bus_type_id',
+            'name',
+            'start_time',
+            'end_time',
+            'total_time',
+            'delayed_time',
+            DB::raw('(SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id) AS distance')
+        );
 
         if ($request->source_place_id && $request->destination_place_id) {
             $routes->whereIn('id', $routeIds);
