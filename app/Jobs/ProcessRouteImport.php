@@ -108,6 +108,7 @@ class ProcessRouteImport implements ShouldQueue
 
                 if (!$routeStopExists) {
                     $route_stop = array(
+                        'route_no' => $value['route_no'],
                         'serial_no' => count($routStops) + 1,
                         'route_id' => $route->id,
                         'site_id' => $stopSite->id,

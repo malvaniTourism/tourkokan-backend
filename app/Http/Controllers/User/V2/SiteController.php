@@ -126,12 +126,12 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $sites = Site::with([
+        $withArr = [
             'sites' => function ($query) use ($user) {
                 $query->select(
                     'id',
                     'name',
-                    'name',
+                    'mr_name',
                     'parent_id',
                     'category_id',
                     'image',
@@ -154,10 +154,19 @@ class SiteController extends BaseController
                     ->withAvg("rating", 'rate');
             },
             'sites.comment',
-            'photos', 'comment', 'category:id,name,code,parent_id,icon,status,is_hot_category',
+            'photos',
+            'comment',
+            'category:id,name,code,parent_id,icon,status,is_hot_category',
             'rate:id,user_id,rate,rateable_type,rateable_id,status',
-        ]);
+        ];
 
+        if ($request->apitype == 'dropdown') {
+            $withArr = [
+                'category:id,name,code,parent_id,icon,status,is_hot_category'
+            ];
+        }
+
+        $sites = Site::with($withArr);
 
         if ($request->has('category')) {
             if ($request->category == 'emergency') {
@@ -190,21 +199,24 @@ class SiteController extends BaseController
             $sites =  $sites->whereIn('bus_stop_type', ['Depo', 'Stop']);
         }
 
-        $sites = $sites->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'))
-            ->selectSub(function ($query) use ($user) {
+        $sites = $sites->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'));
+
+        if ($request->apitype != 'dropdown') {
+            $sites = $sites->selectSub(function ($query) use ($user) {
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
                     ->where('favourites.favouritable_type', Site::class)
                     ->where('favourites.user_id', $user->id);
             }, 'is_favorite')
-            ->withAvg("rating", 'rate')
-            ->withCount([
-                'photos',
-                'comment'
-            ])
-            ->paginate(15);
+                ->withAvg("rating", 'rate')
+                ->withCount([
+                    'photos',
+                    'comment'
+                ]);
+        }
 
+        $sites = $sites->paginate(15);
 
         return $this->sendResponse($sites, 'Sites successfully Retrieved...!');
     }

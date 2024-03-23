@@ -21,7 +21,7 @@ class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChun
 
     public function chunkSize(): int
     {
-        return 50; // Adjust the chunk size as needed
+        return 100; // Adjust the chunk size as needed
     }
 
     /**

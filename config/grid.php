@@ -6,6 +6,7 @@ return [
             "columns" => [
                 'id',
                 'name',
+                'mr_name',
                 'parent_id',
                 'user_id',
                 'category_id',
@@ -31,6 +32,7 @@ return [
             "columns" => [
                 'id',
                 'name',
+                'mr_name',
                 'parent_id',
                 'category_id',
                 'bus_stop_type',
