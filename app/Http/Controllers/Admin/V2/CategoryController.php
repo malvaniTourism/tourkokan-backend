@@ -173,7 +173,8 @@ class CategoryController extends BaseController
 
         $category->update($input);
 
-        Cache::forget(['categories', 'subCategories']);
+        Cache::forget('categories');
+        Cache::forget('subCategories');
 
         return $this->sendResponse($category, 'Category updated successfully...!');
     }
