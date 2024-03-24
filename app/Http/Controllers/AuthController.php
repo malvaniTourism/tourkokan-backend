@@ -117,6 +117,7 @@ class AuthController extends BaseController
                     //     },
                     // ],
                     // 'project_id' => 'nullable|numeric|exists:projects,id',
+                    'role_id' => 'sometimes|exists:roles,id',
                     'name' => 'required|string|between:2,60',
                     'email' => 'required_if:mobile,null|nullable|string|email|max:100|unique:users',
                     'mobile' => 'required_if:email,null|nullable|string|unique:users,mobile|digits:10',
@@ -175,8 +176,11 @@ class AuthController extends BaseController
             $input['password'] = bcrypt($password);
 
             if (
-                !Str::startsWith($request->route()->getPrefix(), 'admin')
+                Str::startsWith($request->route()->getPrefix(), 'admin') &&
+                $request->has('role_id')
             ) {
+                $input['role_id'] = $request->role_id;
+            } else {
                 $roles = Roles::whereIn('code', ['tourist'])->first();
 
                 $input['role_id'] = $roles->id;
