@@ -23,6 +23,7 @@ class CategoryController extends BaseController
                     ->select('*')
                     ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
                     ->whereNull('parent_id')
+                    ->whereStatus(true)
                     ->paginate(10);
 
                 return $categories;
