@@ -19,6 +19,7 @@ use App\Models\PlaceCategory;
 use App\Models\Route;
 use App\Models\Site;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class LandingPageController extends BaseController
 {
@@ -91,7 +92,18 @@ class LandingPageController extends BaseController
             'destinationPlace:id,name,category_id',
             'destinationPlace.category:id,name,icon',
             'busType:id,type,logo,meta_data'
-        ])->select('id', 'source_place_id', 'destination_place_id', 'bus_type_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time')
+        ])->select(
+            'id',
+            'source_place_id',
+            'destination_place_id',
+            'bus_type_id',
+            'name',
+            'start_time',
+            'end_time',
+            'total_time',
+            'delayed_time',
+            DB::raw('(SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id) AS distance')
+        )
             ->latest()
             ->limit(5)
             ->get();

@@ -60,7 +60,7 @@ class AuthController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        if (!$token = auth()->attempt($validator->validated(), ['exp' => JWTAuth::factory()->setTTL(60 * 60 * 24 * 100)])) {
+        if (!$token = auth()->attempt($validator->validated(), ['exp' => null])) {
             return $this->sendError('invalid credentials', '', 200);
         }
 
@@ -231,7 +231,7 @@ class AuthController extends BaseController
             // Validate the incoming request data
             $validator = Validator::make($request->all(), [
                 'email' => 'sometimes|nullable|email|unique:users,email,' . $user->id,
-                'password' => 'sometimes|string|confirmed|min:6',
+                'password' => 'sometimes|nullable|string|confirmed|min:6',
                 'profile_picture' => 'sometimes|nullable|string'
             ]);
 
@@ -240,6 +240,10 @@ class AuthController extends BaseController
             }
 
             $input = $validator->validated();
+
+            if ($request->has('password') && $request->password != "") {
+                $input['password'] = bcrypt($request->password);
+            }
 
             if (isValidReturn($input, 'profile_picture')) {
 
