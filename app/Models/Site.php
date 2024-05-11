@@ -19,7 +19,6 @@ class Site extends Model
      */
     protected $fillable = [
         'name',
-        'mr_name',
         'parent_id',
         'user_id',
         'category_id',
@@ -46,7 +45,9 @@ class Site extends Model
      *
      * @var array
      */
-    protected $hidden = [];
+    protected $hidden = [
+        'mr_name'
+    ];
 
     /**
      * The attributes that should be cast.
@@ -59,6 +60,18 @@ class Site extends Model
         'social_media' => 'array',
         'meta_data' => 'array',
     ];
+
+    public function getNameAttribute($value)
+    {
+        $language = config('language');
+
+        return $language === 'en' ? $value :  $this->mr_name;
+    }
+
+    public function getMrNameAttribute($value)
+    {
+        return $value;
+    }
 
     /**
      * Get the site that owns the Site
@@ -118,7 +131,7 @@ class Site extends Model
         return $this->morphMany(Rating::class, 'rateable');
     }
 
-     /**
+    /**
      * Get all of the address's projects.
      */
     public function rate()
