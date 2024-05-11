@@ -24,7 +24,13 @@ class PreMiddleware
         $endpoint = end($parts);
 
         if (!in_array($endpoint, config('urls')['non_session_url'])) {
-            config(['user_id' => Auth::user()->id]);
+            $user = Auth::user();
+
+            config([
+                'user' => $user,
+                'user_id' => $user->id,
+                'language' => $user->language
+            ]);
         }
 
         config(['app_version' => Cache::has('app_version') ?  Cache::get('app_version') : AppVersion::latest()->first()]);

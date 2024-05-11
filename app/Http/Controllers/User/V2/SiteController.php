@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\Category;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class SiteController extends BaseController
@@ -55,11 +56,45 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $city   =   Site::withCount(['sites', 'photos', 'comment'])
+        // Fetch the columns dynamically based on the API type
+        $apiTypeColumns = config('grid.siteApiTypes.list.columns');
+
+        // Modify each column to include the conditional expression for 'name'
+        foreach ($apiTypeColumns as &$column) {
+            if ($column === 'name') {
+                $column = DB::raw("CASE WHEN '" . config('language') . "' = 'En' THEN name ELSE mr_name END AS name");
+            }
+        }
+
+        $city   =   Site::select($apiTypeColumns)
+            ->withCount(['sites', 'photos', 'comment'])
             ->withAvg('rating', 'rate')
             ->with([
                 'category:id,name,code,parent_id,icon,status,is_hot_category',
                 'sites' => function ($query) {
+                    $query->select(
+                        'id',
+                        DB::raw("CASE WHEN '" . config('language') . "' = 'En' THEN name ELSE mr_name END AS name"),
+                        'parent_id',
+                        'user_id',
+                        'category_id',
+                        'bus_stop_type',
+                        'tag_line',
+                        'description',
+                        'domain_name',
+                        'logo',
+                        'icon',
+                        'image',
+                        'status',
+                        'is_hot_place',
+                        'latitude',
+                        'longitude',
+                        'pin_code',
+                        'speciality',
+                        'rules',
+                        'social_media',
+                        'meta_data',
+                    );
                     $query->with('category:id,name,code,parent_id,icon,status,is_hot_category')
                         ->limit(5);
                 },
@@ -130,8 +165,7 @@ class SiteController extends BaseController
             'sites' => function ($query) use ($user) {
                 $query->select(
                     'id',
-                    'name',
-                    'mr_name',
+                    DB::raw("CASE WHEN '" . config('language') . "' = 'En' THEN name ELSE mr_name END AS name"),
                     'parent_id',
                     'category_id',
                     'image',
@@ -199,7 +233,17 @@ class SiteController extends BaseController
             $sites =  $sites->whereIn('bus_stop_type', ['Depo', 'Stop']);
         }
 
-        $sites = $sites->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'));
+        // Fetch the columns dynamically based on the API type
+        $apiTypeColumns = config('grid.siteApiTypes.' . $request->apitype . '.columns');
+
+        // Modify each column to include the conditional expression for 'name'
+        foreach ($apiTypeColumns as &$column) {
+            if ($column === 'name') {
+                $column = DB::raw("CASE WHEN '" . config('language') . "' = 'En' THEN name ELSE mr_name END AS name");
+            }
+        }
+
+        $sites = $sites->select($apiTypeColumns);
 
         if ($request->apitype != 'dropdown') {
             $sites = $sites->selectSub(function ($query) use ($user) {

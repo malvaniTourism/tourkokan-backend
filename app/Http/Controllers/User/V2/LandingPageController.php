@@ -4,7 +4,6 @@ namespace App\Http\Controllers\User\V2;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Validator;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\AppVersion;
 use App\Models\Banner;
@@ -20,6 +19,7 @@ use App\Models\Route;
 use App\Models\Site;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class LandingPageController extends BaseController
 {
@@ -40,7 +40,13 @@ class LandingPageController extends BaseController
      */
     public function index(Request $request)
     {
-        $user = auth()->user();
+        $validator = Validator::make($request->all(), [
+            'site_id' => 'sometimes|required|exists:sites,id'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
 
         #Banners
         $banners = Banner::latest()
@@ -54,7 +60,14 @@ class LandingPageController extends BaseController
             ->get();
 
         #Top famouse cities
-        $cities = Site::select('id', 'name', 'tag_line', 'logo', 'icon', 'image')
+        $cities = Site::select(
+            'id',
+            DB::raw("CASE WHEN '" . config('language') . "' = 'En' THEN name ELSE mr_name END AS name"),
+            'tag_line',
+            'logo',
+            'icon',
+            'image'
+        )
             ->withAvg("rating", 'rate')
             // ->having('rating_avg_rate', '>', 3)
             ->withCount('photos', 'comment')
@@ -62,12 +75,12 @@ class LandingPageController extends BaseController
             ->whereHas('category', function ($query) {
                 $query->where('code', 'city');
             })
-            ->selectSub(function ($query) use ($user) {
+            ->selectSub(function ($query) {
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
                     ->where('favourites.favouritable_type', Site::class)
-                    ->where('favourites.user_id', $user->id);
+                    ->where('favourites.user_id', config('user_id'));
             }, 'is_favorite')
             ->latest()
             // ->limit(8)
@@ -85,14 +98,26 @@ class LandingPageController extends BaseController
 
         $routes = Route::with([
             'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
-            'routeStops.site:id,name,category_id',
-            'routeStops.site.category:id,name,icon',
-            'sourcePlace:id,name,category_id',
+            'routeStops.site' => function ($query) {
+                $query->select('id', DB::raw("CASE WHEN '" . config('language') . "' = 'En' THEN name ELSE mr_name END AS name"), 'category_id');
+                $query->with('category:id,name,icon');
+            },            'routeStops.site.category:id,name,icon',
+            'sourcePlace' => function ($query) {
+                $query->select('id', DB::raw("CASE WHEN '" . config('language') . "' = 'En' THEN name ELSE mr_name END AS name"), 'category_id');
+                $query->with('category:id,name,icon');
+            },
             'sourcePlace.category:id,name,icon',
-            'destinationPlace:id,name,category_id',
+            'destinationPlace' => function ($query) {
+                $query->select('id', DB::raw("CASE WHEN '" . config('language') . "' = 'En' THEN name ELSE mr_name END AS name"), 'category_id');
+                $query->with('category:id,name,icon');
+            },
             'destinationPlace.category:id,name,icon',
             'busType:id,type,logo,meta_data'
-        ])->select(
+        ])->whereHas('routeStops', function ($query) use ($request) {
+            if ($request->has('site_id')) {
+                $query->where('site_id', $request->site_id);
+            }
+        })->select(
             'id',
             'source_place_id',
             'destination_place_id',
