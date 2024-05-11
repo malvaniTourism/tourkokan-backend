@@ -118,7 +118,7 @@ class AuthController extends BaseController
                     // ],
                     // 'project_id' => 'nullable|numeric|exists:projects,id',
                     'role_id' => 'sometimes|exists:roles,id',
-                    'language' => 'sometimes|required|in:Mr,En',
+                    'language' => 'sometimes|required|in:mr,en',
                     'name' => 'required|string|between:2,60',
                     'email' => 'required_if:mobile,null|nullable|string|email|max:100|unique:users',
                     'mobile' => 'required_if:email,null|nullable|string|unique:users,mobile|digits:10',
@@ -234,7 +234,7 @@ class AuthController extends BaseController
                 'email' => 'sometimes|nullable|email|unique:users,email,' . $user->id,
                 'password' => 'sometimes|nullable|string|confirmed|min:6',
                 'profile_picture' => 'sometimes|nullable|string',
-                'language' => 'sometimes|required|in:Mr,En'
+                'language' => 'sometimes|required|in:mr,en'
             ]);
 
             if ($validator->fails()) {

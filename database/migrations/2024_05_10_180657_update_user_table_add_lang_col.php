@@ -14,7 +14,7 @@ class UpdateUserTableAddLangCol extends Migration
     public function up()
     {
         Schema::table('users', function($table) {
-            $table->string('language')->default('En')->after('role_id');
+            $table->string('language')->default('en')->after('role_id');
         });
     }
 
