@@ -158,6 +158,7 @@ class SiteController extends BaseController
             'comment',
             'category:id,name,code,parent_id,icon,status,is_hot_category',
             'rate:id,user_id,rate,rateable_type,rateable_id,status',
+            'address:id,email,phone,latitude,longitude,addressable_type,addressable_id'
         ];
 
         if ($request->apitype == 'dropdown') {
