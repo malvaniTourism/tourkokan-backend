@@ -44,7 +44,7 @@ class ContactController extends BaseController
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|between:2,100',
             'email' => 'sometimes|string|email|between:2,200',
-            'phone' => 'sometimes|numeric',
+            'phone' => 'nullable|numeric',
             'message' => 'required',
             'contactable_type' => 'sometimes|required_with:contactable_id|string',
             'contactable_id' => 'sometimes|required_with:contactable_type|numeric',
@@ -62,7 +62,7 @@ class ContactController extends BaseController
             'message' => $request->message,
         );
 
-        if ($request->has(['contactable_type', 'contactable_id'])) {
+        if ($request->has(['contactable_type', 'nm[k'])) {
 
             $data = getData($request->contactable_id, $request->contactable_type);
 
