@@ -19,7 +19,7 @@ class CategoryController extends BaseController
     {
         if (!Cache::has('categories')) {
             $categories = Cache::remember('categories', 60, function () {
-                $categories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category'])
+                $categories = Category::with(['subCategories:id,name,code,parent_id,icon,is_hot_category'])
                     ->select('*')
                     ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
                     ->whereNull('parent_id')
@@ -55,20 +55,20 @@ class CategoryController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        if (!Cache::has('subCategories')) {
-            $subCategories = Cache::remember('subCategories', 60, function () use ($request) {
-                $subCategories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category'])
-                    ->find($request->id);
+        // if (!Cache::has('subCategories')) {
+        //     $subCategories = Cache::remember('subCategories', 60, function () use ($request) {
+        $subCategories = Category::with(['subCategories:id,name,code,parent_id,icon,is_hot_category'])
+            ->find($request->id);
 
-                return $subCategories;
-            });
-        }
+        //         return $subCategories;
+        //     });
+        // }
 
-        $subCategories = Cache::get('subCategories');
+        // $subCategories = Cache::get('subCategories');
 
-        if (!$subCategories) {
-            return $this->sendError('Empty', [], 404);
-        }
+        // if (!$subCategories) {
+        //     return $this->sendError('Empty', [], 404);
+        // }
 
         return $this->sendResponse($subCategories, 'Sub Categories successfully Retrieved...!');
     }
