@@ -33,7 +33,7 @@ class RouteStopsController extends BaseController
             ->select('*')
             ->get();
 
-        return $this->sendResponse($places, 'avaible routes successfully Retrieved...!');
+        return $this->sendResponse($places, 'available routes successfully Retrieved...!');
     }
 
     /**
