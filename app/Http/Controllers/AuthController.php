@@ -234,7 +234,8 @@ class AuthController extends BaseController
                 'email' => 'sometimes|nullable|email|unique:users,email,' . $user->id,
                 'password' => 'sometimes|nullable|string|confirmed|min:6',
                 'profile_picture' => 'sometimes|nullable|string',
-                'language' => 'sometimes|required|in:mr,en'
+                'language' => 'sometimes|required|in:mr,en',
+                'mobile' => 'sometimes|required|unique:users,mobile|digits:10',
             ]);
 
             if ($validator->fails()) {

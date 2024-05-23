@@ -46,7 +46,7 @@ class ContactController extends BaseController
             'email' => 'sometimes|string|email|between:2,200',
             'phone' => 'nullable|numeric',
             'message' => 'required',
-            'contactable_type' => 'sometimes|required_with:contactable_id|string',
+            'contactable_type' => 'sometimes|required_with:contactable_id|string',    //query for products and other
             'contactable_id' => 'sometimes|required_with:contactable_type|numeric',
         ]);
 
@@ -62,7 +62,7 @@ class ContactController extends BaseController
             'message' => $request->message,
         );
 
-        if ($request->has(['contactable_type', 'nm[k'])) {
+        if ($request->has(['contactable_type', 'contactable_type'])) {
 
             $data = getData($request->contactable_id, $request->contactable_type);
 
