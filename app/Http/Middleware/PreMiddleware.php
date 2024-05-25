@@ -33,8 +33,8 @@ class PreMiddleware
             ]);
         }
 
-        config(['app_version' => Cache::has('app_version') ?  Cache::get('app_version') : AppVersion::latest()->first()]);
-
+        config(['app_version' => Cache::has('app_version') ?  Cache::get('app_version')->version_number : AppVersion::latest()->first()->version_number]);
+        
         return $next($request);
     }
 }

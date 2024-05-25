@@ -15,8 +15,19 @@ class BaseController extends Controller
      */
     public function sendResponse($result, $message, $status = true)
     {
+        $version =  config('app_version');
+
+        if ($version == null) {
+            $response = [
+                'success' => false,
+                'message' => "Unauthorised Access"
+            ];
+            return response()->json($response, 200);
+        }
+        
         $response = [
-            'version' => (Cache::has('app_version')) ? config('app_version.version_number') : null,
+            'version' => $version,
+            'language' => config('language'),
             'success' => $status,
             'message' => $message,
             'data'    => $result,
