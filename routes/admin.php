@@ -120,7 +120,7 @@ Route::group(['middleware' => 'api', 'prefix' => 'v2/auth'], function ($router) 
     Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
 }); 
 
-Route::group(['middleware' => 'auth:api', 'prefix' => 'v2'], function ($router) {
+Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'], function ($router) {
     Route::post('listcategories', [CategoryController::class, 'listcategories']);
     Route::post('getCategory', [CategoryController::class, 'getCategory']);
     Route::post('addCategory', [CategoryController::class, 'addCategory']);
