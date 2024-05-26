@@ -19,6 +19,8 @@ use DB;
 use Carbon\Carbon;
 use Hash;
 use Illuminate\Support\Facades\Mail;
+use App\Models\AppVersion;
+use Illuminate\Support\Facades\Cache;
 
 class AuthController extends BaseController
 {
@@ -51,6 +53,8 @@ class AuthController extends BaseController
      */
     public function login(Request $request)
     {
+        config(['app_version' => Cache::has('app_version') ?  Cache::get('app_version')->version_number : AppVersion::latest()->first()->version_number]);
+
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string',
