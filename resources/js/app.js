@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import About from './pages/AboutUs';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import Terms from './pages/Terms';
 
 function App() {
     return (
@@ -14,6 +15,7 @@ function App() {
                     <Route exact path="/" element={<Home />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
+                    <Route path="/Terms" element={<Terms />} />
                 </Routes>
             </div>
         </Router>
