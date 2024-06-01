@@ -12,6 +12,7 @@ return [
         'verifyOtp',
         'updateEmail',
         'addAppVersion',
-        'isVerifiedEmail'
+        'isVerifiedEmail',
+        'addGuestQuery'
     ]
 ];

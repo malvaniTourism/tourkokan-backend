@@ -9,42 +9,42 @@ const Terms = () => {
         <div>
             <NavigationBar />
             <Container>
-            <div style={{textAlign: "justify"}}>
-                <h1>Privacy Policy for TourKokan</h1>
-                <p>TourKokan is committed to protecting the privacy of its users. This Privacy Policy governs the manner in which TourKokan collects, uses, maintains, and discloses information collected from users (each, a "User") of the TourKokan mobile application ("App").</p>
-
-                <h2>Information We Collect</h2>
-                <p>The App may collect certain personally identifiable information from Users in a variety of ways, including, but not limited to, when Users visit our App, register on the App, and in connection with other activities, services, features, or resources we make available on our App. Users may be asked for, as appropriate, name, email address, profile picture, and other relevant information. We will collect personal identification information from Users only if they voluntarily submit such information to us. Users can always refuse to supply personally identification information, except that it may prevent them from engaging in certain App-related activities.</p>
-
-                <h2>Usage Data</h2>
-                <p>We may also collect information that your browser sends whenever you visit our App ("Usage Data"). This Usage Data may include information such as your device's Internet Protocol ("IP") address, device type, device operating system version, the pages of our App that you visit, the time and date of your visit, the time spent on those pages, and other statistics.</p>
-
-                <h2>Use of Information</h2>
-                <p>TourKokan may collect and use Users' personal information for the following purposes:</p>
-                <ul>
-                    <li>To improve customer service: Information you provide helps us respond to your customer service requests and support needs more efficiently.</li>
-                    <li>To personalize user experience: We may use information in the aggregate to understand how our Users as a group use the services and resources provided on our App.</li>
-                    <li>To improve our App: We continually strive to improve our App offerings based on the information and feedback we receive from you.</li>
-                    <li>To send periodic emails: We may use the email address to respond to inquiries, questions, and/or other requests.</li>
-                </ul>
-
-                <h2>How We Protect Your Information</h2>
-                <p>We adopt appropriate data collection, storage, and processing practices and security measures to protect against unauthorized access, alteration, disclosure, or destruction of your personal information, username, password, transaction information, and data stored on our App.</p>
-
-                <h2>Sharing Your Personal Information</h2>
-                <p>We do not sell, trade, or rent Users' personal identification information to others. We may share generic aggregated demographic information not linked to any personal identification information regarding visitors and users with our business partners, trusted affiliates, and advertisers for the purposes outlined above.</p>
-
-                <h2>Changes to This Privacy Policy</h2>
-                <p>TourKokan has the discretion to update this privacy policy at any time. When we do, we will post a notification on the main page of our App. We encourage Users to frequently check this page for any changes to stay informed about how we are helping to protect the personal information we collect. You acknowledge and agree that it is your responsibility to review this privacy policy periodically and become aware of modifications.</p>
-
-                <h2>Your Acceptance of These Terms</h2>
-                <p>By using this App, you signify your acceptance of this policy. If you do not agree to this policy, please do not use our App. Your continued use of the App following the posting of changes to this policy will be deemed your acceptance of those changes.</p>
-
+                <h1>Terms and Conditions for TourKokan</h1>
+                <p>Welcome to TourKokan! These terms and conditions outline the rules and regulations for the use of the TourKokan mobile application ("App"). By accessing this App, we assume you accept these terms and conditions. Do not continue to use TourKokan if you do not agree to take all of the terms and conditions stated on this page.</p>
+                <h2>License</h2>
+                <p>Unless otherwise stated, TourKokan and/or its licensors own the intellectual property rights for all material on TourKokan. All intellectual property rights are reserved. You may access this from TourKokan for your own personal use subjected to restrictions set in these terms and conditions.</p>
+                <h2>User Accounts</h2>
+                <p>When you create an account with us, you must provide us with information that is accurate, complete, and current at all times. Failure to do so constitutes a breach of the Terms, which may result in immediate termination of your account on our App.</p>
+                <h2>Prohibited Activities</h2>
+                <p>You are specifically restricted from all of the following:
+                    <ul>
+                        <li>Publishing any App material in any other media without permission.</li>
+                        <li>Selling, sublicensing, and/or otherwise commercializing any App material.</li>
+                        <li>Publicly performing and/or showing any App material without permission.</li>
+                        <li>Using this App in any way that is or may be damaging to this App.</li>
+                        <li>Using this App in any way that impacts user access to this App.</li>
+                        <li>Using this App contrary to applicable laws and regulations, or in any way that may cause harm to the App, or to any person or business entity.</li>
+                        <li>Engaging in any data mining, data harvesting, data extracting, or any other similar activity in relation to this App.</li>
+                        <li>Using this App to engage in any advertising or marketing without permission.</li>
+                    </ul>
+                </p>
+                <h2>Limitation of Liability</h2>
+                <p>In no event shall TourKokan, nor any of its officers, directors, and employees, be held liable for anything arising out of or in any way connected with your use of this App whether such liability is under contract. TourKokan, including its officers, directors, and employees, shall not be held liable for any indirect, consequential, or special liability arising out of or in any way related to your use of this App.</p>
+                <h2>Indemnification</h2>
+                <p>You hereby indemnify to the fullest extent TourKokan from and against any and/or all liabilities, costs, demands, causes of action, damages, and expenses arising in any way related to your breach of any of the provisions of these Terms.</p>
+                <h2>Severability</h2>
+                <p>If any provision of these Terms is found to be invalid under any applicable law, such provisions shall be deleted without affecting the remaining provisions herein.</p>
+                <h2>Variation of Terms</h2>
+                <p>TourKokan is permitted to revise these Terms at any time as it sees fit, and by using this App you are expected to review these Terms on a regular basis.</p>
+                <h2>Assignment</h2>
+                <p>The TourKokan is allowed to assign, transfer, and subcontract its rights and/or obligations under these Terms without any notification. However, you are not allowed to assign, transfer, or subcontract any of your rights and/or obligations under these Terms.</p>
+                <h2>Entire Agreement</h2>
+                <p>These Terms constitute the entire agreement between TourKokan and you in relation to your use of this App, and supersede all prior agreements and understandings.</p>
+                <h2>Governing Law & Jurisdiction</h2>
+                <p>These Terms will be governed by and interpreted in accordance with the laws of the State/Country, and you submit to the non-exclusive jurisdiction of the state and federal courts located in State/Country for the resolution of any disputes.</p>
                 <h2>Contact Us</h2>
-                <p>If you have any questions about this Privacy Policy, the practices of this App, or your dealings with this App, please contact us at tourkokan.com.</p>
-
+                <p>If you have any questions about these Terms, please contact us at <a href="mailto:support@tourkokan.com">support@tourkokan.com</a>.</p>
                 <p>This document was last updated on 06th April 2024.</p>
-            </div>
             </Container>
             <Footer />
         </div>

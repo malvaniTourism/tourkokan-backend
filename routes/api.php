@@ -177,8 +177,9 @@ use App\Http\Controllers\User\V2\{
 // New Structure API
 
 
-Route::group(['middleware' => 'api', 'prefix' => 'v2'], function ($router) {
+Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2'], function ($router) {
     Route::get('roleDD', [RolesController::class, 'roleDD']);
+    Route::post('addGuestQuery', [ContactController::class, 'addQuery']);
 });
 
 Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2/auth'], function ($router) {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Button, Container } from 'react-bootstrap';
+import { Form, Button, Container, Modal } from 'react-bootstrap';
 import './styles.css'
 
 const Contact = () => {
@@ -7,18 +7,45 @@ const Contact = () => {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [message, setMessage] = useState('');
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [showFailureModal, setShowFailureModal] = useState(false);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Handle form submission
-        console.log({ name, email, message });
-        // Here you would typically send the data to a backend endpoint
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/v2/addGuestQuery', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, email, phone, message })
+            });
+
+            if (response.ok) {
+                // Handle success
+                  // Reset form fields
+                  setName('');
+                  setEmail('');
+                  setPhone('');
+                  setMessage('');
+  
+                setShowSuccessModal(true);
+            } else {
+                // Handle failure
+                setShowFailureModal(true);
+            }
+        } catch (error) {
+            // Handle error
+            console.error('Error:', error);
+        }
     };
+
     return (
         <Container>
-            <div style={{ borderRadius: 15, padding: 10, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-                <h1 style={{color: "#fff"}}>Contact Us</h1>
-                <Form onSubmit={handleSubmit} style={{display: "flex", flexDirection: "column", justifyContent: "center"}}>
+            <div style={{ borderRadius: 15, padding: 10, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+                <h1 style={{ color: "#fff" }}>Contact Us</h1>
+                <Form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
                     <Form.Group controlId="formName">
                         <Form.Label>Name</Form.Label>
                         <Form.Control
@@ -48,7 +75,7 @@ const Contact = () => {
                             type="phone"
                             placeholder="Enter your phone number"
                             value={phone}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={(e) => setPhone(e.target.value)}
                         />
                     </Form.Group>
 
@@ -64,11 +91,37 @@ const Contact = () => {
                         />
                     </Form.Group>
 
-                    <Button variant="primary" type="submit" style={{marginTop: 20}}>
+                    <Button variant="primary" type="submit" style={{ marginTop: 20 }}>
                         Submit
                     </Button>
                 </Form>
             </div>
+
+            {/* Success Modal */}
+            <Modal show={showSuccessModal} onHide={() => setShowSuccessModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Success</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>Your message has been successfully sent.</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowSuccessModal(false)}>
+                        Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Failure Modal */}
+            <Modal show={showFailureModal} onHide={() => setShowFailureModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Error</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>Failed to send your message. Please try again later.</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowFailureModal(false)}>
+                        Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </Container>
     )
 }

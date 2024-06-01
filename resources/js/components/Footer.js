@@ -31,13 +31,13 @@ const Footer = () => {
                         <div class="col-lg-4">
 
                             <h4>About us</h4>
-                            <p style={{width: "90%"}}>Welcome to TourKokan, your ultimate guide to exploring the hidden gems of Kokan! Our app showcasing unique places and local attractions. Discover the rich culture, historical sites, and natural beauty of Kokan through our curated content. Whether you're seeking adventure activities, cultural experiences, or serene getaways, TourKokan is here to help you plan the perfect trip. Join us and uncover the authentic charm of Kokan!</p>
+                            <p style={{ width: "90%" }}>Welcome to TourKokan, your ultimate guide to exploring the hidden gems of Kokan! Our app showcasing unique places and local attractions. Discover the rich culture, historical sites, and natural beauty of Kokan through our curated content. Whether you're seeking adventure activities, cultural experiences, or serene getaways, TourKokan is here to help you plan the perfect trip. Join us and uncover the authentic charm of Kokan!</p>
 
                         </div>
 
                         <div class="col-md-4">
                             <h4>Information</h4>
-                            <ul class="address1" style={{marginLeft: "-17%"}}>
+                            <ul class="address1" style={{ marginLeft: "-17%" }}>
                                 <li><HiOutlineLocationMarker /> 402, Sai Anand CHS, Gopinath Chawk, Dombivali (w), &nbsp; 421202. </li>
                                 <li><BsEnvelopeAt /><a href="mailto:support@tourkokan.com"> support@tourkokan.com</a></li>
                                 <li><FiPhoneCall /> <a href="tel:8454029747"> 8454029747</a></li>
@@ -47,9 +47,17 @@ const Footer = () => {
                         <div class="col-md-4">
                             <h4>Follow us</h4>
                             <ul class="social-icon">
-                                <li><ImFacebook2 size={20}/></li>
-                                <li><FaInstagramSquare size={22}/></li>
-                                <li><BsLinkedin size={20}/></li>
+                                <a href="https://www.facebook.com/people/Tourkokan/61560289596939/?mibextid=LQQJ4d" style={{ color: 'black' }}>
+                                    <li>
+                                        <ImFacebook2 size={20} />
+                                    </li>
+                                </a>
+                                <a href="https://www.instagram.com/tour_kokan/" style={{ color: 'black' }}>
+                                    <li>
+                                        <FaInstagramSquare size={22} />
+                                    </li>
+                                </a>
+                                {/* <a href=""> <li><BsLinkedin size={20} /></li></a> */}
                             </ul>
                         </div>
 
@@ -60,8 +68,7 @@ const Footer = () => {
                 <div class="container">
                     <div class="row">
                         <div class="col-sm-5">
-                            <p class="copyright">Designed & Developed By Probyte Solution LLP.
-                          </p>
+                            {/* <p class="copyright">Designed & Developed By Probyte Solution LLP.</p> */}
                         </div>
                         <div class="col-sm-7">
                             <ul>

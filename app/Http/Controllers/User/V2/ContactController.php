@@ -44,7 +44,7 @@ class ContactController extends BaseController
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|between:2,100',
             'email' => 'sometimes|string|email|between:2,200',
-            'phone' => 'nullable|numeric',
+            'phone' => 'sometimes|nullable|numeric',
             'message' => 'required',
             'contactable_type' => 'sometimes|required_with:contactable_id|string',    //query for products and other
             'contactable_id' => 'sometimes|required_with:contactable_type|numeric',
@@ -55,7 +55,7 @@ class ContactController extends BaseController
         }
 
         $contact = array(
-            'user_id' => config('user_id'),
+            'user_id' => config('user_id') == null ? config('user_id') : null,
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
