@@ -9,12 +9,13 @@ const Contact = () => {
     const [message, setMessage] = useState('');
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showFailureModal, setShowFailureModal] = useState(false);
+    const appUrl = process.env.APP_URL; // Accessing the base URL from environment variables
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/v2/addGuestQuery', {
+            const response = await fetch(`${appUrl}/api/v2/addGuestQuery`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

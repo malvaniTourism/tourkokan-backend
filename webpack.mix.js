@@ -14,3 +14,8 @@ const mix = require('laravel-mix');
 mix.js('resources/js/app.js', 'public/js')
     .react()
     .sass('resources/sass/app.scss', 'public/css');
+
+// Set environment variables for use in the frontend
+mix.define({
+    'process.env.APP_URL': JSON.stringify(process.env.APP_URL || 'http://localhost:8000'),
+});
