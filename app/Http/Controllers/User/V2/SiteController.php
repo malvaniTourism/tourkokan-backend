@@ -45,6 +45,7 @@ class SiteController extends BaseController
      */
     public function getSite(Request $request)    //city
     {
+        $user_id = config('user_id');
         // there is bug in this api need to fix if this api is hit and id passed of any other category type site data will be returned.
         // need to restrict this by adding validation or condition
         $validator = Validator::make($request->all(), [
@@ -79,6 +80,13 @@ class SiteController extends BaseController
                 },
                 'photos'
             ])
+            ->selectSub(function ($query) use ($user_id) {
+                $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
+                    ->from('favourites')
+                    ->whereColumn('sites.id', 'favourites.favouritable_id')
+                    ->where('favourites.favouritable_type', Site::class)
+                    ->where('favourites.user_id', $user_id);
+            }, 'is_favorite')
             ->latest()
             ->limit(5)
             ->find($request->id);
