@@ -15,7 +15,7 @@ function App() {
                     <Route exact path="/" element={<Home />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
-                    <Route path="/Terms" element={<Terms />} />
+                    <Route path="/Terms/:app?" element={<Terms />} />
                 </Routes>
             </div>
         </Router>
