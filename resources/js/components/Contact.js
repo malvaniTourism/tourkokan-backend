@@ -15,6 +15,7 @@ const Contact = () => {
         e.preventDefault();
 
         try {
+            console.log(appUrl);
             const response = await fetch(`${appUrl}/api/v2/addGuestQuery`, {
                 method: 'POST',
                 headers: {
