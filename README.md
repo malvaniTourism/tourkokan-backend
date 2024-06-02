@@ -85,3 +85,12 @@ blog: https://medium.com/@arvind.mailto/how-to-create-custom-routes-for-protecte
 * [ ] Bus Seeder (Low Priority) Excel
 * [X] Routes Seeder Excel
 * [ ] Routes Stops Logical
+
+
+For frontend react+laravel
+    changes in .env  (each branch dev/test/uat/prod)
+        optimize:clear
+        npn run watch
+        git add .
+        git commit -m ""
+        git push
