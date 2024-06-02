@@ -9,7 +9,7 @@ const Contact = () => {
     const [message, setMessage] = useState('');
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showFailureModal, setShowFailureModal] = useState(false);
-    const appUrl = process.env.APP_URL; // Accessing the base URL from environment variables
+    const appUrl = process.env.MIX_APP_URL; // Accessing the base URL from environment variables
 
     const handleSubmit = async (e) => {
         e.preventDefault();

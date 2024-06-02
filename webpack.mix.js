@@ -17,5 +17,5 @@ mix.js('resources/js/app.js', 'public/js')
 
 // Set environment variables for use in the frontend
 mix.define({
-    'process.env.APP_URL': JSON.stringify(process.env.APP_URL || 'http://localhost:8000'),
+    'process.env.MIX_APP_URL': JSON.stringify(process.env.MIX_APP_URL || 'http://localhost:8000'),
 });
