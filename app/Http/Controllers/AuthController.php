@@ -21,6 +21,7 @@ use Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Models\AppVersion;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\Rule;
 
 class AuthController extends BaseController
 {
@@ -239,7 +240,12 @@ class AuthController extends BaseController
                 'password' => 'sometimes|nullable|string|confirmed|min:6',
                 'profile_picture' => 'sometimes|nullable|string',
                 'language' => 'sometimes|required|in:mr,en',
-                'mobile' => 'sometimes|required|unique:users,mobile|digits:10',
+                'mobile' => [
+                    'sometimes',
+                    'required',
+                    'digits:10',
+                    Rule::unique('users', 'mobile')->ignore($user->id)
+                ],
             ]);
 
             if ($validator->fails()) {
