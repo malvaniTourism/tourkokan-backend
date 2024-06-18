@@ -107,6 +107,9 @@ class LandingPageController extends BaseController
             'destinationPlace.category:id,name,icon',
             'busType:id,type,logo,meta_data'
         ])->whereHas('routeStops', function ($query) use ($request) {
+
+            logger(config('user')->address());
+            // write code to get user city
             if ($request->has('site_id')) {
                 $query->where('site_id', $request->site_id);
             }

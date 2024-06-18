@@ -65,7 +65,7 @@ class Site extends Model
     {
         $language = config('language');
 
-        return $language === 'en' ? $value :  $this->mr_name;
+        return $language === 'en' ? $value :  ($this->mr_name == "" ? $value :  $this->mr_name);
     }
 
     public function getMrNameAttribute($value)
