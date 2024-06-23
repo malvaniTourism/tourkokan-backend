@@ -65,4 +65,14 @@ class Wallet extends Model
     {
         return $this->belongsTo(User::class, 'referrer_id');
     }
+
+    /**
+     * Get the users that refers this user
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function bonusType()
+    {
+        return $this->belongsTo(BonusTypes::class, 'bonus_id');
+    }
 }

@@ -19,7 +19,7 @@ class BonusTypeSeeder extends Seeder
                 'name' => 'Joining Bonus coins',
                 'code' => 'joining_bonus_coins',
                 'description' =>  'User will get this bonus on first time of registartion in tourkokan.',
-                'amount' => '500'
+                'amount' => '1000'
             ],
             [
                 'name' => 'Referral Bonus coins',

@@ -448,7 +448,7 @@ class AuthController extends BaseController
     {
         $user = auth()->user();
         
-        $user->load(['favourites.favouritable', 'rating', 'commentsOfUser', 'commentsOnUser', 'contacts', 'addresses', 'wallets']);
+        $user->load(['favourites.favouritable', 'rating', 'commentsOfUser', 'commentsOnUser', 'contacts', 'addresses']);
 
         // Calculate the sum of wallet amounts
         $walletsSum = $user->wallets()->sum('amount');
