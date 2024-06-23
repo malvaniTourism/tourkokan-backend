@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\AccomodationCategoryController;
 use App\Http\Controllers\Admin\V2\BannerController;
 use App\Http\Controllers\Admin\BusTypeController;
 use App\Http\Controllers\Admin\DropDownController;
+use App\Http\Controllers\Admin\V2\BonusTypesController;
 use App\Http\Controllers\Admin\V2\CategoryController;
 use App\Http\Controllers\Admin\V2\SiteController;
 
@@ -144,4 +145,12 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
     Route::post('getBanner', [BannerController::class, 'getBanner']);
     Route::post('updateBanner', [BannerController::class, 'updateBanner']);
     Route::post('deleteBanner', [BannerController::class, 'deleteBanner']);
+
+    Route::post('addBonusType', [BonusTypesController::class, 'addBonusType']);
+    Route::post('listBonusTypes', [BonusTypesController::class, 'listBonusTypes']);
+    Route::post('getBonusType', [BonusTypesController::class, 'getBonusType']);
+    Route::post('deleteBonusType', [BonusTypesController::class, 'deleteBonusType']);
+    Route::post('updateBonusType', [BonusTypesController::class, 'updateBonusType']);
+
+    
 });

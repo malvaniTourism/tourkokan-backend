@@ -20,6 +20,8 @@ use Carbon\Carbon;
 use Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Models\AppVersion;
+use App\Models\BonusTypes;
+use App\Models\Wallet;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
@@ -131,7 +133,11 @@ class AuthController extends BaseController
                     // 'profile_picture' => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
                     'profile_picture' => 'nullable|string',
                     'latitude' => 'sometimes|required_with:longitude',
-                    'longitude' => 'sometimes|required_with:latitude'
+                    'longitude' => 'sometimes|required_with:latitude',
+                    'referral_code' => 'sometimes|nullable|exists:users,uid',
+                ],
+                [
+                    'referral_code.exists' => 'Invalid Referral Code...!'
                 ]
             );
 
@@ -192,9 +198,52 @@ class AuthController extends BaseController
                 $input['role_id'] = $roles->id;
             }
 
+            #considering uid as coupon code
             $input['uid'] = Str::random(10);
 
+            $joiningBonus = BonusTypes::where(['code' => 'joining_bonus_coins'])->first();
+
+            if (!$joiningBonus) {
+                return $this->sendError('Something went wrong', '', 200);
+            }
+
             $user = User::create($input);
+
+            $referrer = [];
+
+            if (isValidReturn($input, 'referral_code')) {
+                $referrer = User::where('uid', $input['referral_code'])->first();
+
+                if (!$referrer) {
+                    return $this->sendError('Invalid Referral Code...!', '', 200);
+                }
+
+                $referralBonus = BonusTypes::where(['code' => 'referral_bonus_coins'])->first();
+
+                if (!$referralBonus) {
+                    return $this->sendError('Something went wrong', '', 200);
+                }
+
+                $referrerWallet = new Wallet([
+                    'user_id' => $referrer->id,
+                    'bonus_id' => $referralBonus->id,
+                    'amount' => $referralBonus->amount,
+                    'description' => "Referral bonus on successful registration of a new user",
+                    'referee_id' => $user->id
+                ]);
+
+                $referrer->wallets()->save($referrerWallet);
+            }
+
+            $newUserWallet = new Wallet([
+                'user_id' => $user->id,
+                'bonus_id' => $joiningBonus->id,
+                'amount' => $joiningBonus->amount,
+                'description' => "Joining bonus on successfull registration",
+                'referrer_id' => isValidReturn($referrer, 'id')
+            ]);
+
+            $user->wallets()->save($newUserWallet);
 
             $user = User::select('id', 'role_id', 'name', 'email', 'isVerified', 'profile_picture', 'gender', 'uid')->find($user->id);
 
@@ -398,7 +447,14 @@ class AuthController extends BaseController
     public function userProfile()
     {
         $user = auth()->user();
-        $user->load(['favourites.favouritable', 'rating', 'commentsOfUser', 'commentsOnUser', 'contacts', 'addresses']);
+        
+        $user->load(['favourites.favouritable', 'rating', 'commentsOfUser', 'commentsOnUser', 'contacts', 'addresses', 'wallets']);
+
+        // Calculate the sum of wallet amounts
+        $walletsSum = $user->wallets()->sum('amount');
+
+        // Attach the sum to the user model
+        $user->wallets_sum_amount = $walletsSum;
 
         return $this->sendResponse($user, 'User Fetched..!');
     }
