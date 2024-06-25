@@ -1,20 +1,28 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\User\V2;
 
 use App\Models\Gallery;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\BaseController;
 
-class GalleryController extends Controller
+class GalleryController extends BaseController
 {
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function getGallery()
     {
-        //
+        $gallery = Gallery::with([
+            'galleryable:id,name,parent_id,category_id',
+            'galleryable.category:id,name,code,parent_id'
+        ])
+            ->paginate(10);
+
+        return $this->sendResponse($gallery, 'Gallery images successfully Retrieved...!');
     }
 
     /**

@@ -35,7 +35,10 @@ class Gallery extends Model
      *
      * @var array
      */
-    protected $casts = [];
+    protected $casts = [
+        'is_url' => 'boolean',
+        'status' => 'boolean'
+    ];
 
     /**
      * Get all of the models that own comments.

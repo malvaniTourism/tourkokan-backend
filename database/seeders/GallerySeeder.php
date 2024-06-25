@@ -20,8 +20,7 @@ class GallerySeeder extends Seeder
      */
     public function run()
     {
-        $cities = Site::where('category_id', 3)
-            ->get();
+        $cities = Site::where('category_id', 3)->get();
 
         foreach ($cities as $key => $value) {
 
@@ -44,8 +43,6 @@ class GallerySeeder extends Seeder
 
             // Iterate through the files and print their paths
             foreach ($files as $file) {
-                // logger($file->getFilename());
-
                 $exist = Gallery::where('title',  pathinfo($file->getFilename(), PATHINFO_FILENAME))->first();
 
                 if (!$exist) {
@@ -66,62 +63,9 @@ class GallerySeeder extends Seeder
                     );
                 }
             }
-            logger($insertArr);
             if (!empty($insertArr)) {
                 Gallery::insert($insertArr);
-                logger("insert success");
             }
-            logger("=======================");
         }
-
-
-
-        // $array = array(
-        //     [
-        //         'name' => 'Joining Bonus coins',
-        //         'code' => 'joining_bonus_coins',
-        //         'description' =>  'User will get this bonus on first time of registartion in tourkokan.',
-        //         'amount' => '1000'
-        //     ],
-        //     [
-        //         'name' => 'Referral Bonus coins',
-        //         'code' => 'referral_bonus_coins',
-        //         'description' =>  'User will get this bonus on refer tourkokan to any of his friend or relative and of successfull registartion of user in tourkokan.',
-        //         'amount' => '500'
-        //     ]
-        // );
-
-        // $newRecords = [];
-
-        // foreach ($array as $value) {
-        //     $exist = Gallery::where('name', $value['name'])->where('code', $value['code'])->first();
-
-        //     if (!$exist) {
-        //         if (isValidReturn($value, 'path')) {
-        //             $sourceFilePath = public_path('assets/bustypelogo' . $value['path']);
-        //             $destinationFilePath = config('constants.upload_path.busType') . '/' . $value['type'] . $value['path'];
-
-        //             // Copy the file from the public folder to the storage/app folder
-        //             Storage::put($destinationFilePath, file_get_contents($sourceFilePath));
-
-        //             // Optionally, you can also delete the original file from the public folder
-        //             // unlink($sourceFilePath);
-
-        //             // Get the downloadable URL for the file
-
-        //             $value['logo'] = Storage::url($destinationFilePath);
-
-        //             Log::info("FILE STORED" . $value['logo']);
-        //         }
-
-        //         unset($value['path']);
-
-        //         $newRecords[] = $value;
-        //     }
-        // }
-
-        // if (!empty($newRecords)) {
-        //     Gallery::insert($newRecords);
-        // }
     }
 }

@@ -35,6 +35,7 @@ use App\Http\Controllers\User\V2\{
     CommentController,
     ContactController,
     FavouriteController,
+    GalleryController,
     RatingController,
     RolesController,
     RouteController,
@@ -231,4 +232,7 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('getComment', [CommentController::class, 'getComment']);
     Route::post('updateComment', [CommentController::class, 'updateComment']);
     Route::post('deleteComment', [CommentController::class, 'deleteComment']);
+
+    Route::post('getGallery', [GalleryController::class, 'getGallery']);
+    
 });
