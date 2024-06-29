@@ -44,7 +44,7 @@ class GalleryController extends BaseController
             $gallery = $gallery->where('title', 'like', '%' . $search . '%');
         }
 
-        $gallery = $gallery->paginate(10);
+        $gallery = $gallery->paginate(isValidReturn($request, 'per_page', 10));
 
         return $this->sendResponse($gallery, 'Gallery images successfully Retrieved...!');
     }
