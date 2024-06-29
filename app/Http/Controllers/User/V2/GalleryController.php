@@ -14,13 +14,37 @@ class GalleryController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function getGallery()
+    public function getGallery(Request $request)
     {
+        $user = auth()->user();
+
+        $validator = Validator::make($request->all(), [
+            'search' => 'sometimes|nullable|string|alpha|max:255',
+            'category' => 'nullable|exists:categories,code'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        $search = $request->input('search');
+        $category = $request->input('category');
+
         $gallery = Gallery::with([
             'galleryable:id,name,parent_id,category_id',
             'galleryable.category:id,name,code,parent_id'
-        ])
-            ->paginate(10);
+        ]);
+
+        if ($request->has('search') && $request->has('category') && !empty($category)) {
+            $gallery = $gallery->whereHas('galleryable.category', function ($query) use ($category) {
+                $query->where('code', $category);
+            })
+                ->where('title', 'like',  '%' . $search . '%');
+        } elseif ($request->has('search')) {
+            $gallery = $gallery->where('title', 'like', '%' . $search . '%');
+        }
+
+        $gallery = $gallery->paginate(10);
 
         return $this->sendResponse($gallery, 'Gallery images successfully Retrieved...!');
     }
