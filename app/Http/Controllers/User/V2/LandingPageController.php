@@ -60,22 +60,58 @@ class LandingPageController extends BaseController
             ->get();
 
         #Top famouse cities
-        $cities = Site::select(
-            'id',
-            'name',
-            'mr_name',
-            'tag_line',
-            'logo',
-            'icon',
-            'image'
-        )
-            ->withAvg("rating", 'rate')
-            // ->having('rating_avg_rate', '>', 3)
-            ->withCount('photos', 'comment')
-            ->with(['category:id,name,code,parent_id,icon,status,is_hot_category'])
-            ->whereHas('category', function ($query) {
-                $query->where('code', 'city');
-            })
+        // $cities = Site::select(
+        //     'id',
+        //     'name',
+        //     'mr_name',
+        //     'tag_line',
+        //     'logo',
+        //     'icon',
+        //     'image'
+        // )
+        //     ->withAvg("rating", 'rate')
+        //     // ->having('rating_avg_rate', '>', 3)
+        //     ->withCount('photos', 'comment')
+        //     ->with(['category:id,name,code,parent_id,icon,status,is_hot_category'])
+        //     ->whereHas('category', function ($query) {
+        //         $query->where('code', 'city');
+        //     })
+        //     ->selectSub(function ($query) {
+        //         $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
+        //             ->from('favourites')
+        //             ->whereColumn('sites.id', 'favourites.favouritable_id')
+        //             ->where('favourites.favouritable_type', Site::class)
+        //             ->where('favourites.user_id', config('user_id'));
+        //     }, 'is_favorite')
+        //     ->latest()
+        //     // ->limit(8)
+        //     ->get();
+
+
+        $cities = Site::withCount(['sites', 'photos', 'comment'])
+            ->withAvg('rating', 'rate')
+            ->with([
+                'category:id,name,code,parent_id,icon,status,is_hot_category',
+                'sites' => function ($query) {
+                    $query->with('category:id,name,code,parent_id,icon,status,is_hot_category')
+                        ->limit(5);
+                },
+                'comment' => function ($query) {
+                    $query->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
+                        ->limit(5);
+                },
+                'comment.comments' => function ($query) {
+                    $query->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
+                        ->limit(5);
+                },
+                'comment.users' => function ($query) {
+                    $query->select('id', 'name', 'email', 'profile_picture');
+                },
+                'comment.comments.users' => function ($query) {
+                    $query->select('id', 'name', 'email', 'profile_picture');
+                },
+                'photos'
+            ])
             ->selectSub(function ($query) {
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
@@ -84,10 +120,8 @@ class LandingPageController extends BaseController
                     ->where('favourites.user_id', config('user_id'));
             }, 'is_favorite')
             ->latest()
-            // ->limit(8)
+            ->limit(5)
             ->get();
-
-
         // #Bus Stops / Depos
         // $stops = Place::withAvg("rating", 'rate')
         //     ->select('id', 'name', 'city_id', 'parent_id', 'place_category_id', 'image_url', 'bg_image_url', 'visitors_count')
