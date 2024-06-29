@@ -112,6 +112,9 @@ class LandingPageController extends BaseController
                 },
                 'photos'
             ])
+            ->whereHas('category', function ($query) {
+                        $query->where('code', 'city');
+                    })
             ->selectSub(function ($query) {
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
