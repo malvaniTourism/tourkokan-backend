@@ -2,9 +2,13 @@
 
 namespace App\Console\Commands;
 
+use App\Exports\CrawlGoogleMapDownloadPlace;
 use App\Models\Category;
 use App\Models\Site;
 use Illuminate\Console\Command;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class FetchGoogleMapsPlaces extends Command
 {
@@ -20,7 +24,7 @@ class FetchGoogleMapsPlaces extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Command is used for fetching all places by categories in each city';
 
     /**
      * Create a new command instance.
@@ -39,48 +43,97 @@ class FetchGoogleMapsPlaces extends Command
      */
     public function handle()
     {
-
-        // Step 1: Fetch the parent category with code 'destination'
-        $destinationCategory = Category::where('code', 'destination')->first();
-
-        // Step 2: Get the IDs of the destination category and its subcategories
-        $excludeIds = collect();
-        if ($destinationCategory) {
-            $excludeIds->push($destinationCategory->id);
-            $subCategoryIds = Category::where('parent_id', $destinationCategory->id)->pluck('id');
-            $excludeIds = $excludeIds->merge($subCategoryIds);
-        }
-
         $cities = Site::where('category_id', 3)->get();
 
         foreach ($cities as $key => $value) {
+            Log::info("city " . $value['name']);
+            if ($value['name'] != "Devgad") {
+               continue;
+            }
             $categories = Category::select(['name', 'parent_id', 'status'])
-            ->whereNull('parent_id')
-                ->whereNotIn('id', $excludeIds)
+                ->whereNotNull('parent_id')
                 ->whereStatus(true)
                 ->get();
 
             foreach ($categories as $cateKey => $cateValue) {
+                Log::info("category " . $cateValue['name']);
+
                 $method = "GET";
 
                 $payload = array(
                     "key" => env('GOOGLE_MAPS_GEOCODING_API_KEY'),
-                    "query" => $cateValue['name']. " in " . $value['name'],
-                    "type" => "tourist_attraction,lodging"
+                    "query" => $cateValue['name'] . " in " . $value['name'],
+                    'radius' => 5000,
+                    // "type" => "tourist_attraction"
                 );
 
                 $url = "https://maps.googleapis.com/maps/api/place/textsearch/json";
 
-                // logger([$method, $url, $payload, $cateValue->toArray()]);
-                // $result = callExternalAPI($method, $url, $payload);
+                $newData = $this->fetchAndStoreData($method, $url, $payload);
 
-                // logger($result);
-                if ($cateKey == 1) {
-                    # code...
-                    break;
+                // Store any remaining data
+                if (!empty($newData)) {
+                    $this->storeDataInExcel($newData);
                 }
             }
-            break;
         }
+    }
+
+    function storeDataInExcel($data)
+    {
+        $fileName = time() . '_placesfromgoogle.xlsx';
+        Excel::store(new CrawlGoogleMapDownloadPlace($data), $fileName, 'local');
+    }
+
+    public function fetchAndStoreData($method, $url, $payload, $data = [], $pageToken = null)
+    {
+        Log::info("inside fetch and store method");
+
+        if ($pageToken) {
+            Log::info("pagination present");
+            $payload['pagetoken'] = $pageToken;
+            sleep(2); // Pause to comply with the API requirement for subsequent requests
+        }
+
+        Log::info(["payload" => $payload, "url" => $url]);
+
+        $response = callExternalAPI($method, $url, $payload);
+
+        if ($response && $response['status'] === 'OK') {
+            foreach ($response['results'] as $result) {
+                $location = isValidReturn($result['geometry'], 'location');
+                $data[] = [
+                    'business_status' => isValidReturn($result, 'business_status'),
+                    'formatted_address' => isValidReturn($result, 'formatted_address'),
+                    'latitude' => isValidReturn($location, 'lat'),
+                    'longitude' => isValidReturn($location, 'lng'),
+                    'name' => isValidReturn($result, 'name'),
+                    'place_id' => isValidReturn($result, 'place_id'),
+                    'rating' => isValidReturn($result, 'rating'),
+                    'reference' => isValidReturn($result, 'reference'),
+                    'types' => json_encode(isValidReturn($result, 'types')),
+                    'user_ratings_total' => isValidReturn($result, 'user_ratings_total'),
+                    'viewport' => json_encode(isValidReturn($result, 'geometry')),
+                    'photos' => json_encode(isValidReturn($result, 'photos')),
+                    'payload' => $payload
+                ];
+
+                // Store the data in chunks to prevent memory overflow
+                if (count($data) >= 1000) {
+                    $this->storeDataInExcel($data);
+                    $data = []; // Reset data array after storing
+                }
+            }
+
+            // Check if there is a next_page_token and call the function recursively
+            if (isset($response['next_page_token'])) {
+                Log::info("Next page recursive call done.");
+                Log::info(["Next page token " => $response['next_page_token']]);
+
+                $data = $this->fetchAndStoreData($method, $url, $payload, $data, $response['next_page_token']);
+            }
+        }
+
+        return $data;
     }
 }
