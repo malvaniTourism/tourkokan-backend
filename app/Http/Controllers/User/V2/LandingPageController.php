@@ -111,7 +111,7 @@ class LandingPageController extends BaseController
         ]);
 
         foreach ($cities as $city) {
-            $city->setRelation('sites', $city->sites()->with('category:id,name,code,parent_id,icon,status,is_hot_category')->limit(5)->get());
+            $city->setRelation('sites', $city->sites()->select('id', 'name', 'parent_id', 'category_id')->with('category:id,name,code,parent_id,icon,status,is_hot_category')->limit(5)->get());
             $city->setRelation('gallery', $city->gallery()->limit(5)->get());
 
             $city->setRelation('comment', $city->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5)->get()->each(function ($comment) {
