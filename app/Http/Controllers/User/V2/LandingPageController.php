@@ -53,8 +53,12 @@ class LandingPageController extends BaseController
             ->limit(5)
             ->get();
 
-        #Services categories
-        $categories = Category::whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
+        #categories
+        $categories = Category::with(['subCategories:id,name,code,parent_id,icon,is_hot_category'])
+            ->select('*')
+            ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
+            ->whereNull('parent_id')
+            ->whereStatus(true)
             ->latest()
             ->limit(8)
             ->get();
@@ -86,32 +90,8 @@ class LandingPageController extends BaseController
         //     ->latest()
         //     // ->limit(8)
         //     ->get();
-
-
         $cities = Site::withCount(['sites', 'photos', 'comment'])
             ->withAvg('rating', 'rate')
-            ->with([
-                'category:id,name,code,parent_id,icon,status,is_hot_category',
-                'sites' => function ($query) {
-                    $query->with('category:id,name,code,parent_id,icon,status,is_hot_category')
-                        ->limit(5);
-                },
-                'comment' => function ($query) {
-                    $query->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
-                        ->limit(5);
-                },
-                'comment.comments' => function ($query) {
-                    $query->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
-                        ->limit(5);
-                },
-                'comment.users' => function ($query) {
-                    $query->select('id', 'name', 'email', 'profile_picture');
-                },
-                'comment.comments.users' => function ($query) {
-                    $query->select('id', 'name', 'email', 'profile_picture');
-                },
-                'photos'
-            ])
             ->whereHas('category', function ($query) {
                 $query->where('code', 'city');
             })
@@ -125,15 +105,24 @@ class LandingPageController extends BaseController
             ->latest()
             ->limit(5)
             ->get();
-        // #Bus Stops / Depos
-        // $stops = Place::withAvg("rating", 'rate')
-        //     ->select('id', 'name', 'city_id', 'parent_id', 'place_category_id', 'image_url', 'bg_image_url', 'visitors_count')
-        //     ->orWhere('visitors_count', '>=', 5)
-        //     ->whereIn('place_category_id', [3, 4])
-        //     ->latest()
-        //     ->limit(5)
-        //     ->get();
 
+        $cities->load([
+            'category:id,name,code,parent_id,icon,status,is_hot_category'
+        ]);
+
+        foreach ($cities as $city) {
+            $city->setRelation('sites', $city->sites()->with('category:id,name,code,parent_id,icon,status,is_hot_category')->limit(5)->get());
+            $city->setRelation('gallery', $city->gallery()->limit(5)->get());
+
+            $city->setRelation('comment', $city->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5)->get()->each(function ($comment) {
+                $comment->setRelation('comments', $comment->comments()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5)->get()->each(function ($reply) {
+                    $reply->setRelation('users', $reply->users()->select('id', 'name', 'email', 'profile_picture')->get());
+                }));
+                $comment->setRelation('users', $comment->users()->select('id', 'name', 'email', 'profile_picture')->get());
+            }));
+        }
+
+        #Routes
         $routes = Route::with([
             'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
             'routeStops.site:id,name,mr_name,category_id',

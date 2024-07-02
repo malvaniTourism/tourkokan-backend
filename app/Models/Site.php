@@ -162,4 +162,15 @@ class Site extends Model
     {
         return $this->morphMany(Banner::class, 'bannerable');
     }
+
+    /**
+     * Get all of the comment for the Site
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function gallery()
+    {
+        return $this->morphMany(Gallery::class, 'galleryable');
+    }
+
 }
