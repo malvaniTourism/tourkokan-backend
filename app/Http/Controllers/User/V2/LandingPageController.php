@@ -103,7 +103,6 @@ class LandingPageController extends BaseController
                     ->where('favourites.user_id', config('user_id'));
             }, 'is_favorite')
             ->latest()
-            ->limit(5)
             ->get();
 
         $cities->load([

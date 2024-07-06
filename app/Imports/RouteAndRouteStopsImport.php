@@ -29,8 +29,6 @@ class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChun
      */
     public function collection(Collection $data)
     {
-        $faker = \Faker\Factory::create();
-
         $dataChunks = $data->chunk(50); // Adjust the chunk size as needed
 
         foreach ($dataChunks as $chunk) {
