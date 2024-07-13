@@ -26,25 +26,15 @@ class CategoryController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function listcategories()
+    public function listcategories(Request $request)
     {
-        if (!Cache::has('categories')) {
-            $categories = Cache::remember('categories', 60, function () {
-                $categories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category'])
-                    ->select('*')
-                    ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
-                    ->whereNull('parent_id')
-                    ->paginate(10);
+        $page = $request->get('page', 1); // Get the current page from the request
+        $cacheKey = 'categories_page_' . $page; // Create a unique cache key for each page
 
-                return $categories;
-            });
-        }
-
-        $categories = Cache::get('categories');
-
-        if (!$categories) {
-            return $this->sendError('Empty', [], 404);
-        }
+        $categories = Category::select('*')
+            ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area', 'destination'])
+            ->whereNull('parent_id')
+            ->paginate(10);
 
         return $this->sendResponse($categories, 'Categories successfully Retrieved...!');
     }
@@ -64,17 +54,9 @@ class CategoryController extends BaseController
         if ($validator->fails()) {
             return $this->sendError($validator->errors(), '', 200);
         }
-
-        if (!Cache::has('subCategories')) {
-            $subCategories = Cache::remember('subCategories', 60, function () use ($request) {
-                $subCategories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category'])
-                    ->find($request->id);
-
-                return $subCategories;
-            });
-        }
-
-        $subCategories = Cache::get('subCategories');
+        
+        $subCategories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category'])
+            ->find($request->id);
 
         if (!$subCategories) {
             return $this->sendError('Empty', [], 404);
@@ -93,7 +75,7 @@ class CategoryController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|unique:categories,name|string|between:2,100',
-            'parent_id' => 'required|string|exists:categories,id',
+            'parent_id' => 'sometimes|string|exists:categories,id',
             'description' => 'required|string',
             'icon' => 'nullable|mimes:jpeg,jpg,png|max:512',
             'status' => 'boolean:true,false',
@@ -119,8 +101,6 @@ class CategoryController extends BaseController
         $input['code'] = strtolower($request->name);
 
         $category = Category::create($input);
-
-        Cache::forget(['categories', 'subCategories']);
 
         return $this->sendResponse($category, 'Category added successfully...!');
     }
@@ -173,9 +153,6 @@ class CategoryController extends BaseController
 
         $category->update($input);
 
-        Cache::forget('categories');
-        Cache::forget('subCategories');
-
         return $this->sendResponse($category, 'Category updated successfully...!');
     }
 
@@ -207,8 +184,6 @@ class CategoryController extends BaseController
         }
 
         $category->delete($request->id);
-
-        Cache::forget(['categories', 'subCategories']);
 
         return $this->sendResponse($category, 'Category deleted successfully...!');
     }

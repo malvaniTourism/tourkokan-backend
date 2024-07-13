@@ -60,7 +60,7 @@ class Category extends Model
         return $this->hasMany(Site::class, 'category_id', 'id');
     }
 
-        /**
+    /**
      * Get all of the subCategories for the Category
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
@@ -68,5 +68,15 @@ class Category extends Model
     public function subCategories()
     {
         return $this->hasMany(Category::class, 'parent_id', 'id')->where('status', true);
+    }
+
+    /**
+     * Get the category that owns the Contact
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'parent_id', 'id');
     }
 }

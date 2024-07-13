@@ -31,31 +31,45 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $sites = Site::withCount(['photos', 'comment'])
-            ->with([
-                'sites' => function ($query) {
-                    $query->select(
-                        'id',
-                        'name',
-                        'name',
-                        'parent_id',
-                        'category_id',
-                        'image',
-                        'domain_name',
-                        'description',
-                        'tag_line',
-                        'bus_stop_type',
-                        'icon',
-                        'status',
-                    )
-                        ->where('is_hot_place', true);
-                },
-                'sites.comments',
-                'photos', 'comment', 'category:id,name,code,parent_id,icon,status,is_hot_category'
-            ]);
+        $withArr = [
+            'sites' => function ($query) {
+                $query->select(
+                    'id',
+                    'name',
+                    'mr_name',
+                    'parent_id',
+                    'category_id',
+                    'image',
+                    'domain_name',
+                    'description',
+                    'tag_line',
+                    'bus_stop_type',
+                    'icon',
+                    'status',
+                )
+                    ->with(['rate:id,user_id,rate,rateable_type,rateable_id,status'])
+                    ->where('is_hot_place', true)
+                    ->withAvg("rating", 'rate');
+            },
+            'sites.comment',
+            'photos',
+            'comment',
+            'category:id,name,code,parent_id,icon,status,is_hot_category',
+            'rate:id,user_id,rate,rateable_type,rateable_id,status',
+            'address:id,email,phone,latitude,longitude,addressable_type,addressable_id'
+        ];
+
+        if ($request->apitype == 'dropdown') {
+            $withArr = [
+                'category:id,name,code,parent_id,icon,status,is_hot_category'
+            ];
+        }
+
+        $sites = Site::with($withArr);
+
 
         if ($request->has('category')) {
-            if ($request->has('category') == 'emergency') {
+            if ($request->category == 'emergency') {
                 $category = Category::where('code', 'emergency')->pluck('id');
 
                 $category_ids =  Category::where('parent_id', $category)->get()->pluck('id');
@@ -78,7 +92,7 @@ class SiteController extends BaseController
 
         if ($request->has('search')) {
             $search = $request->input('search');
-            $sites = $sites->where('name', 'like', '%' . $search . '%');
+            $sites = $sites->where('name', 'like', $search . '%');
         }
 
         if ($request->has('type') && $request->input('type') == 'bus') {
@@ -86,7 +100,8 @@ class SiteController extends BaseController
         }
 
         $sites = $sites->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'))
-            ->paginate(15);
+            ->paginate(isValidReturn($request->all(), 'per_page', 15));
+
 
         return $this->sendResponse($sites, 'Sites successfully Retrieved...!');
     }
@@ -248,7 +263,7 @@ class SiteController extends BaseController
                 $input[$field] = uploadFile($image, $uploadPath)['path'];
             }
         }
-        
+
         $site = Site::create($input);
 
         return $this->sendResponse($site, 'Site added successfully...!');
