@@ -26,42 +26,14 @@ class RouteController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function listroutes()
-    {
-        $routes = Route::withCount(['routeStops'])
-            ->with([
-                'sourcePlace:id,name,category_id',
-                'sourcePlace.category:id,name,icon',
-                'destinationPlace:id,name,category_id',
-                'destinationPlace.category:id,name,icon'
-            ])
-            ->select(
-                'id',
-                'source_place_id',
-                'destination_place_id',
-                'name',
-                'start_time',
-                'end_time',
-                'total_time',
-                'delayed_time',
-                DB::raw('(SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id) AS distance')
-            )
-            ->paginate();
-
-        return $this->sendResponse($routes, 'Routes successfully Retrieved...!');
-    }
-
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function routes(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'source_place_id' => 'nullable|required_with:destination_place_id|exists:sites,id',
             'destination_place_id' => 'nullable|required_with:source_place_id|exists:sites,id',
             'search' => 'nullable|string|alpha|max:255',
+            'apitype' => 'required|string|max:255|in:list,dropdown',
+            'per_page' => 'nullable|integer|max:50|min:1'
         ]);
 
         if ($validator->fails()) {
@@ -180,7 +152,8 @@ class RouteController extends BaseController
             $routes->whereIn('id', $routeIds);
         }
 
-        $routes = $routes->paginate(10);
+        $routes = $routes->select(isValidReturn(config('grid.listRoutes.' . $request->apitype), 'columns', '*'))
+            ->paginate(isValidReturn($request->all(), 'per_page', 15));
 
         #need to test on both query for performance
 
@@ -222,14 +195,6 @@ class RouteController extends BaseController
 
         return $this->sendResponse($routes, 'available routes successfully Retrieved...!');
     }
-
-
-
-
-
-
-
-
 
     // public function routes(Request $request)
     // {

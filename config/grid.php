@@ -41,7 +41,6 @@ return [
             ]
         ],
     ],
-
     "listTransactions" => [
         "columns" => [
             '_id',
@@ -69,5 +68,27 @@ return [
             'Transaction ID' => ["transactionDetails" => "_id"],
             'Vendor Transaction ID' => ["transactionDetails" => "transaction_id"]
         ]
-    ]
+    ],
+    'listRoutes' => [
+        'list' => [
+            "columns" => [
+               'id',
+                'name',
+                'source_place_id',
+                'destination_place_id',
+                'bus_type_id',
+                'start_time',
+                'end_time',
+                'total_time',
+                'delayed_time',
+                'distance',
+            ]
+        ],
+        'dropdown' =>  [
+            "columns" => [
+                'id',
+                'name'
+            ]
+        ],
+    ],
 ];
