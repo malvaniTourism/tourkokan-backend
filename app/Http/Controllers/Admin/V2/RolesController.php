@@ -22,7 +22,7 @@ class RolesController extends BaseController
     public function roleDD()
     {
         try {
-            $roles = Roles::get();
+            $roles = Roles::paginate(request()->per_page);
 
             return $this->sendResponse($roles, 'Roles Dropdown');
         } catch (\Throwable $th) {
