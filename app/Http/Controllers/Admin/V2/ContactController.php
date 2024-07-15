@@ -18,6 +18,7 @@ class ContactController extends BaseController
     public function getQueries()
     {
         $contacts = Contact::with([
+            'user:id,name',
             'contactable:id,name,parent_id,category_id',
             'contactable.category:id,name'
         ])
