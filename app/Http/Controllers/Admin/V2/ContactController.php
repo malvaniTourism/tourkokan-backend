@@ -54,10 +54,8 @@ class ContactController extends BaseController
     public function updateQuery(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'string|between:2,100',
-            'email' => 'sometimes|string|email|between:2,200',
-            'phone' => 'sometimes|numeric',
-            'message' => 'required',
+            'id' => 'required|exists:contacts,id',
+            'status' => 'required|string|max:255|in:read,unread',
         ]);
 
         if ($validator->fails()) {
