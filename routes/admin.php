@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\DropDownController;
 use App\Http\Controllers\Admin\V2\BonusTypesController;
 use App\Http\Controllers\Admin\V2\CategoryController;
 use App\Http\Controllers\Admin\V2\ContactController;
+use App\Http\Controllers\Admin\V2\RolesController;
 use App\Http\Controllers\Admin\V2\RouteController;
 use App\Http\Controllers\Admin\V2\SiteController;
 
@@ -160,5 +161,7 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
     Route::post('updateQuery', [ContactController::class, 'updateQuery']);
 
     Route::post('allUsers', [AuthController::class, 'allUsers']);
+
+    Route::post('roleDD', [RolesController::class, 'roleDD']);
 
 });

@@ -37,11 +37,11 @@ class AuthController extends BaseController
         $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail', 'isVerifiedEmail']]);
     }
 
-    public function allUsers(Request $request)
+    public function allUsers()
     {
         if (in_array(config('user')->roles->code, ['superadmin', 'admin'])) {
             $user = User::with('roles')
-                ->paginate(10);
+                ->paginate(request()->per_page);
             return $this->sendResponse($user, 'User successfully registered');
         } else {
             return $this->sendError('Unauthorized', '', 401);
