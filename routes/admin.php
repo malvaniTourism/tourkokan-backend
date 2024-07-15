@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\BusTypeController;
 use App\Http\Controllers\Admin\DropDownController;
 use App\Http\Controllers\Admin\V2\BonusTypesController;
 use App\Http\Controllers\Admin\V2\CategoryController;
+use App\Http\Controllers\Admin\V2\ContactController;
 use App\Http\Controllers\Admin\V2\RouteController;
 use App\Http\Controllers\Admin\V2\SiteController;
 
@@ -155,4 +156,7 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 
     Route::post('routes', [RouteController::class, 'routes']);
 
+    Route::post('getQueries', [ContactController::class, 'getQueries']);
+    Route::post('getQuery', [ContactController::class, 'getQuery']);
+    Route::post('updateQuery', [ContactController::class, 'updateQuery']);
 });

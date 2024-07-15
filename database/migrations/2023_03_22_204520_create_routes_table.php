@@ -28,6 +28,7 @@ class CreateRoutesTable extends Migration
             $table->time('total_time')->nullable();
             $table->time('delayed_time')->nullable();
             $table->string('working_days')->nullable();
+            $table->boolean('status')->default(false);
             $table->timestamps();
 
             $table->foreign('source_place_id')->references('id')->on('sites')->onDelete('cascade')->onUpdate('cascade');
