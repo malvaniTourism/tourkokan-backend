@@ -37,16 +37,15 @@ class AuthController extends BaseController
         $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail', 'isVerifiedEmail']]);
     }
 
-    public function index(Request $request)
+    public function allUsers(Request $request)
     {
-        // if ($request->privilage == 'superadmin') {
-        $user = User::with('roles', 'commentsOfUser', 'commentsOnUser', 'project', 'projects')
-            ->paginate(10);
-        return $this->sendResponse($user, 'User successfully registered');
-        // }
-        // else{
-        //     return $this->sendError('Unauthorized', '', 401);
-        // }
+        if (in_array(config('user')->roles->code, ['superadmin', 'admin'])) {
+            $user = User::with('roles')
+                ->paginate(10);
+            return $this->sendResponse($user, 'User successfully registered');
+        } else {
+            return $this->sendError('Unauthorized', '', 401);
+        }
     }
 
     /**
@@ -447,7 +446,7 @@ class AuthController extends BaseController
     public function userProfile()
     {
         $user = auth()->user();
-        
+
         $user->load(['favourites.favouritable', 'rating', 'commentsOfUser', 'commentsOnUser', 'contacts', 'addresses']);
 
         // Calculate the sum of wallet amounts

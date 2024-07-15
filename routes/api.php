@@ -187,7 +187,6 @@ Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2/auth'], function 
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('refresh', [AuthController::class, 'refresh']);
-    Route::post('users', [AuthController::class, 'index']);
     Route::post('sendOtp', [AuthController::class, 'sendOtp']);
     Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
     Route::post('updateEmail', [AuthController::class, 'updateEmail']);
