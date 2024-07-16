@@ -28,13 +28,34 @@ class CategoryController extends BaseController
      */
     public function listcategories(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'parent_id' => 'nullable|exists:categories,id',
+            'status' => 'nullable|boolean:true,false',
+        ]);
+
+        // return $request->all();
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
         $page = $request->get('page', 1); // Get the current page from the request
         $cacheKey = 'categories_page_' . $page; // Create a unique cache key for each page
 
         $categories = Category::select('*')
-            ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area', 'destination'])
-            ->whereNull('parent_id')
-            ->paginate(10);
+            ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area', 'destination']);
+
+        if ($request->parent_id) {
+            $categories = $categories->where('parent_id', $request->parent_id);
+        } else {
+            $categories = $categories->whereNull('parent_id');
+        }
+
+        if ($request->status != null) {
+            $categories = $categories->whereStatus($request->status);
+        }
+
+        $categories = $categories->paginate($request->per_page);
 
         return $this->sendResponse($categories, 'Categories successfully Retrieved...!');
     }
@@ -54,7 +75,7 @@ class CategoryController extends BaseController
         if ($validator->fails()) {
             return $this->sendError($validator->errors(), '', 200);
         }
-        
+
         $subCategories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category'])
             ->find($request->id);
 
