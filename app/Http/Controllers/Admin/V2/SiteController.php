@@ -22,8 +22,8 @@ class SiteController extends BaseController
             'search' => 'sometimes|nullable|string|alpha|max:255',
             'type' => 'sometimes|required|string|max:255|in:bus',
             'apitype' => 'required|string|max:255|in:list,dropdown',
-            'category' => ($request->has('type') || $request->has('global')) ? 'nullable|exists:categories,code' : 'nullable|required_without:parent_id|exists:categories,code',
-            'parent_id' => 'nullable|required_with:parent_id|exists:sites,parent_id',
+            'category' => ($request->has('type') || $request->has('global')) ? 'nullable|exists:categories,code' : 'nullable|exists:categories,code',
+            'parent_id' => 'nullable|exists:sites,parent_id',
             'global'    => 'sometimes|boolean'
         ]);
 
@@ -82,7 +82,7 @@ class SiteController extends BaseController
         }
 
         if ($request->has('parent_id')) {
-            $sites = $sites->orWhere('parent_id', "=", $request->parent_id);
+            $sites = $sites->where('parent_id', "=", $request->parent_id);
         }
 
         if ($request->has('global')) {
