@@ -19,8 +19,8 @@ class ContactController extends BaseController
     {
         $contacts = Contact::with([
             'user:id,name',
-            'contactable:id,name,parent_id,category_id',
-            'contactable.category:id,name'
+            'contactable:id,name,parent_id',
+            'contactable.categories:id,name'
         ])
             ->paginate(request()->per_page);
 

@@ -21,7 +21,7 @@ class SiteController extends BaseController
         $user = auth()->user();
 
         $city = Site::withCount(['photos', 'comment'])
-            ->with(['photos', 'comment', 'category:id,name,code,parent_id,icon,status,is_hot_category'])
+            ->with(['photos', 'comment', 'categories:id,name,code,parent_id,icon,status,is_hot_category'])
             ->selectSub(function ($query) use ($user) {
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
@@ -29,7 +29,7 @@ class SiteController extends BaseController
                     ->where('favourites.favouritable_type', Site::class)
                     ->where('favourites.user_id', $user->id);
             }, 'is_favorite')
-            ->whereHas('category', function ($query) {
+            ->whereHas('categories', function ($query) {
                 $query->where('code', 'city');
             })->paginate(10);
 
@@ -59,9 +59,9 @@ class SiteController extends BaseController
         $city   =   Site::withCount(['sites', 'photos', 'comment'])
             ->withAvg('rating', 'rate')
             ->with([
-                'category:id,name,code,parent_id,icon,status,is_hot_category',
+                'categories:id,name,code,parent_id,icon,status,is_hot_category',
                 'sites' => function ($query) {
-                    $query->with('category:id,name,code,parent_id,icon,status,is_hot_category')
+                    $query->with('categories:id,name,code,parent_id,icon,status,is_hot_category')
                         ->limit(5);
                 },
                 'comment' => function ($query) {
@@ -103,10 +103,10 @@ class SiteController extends BaseController
     {
         $places = Site::with([
             'site:id,name,icon',
-            'category:id,name,code,parent_id,icon,status,is_hot_category'
+            'categories:id,name,code,parent_id,icon,status,is_hot_category'
         ])
             ->whereIn('bus_stop_type', ['Depo', 'Stop'])
-            ->select('id', 'name', 'parent_id', 'category_id', 'icon', 'status', 'is_hot_place', 'bus_stop_type')
+            ->select('id', 'name', 'parent_id', 'icon', 'status', 'is_hot_place', 'bus_stop_type')
             ->paginate(10);
 
         return $this->sendResponse($places, 'Stops successfully Retrieved...!');
@@ -141,7 +141,6 @@ class SiteController extends BaseController
                     'name',
                     'mr_name',
                     'parent_id',
-                    'category_id',
                     'image',
                     'domain_name',
                     'description',
@@ -164,35 +163,46 @@ class SiteController extends BaseController
             'sites.comment',
             'photos',
             'comment',
-            'category:id,name,code,parent_id,icon,status,is_hot_category',
+            'categories:id,name,code,parent_id,icon,status,is_hot_category',
             'rate:id,user_id,rate,rateable_type,rateable_id,status',
             'address:id,email,phone,latitude,longitude,addressable_type,addressable_id'
         ];
 
         if ($request->apitype == 'dropdown') {
             $withArr = [
-                'category:id,name,code,parent_id,icon,status,is_hot_category'
+                'categories:id,name,code,parent_id,icon,status,is_hot_category'
             ];
         }
 
         $sites = Site::with($withArr);
 
-        if ($request->has('category')) {
-            if ($request->category == 'emergency') {
-                $category = Category::where('code', 'emergency')->pluck('id');
+        if (isValidReturn($request, 'category') == "emergency") {
+            // Retrieve the 'emergency' category with its sub-categories
+            $category = Category::with('subCategories')->where('code', 'emergency')->first();
 
-                $category_ids =  Category::where('parent_id', $category)->get()->pluck('id');
+            if ($category) {
+                // Extract the IDs of all sub-categories
+                $ids = $category->subCategories->pluck('id');
 
-                $sites = $sites->whereIn('category_id', $category_ids);
+                // Filter sites where the categories match the extracted sub-category IDs
+                $sites = $sites->whereHas('categories', function ($query) use ($ids) {
+                    $query->whereIn('id', $ids);
+                });
             } else {
-                $sites = $sites->whereHas('category', function ($query) use ($request) {
+                // If no 'emergency' category is found, return an empty result
+                $sites = $sites->whereNull('id'); // Ensures no sites are returned
+            }
+        } else {
+            if ($request->has('category')) {
+                // Filter sites based on the specific category code provided in the request
+                $sites = $sites->whereHas('categories', function ($query) use ($request) {
                     $query->where('code', $request->category);
                 });
             }
         }
 
         if ($request->has('parent_id')) {
-            $sites = $sites->orWhere('parent_id', "=", $request->parent_id);
+            $sites = $sites->where('parent_id', "=", $request->parent_id);
         }
 
         if ($request->has('global')) {

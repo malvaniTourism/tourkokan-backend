@@ -19,7 +19,6 @@ class CreateSitesTable extends Migration
             $table->string('mr_name')->index();
             $table->integer('parent_id')->unsigned()->nullable();
             $table->integer('user_id')->unsigned()->nullable();
-            $table->integer('category_id')->unsigned()->index();
             $table->string('bus_stop_type')->nullable();
             $table->string('tag_line')->nullable();
             $table->text('description');
@@ -38,7 +37,6 @@ class CreateSitesTable extends Migration
             $table->json('meta_data')->nullable();
             $table->timestamps();
 
-            $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade')->onUpdate('cascade');
             $table->foreign('parent_id')->references('id')->on('sites')->onUpdate('cascade');
             $table->foreign('user_id')->references('id')->on('users')->onUpdate('cascade');
         });

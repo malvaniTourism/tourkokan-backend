@@ -50,14 +50,19 @@ class Category extends Model
         'meta_data' => 'array'
     ];
 
-    /**
-     * Get all of the sites for the Category
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
+    // /**
+    //  * Get all of the sites for the Category
+    //  *
+    //  * @return \Illuminate\Database\Eloquent\Relations\HasMany
+    //  */
+    // public function sites()
+    // {
+    //     return $this->hasMany(Site::class, 'category_id', 'id');
+    // }
+
     public function sites()
     {
-        return $this->hasMany(Site::class, 'category_id', 'id');
+        return $this->belongsToMany(Site::class);
     }
 
     /**

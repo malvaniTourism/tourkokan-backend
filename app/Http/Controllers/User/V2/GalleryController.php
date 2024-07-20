@@ -31,12 +31,12 @@ class GalleryController extends BaseController
         $category = $request->input('category');
 
         $gallery = Gallery::with([
-            'galleryable:id,name,parent_id,category_id',
-            'galleryable.category:id,name,code,parent_id'
+            'galleryable:id,name,parent_id',
+            'galleryable.categories:id,name,code,parent_id'
         ]);
 
         if ($request->has('search') && $request->has('category') && !empty($category)) {
-            $gallery = $gallery->whereHas('galleryable.category', function ($query) use ($category) {
+            $gallery = $gallery->whereHas('galleryable.categories', function ($query) use ($category) {
                 $query->where('code', $category);
             })
                 ->where('title', 'like',  '%' . $search . '%');

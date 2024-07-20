@@ -113,18 +113,18 @@ class RouteController extends BaseController
         // })->pluck('id');
 
         $with = [
-            'sourcePlace:id,name,mr_name,category_id',
-            'sourcePlace.category:id,name,icon',
-            'destinationPlace:id,name,mr_name,category_id',
-            'destinationPlace.category:id,name,icon',
+            'sourcePlace:id,name,mr_name',
+            'sourcePlace.categories:id,name,icon',
+            'destinationPlace:id,name,mr_name',
+            'destinationPlace.categories:id,name,icon',
             'busType:id,type,logo,meta_data'
         ];
 
         if (config('user')->roles->name != 'Admin') {
             $additionalWith = [
                 'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time,distance',
-                'routeStops.site:id,name,mr_name,category_id',
-                'routeStops.site.category:id,name,icon',
+                'routeStops.site:id,name,mr_name',
+                'routeStops.site.categories:id,name,icon',
             ];
 
             $with = array_merge($with, $additionalWith);

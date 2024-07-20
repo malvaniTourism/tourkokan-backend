@@ -21,7 +21,6 @@ class Site extends Model
         'name',
         'parent_id',
         'user_id',
-        'category_id',
         'bus_stop_type',
         'tag_line',
         'description',
@@ -94,14 +93,19 @@ class Site extends Model
         return $this->hasMany(Site::class, 'parent_id');
     }
 
-    /**
-     * Get the category that owns the Site
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function category()
+    // /**
+    //  * Get the category that owns the Site
+    //  *
+    //  * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+    //  */
+    // public function category()
+    // {
+    //     return $this->belongsTo(Category::class, 'category_id', 'id');
+    // }
+
+    public function categories()
     {
-        return $this->belongsTo(Category::class, 'category_id', 'id');
+        return $this->belongsToMany(Category::class);
     }
 
     /**
@@ -172,5 +176,4 @@ class Site extends Model
     {
         return $this->morphMany(Gallery::class, 'galleryable');
     }
-
 }

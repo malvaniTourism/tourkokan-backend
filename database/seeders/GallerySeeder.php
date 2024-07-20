@@ -20,7 +20,9 @@ class GallerySeeder extends Seeder
      */
     public function run()
     {
-        $cities = Site::where('category_id', 3)->get();
+        $cities = Site::whereHas('categories', function ($query) {
+            $query->where('id', 3);
+        })->get();
 
         foreach ($cities as $key => $value) {
 
