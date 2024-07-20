@@ -19,8 +19,8 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
-
+    'allowed_origins' => ['https://malvanitourism.github.io'],
+    
     'allowed_origins_patterns' => [],
 
     'allowed_headers' => ['*'],
