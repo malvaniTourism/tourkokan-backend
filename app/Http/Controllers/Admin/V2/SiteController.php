@@ -22,8 +22,8 @@ class SiteController extends BaseController
             'search' => 'sometimes|nullable|string|alpha|max:255',
             'type' => 'sometimes|required|string|max:255|in:bus',
             'apitype' => 'required|string|max:255|in:list,dropdown',
-            'category' => 'nullable|exists:categories,id',
-            'parent_id' => 'nullable|exists:sites,parent_id',
+            'category' => ($request->has('type') || $request->has('global')) ? 'nullable|exists:categories,code' : 'nullable|required_without:parent_id|exists:categories,code',
+            'parent_id' => 'nullable|required_with:parent_id|exists:sites,parent_id',
             'global'    => 'sometimes|boolean'
         ]);
 
@@ -67,12 +67,23 @@ class SiteController extends BaseController
 
         $sites = Site::with($withArr);
 
-        if ($request->category) {
-            $sites = $sites->where('category_id', $request->category);
+
+        if ($request->has('category')) {
+            if ($request->category == 'emergency') {
+                $category = Category::where('code', 'emergency')->pluck('id');
+
+                $category_ids =  Category::where('parent_id', $category)->get()->pluck('id');
+
+                $sites = $sites->whereIn('category_id', $category_ids);
+            } else {
+                $sites = $sites->whereHas('category', function ($query) use ($request) {
+                    $query->where('code', $request->category);
+                });
+            }
         }
 
         if ($request->has('parent_id')) {
-            $sites = $sites->where('parent_id', "=", $request->parent_id);
+            $sites = $sites->orWhere('parent_id', "=", $request->parent_id);
         }
 
         if ($request->has('global')) {
