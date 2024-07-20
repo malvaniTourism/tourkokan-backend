@@ -31,6 +31,7 @@ class CategoryController extends BaseController
         $validator = Validator::make($request->all(), [
             'parent_id' => 'nullable|exists:categories,id',
             'status' => 'nullable|boolean:true,false',
+            'apitype' => 'required|string|in:list,dropdown',
         ]);
 
         // return $request->all();
@@ -42,7 +43,7 @@ class CategoryController extends BaseController
         $page = $request->get('page', 1); // Get the current page from the request
         $cacheKey = 'categories_page_' . $page; // Create a unique cache key for each page
 
-        $categories = Category::select('*')
+        $categories = Category::select(isValidReturn(config('grid.categories.' . $request->apitype), 'columns', '*'))
             ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area', 'destination']);
 
         if ($request->parent_id) {

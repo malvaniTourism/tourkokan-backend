@@ -67,7 +67,6 @@ class SiteController extends BaseController
 
         $sites = Site::with($withArr);
 
-
         if ($request->has('category')) {
             if ($request->category == 'emergency') {
                 $category = Category::where('code', 'emergency')->pluck('id');

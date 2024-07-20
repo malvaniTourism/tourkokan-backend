@@ -72,7 +72,7 @@ return [
     'listRoutes' => [
         'list' => [
             "columns" => [
-               'id',
+                'id',
                 'name',
                 'source_place_id',
                 'destination_place_id',
@@ -88,6 +88,31 @@ return [
             "columns" => [
                 'id',
                 'name'
+            ]
+        ],
+    ],
+    'categories' => [
+        'list' => [
+            "columns" => [
+                'id',
+                'name',
+                'code',
+                'parent_id',
+                'icon',
+                'is_hot_category',
+                'status',
+                'meta_data',
+                'created_at',
+                'updated_at',
+                'deleted_at',
+            ]
+        ],
+        'dropdown' =>  [
+            "columns" => [
+                'id',
+                'name',
+                'code',
+                'parent_id',
             ]
         ],
     ],
