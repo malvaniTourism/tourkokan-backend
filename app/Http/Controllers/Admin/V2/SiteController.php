@@ -67,7 +67,7 @@ class SiteController extends BaseController
 
         $sites = Site::with($withArr);
 
-        if ($request->has('category')) {
+        if ($request->category) {
             if ($request->category == 'emergency') {
                 $category = Category::where('code', 'emergency')->pluck('id');
 
@@ -76,7 +76,7 @@ class SiteController extends BaseController
                 $sites = $sites->whereIn('category_id', $category_ids);
             } else {
                 $sites = $sites->whereHas('category', function ($query) use ($request) {
-                    $query->where('code', $request->category);
+                    $query->orWhere('code', $request->category);
                 });
             }
         }
@@ -84,6 +84,8 @@ class SiteController extends BaseController
         if ($request->has('parent_id')) {
             $sites = $sites->where('parent_id', "=", $request->parent_id);
         }
+
+        // return $sites->toSql();
 
         if ($request->has('global')) {
             $sites = $sites->whereNotNull('parent_id');
