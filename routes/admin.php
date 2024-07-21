@@ -135,7 +135,7 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 
     Route::post('addSite', [SiteController::class, 'addSite']);
     Route::post('updateSite', [SiteController::class, 'updateSite']);
-    Route::delete('deleteSite', [SiteController::class, 'deleteSite']);
+    Route::post('deleteSite', [SiteController::class, 'deleteSite']);
 
     Route::post('bannerDaysDD', [DropDownController::class, 'bannerDaysDD']);
     Route::post('bannerImageOrientationDD', [DropDownController::class, 'bannerImageOrientationDD']);
