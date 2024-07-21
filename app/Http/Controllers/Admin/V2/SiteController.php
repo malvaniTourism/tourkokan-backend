@@ -372,7 +372,7 @@ class SiteController extends BaseController
     public function deleteSite(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'id' => 'required|exists:categories,id'
+            'id' => 'required|exists:sites,id'
         ]);
 
         if ($validator->fails()) {
