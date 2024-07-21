@@ -74,6 +74,8 @@ class SiteController extends BaseController
                 // Extract the IDs of all sub-categories
                 $ids = $category->subCategories->pluck('id');
 
+                $ids->prepend($category->id);
+
                 // Filter sites where the categories match the extracted sub-category IDs
                 $sites = $sites->whereHas('categories', function ($query) use ($ids) {
                     $query->whereIn('id', $ids);
