@@ -15,9 +15,11 @@ use App\Http\Controllers\Admin\AccomodationCategoryController;
 use App\Http\Controllers\Admin\V2\BannerController;
 use App\Http\Controllers\Admin\BusTypeController;
 use App\Http\Controllers\Admin\DropDownController;
+use App\Http\Controllers\Admin\V2\AppVersionController;
 use App\Http\Controllers\Admin\V2\BonusTypesController;
 use App\Http\Controllers\Admin\V2\CategoryController;
 use App\Http\Controllers\Admin\V2\ContactController;
+use App\Http\Controllers\Admin\V2\GalleryController;
 use App\Http\Controllers\Admin\V2\RolesController;
 use App\Http\Controllers\Admin\V2\RouteController;
 use App\Http\Controllers\Admin\V2\SiteController;
@@ -164,4 +166,12 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 
     Route::post('roleDD', [RolesController::class, 'roleDD']);
 
+    Route::post('listAppVersions', [AppVersionController::class, 'listAppVersions']);
+    Route::post('getAppVersion', [AppVersionController::class, 'getAppVersion']);
+    Route::post('addAppVersion', [AppVersionController::class, 'addAppVersion']);
+    Route::post('updateAppVersion', [AppVersionController::class, 'updateAppVersion']);
+    Route::post('deleteAppVersion', [AppVersionController::class, 'deleteAppVersion']);
+
+    Route::post('getGallery', [GalleryController::class, 'getGallery']);
+    Route::post('updateGallery', [GalleryController::class, 'updateGallery']);
 });

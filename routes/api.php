@@ -215,9 +215,6 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('updateQuery', [ContactController::class, 'updateQuery']);
     Route::post('deleteQuery', [ContactController::class, 'deleteQuery']);
 
-    Route::post('addAppVersion', [AppVersionController::class, 'addAppVersion']);
-    Route::post('getAppVersion', [AppVersionController::class, 'getAppVersion']);
-
     Route::post('listcategories', [CategoryController::class, 'listcategories']);
     Route::post('getCategory', [CategoryController::class, 'getCategory']);
 

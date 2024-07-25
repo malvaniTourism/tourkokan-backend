@@ -308,7 +308,7 @@ class SiteController extends BaseController
 
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:sites,id',
-            'name' => 'sometimes|required|unique:sites,name|string|between:2,100',
+            'name' => 'sometimes|required|unique:sites,name,id|string|between:2,100',
             'parent_id' => 'sometimes|required|exists:sites,id',
             'user_id' => 'sometimes|required|exists:users,id',
             'categories' => 'nullable|array',
