@@ -33,6 +33,7 @@ class RouteController extends BaseController
             'destination_place_id' => 'nullable|required_with:source_place_id|exists:sites,id',
             'search' => 'nullable|string|alpha|max:255',
             'apitype' => 'required|string|max:255|in:list,dropdown',
+            'with_stops' => 'sometimes|required|boolean:true,false',
             'per_page' => 'nullable|integer|max:50|min:1'
         ]);
 
@@ -120,7 +121,7 @@ class RouteController extends BaseController
             'busType:id,type,logo,meta_data'
         ];
 
-        if (config('user')->roles->name != 'Admin') {
+        if ($request->with_stops) {
             $additionalWith = [
                 'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time,distance',
                 'routeStops.site:id,name,mr_name',
