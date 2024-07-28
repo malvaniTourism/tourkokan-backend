@@ -103,7 +103,11 @@ class LandingPageController extends BaseController
                     ->where('favourites.user_id', config('user_id'));
             }, 'is_favorite')
             ->latest()
-            ->get();
+            ->get()
+            ->map(function ($city) {
+                $city->rating_avg_rate = number_format($city->rating_avg_rate, 1);
+                return $city;
+            });
 
         $cities->load([
             'categories:id,name,code,parent_id,icon,status,is_hot_category'
