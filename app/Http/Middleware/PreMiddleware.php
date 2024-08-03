@@ -27,7 +27,7 @@ class PreMiddleware
             $user = Auth::user();
 
             config([
-                'user' => $user,
+                'user' => $user->load(['roles']),
                 'user_id' => $user->id,
                 'language' => $user->language
             ]);

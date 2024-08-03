@@ -13,6 +13,7 @@ use App\Models\Site;
 use GuzzleHttp\Exception\ClientException;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Spatie\Geocoder\Geocoder;
 use Illuminate\Support\Facades\Mail;
 
@@ -126,12 +127,32 @@ function uploadFile($file, $destination)
 
 function callExternalAPI($method, $url, $payload)
 {
-    $response = Http::$method($url, $payload);
+    // Validate HTTP method
+    $validMethods = ['get', 'post', 'put', 'delete', 'patch'];
+    if (!in_array(strtolower($method), $validMethods)) {
+        Log::error("Invalid HTTP method: $method");
+        return null;
+    }
 
-    $data = $response->json();
+    try {
+        // Make the HTTP request
+        $response = Http::timeout(10)->{$method}($url, $payload);
 
-    if ($data['status'] == 'OK') {
-        return $data;
+        // Check if the response status is 200 OK
+        if ($response->status() === 200) {
+            $data = $response->json();
+
+            // Check if the status in the response data is 'OK'
+            if (isValidReturn($data, 'status') == "OK") {
+                return $data;
+            } else {
+                Log::error("API responded with an error: " . json_encode($data));
+            }
+        } else {
+            Log::error("HTTP request failed: " . $response->status() . " " . $response->body());
+        }
+    } catch (\Exception $e) {
+        Log::error("Exception occurred while calling external API: " . $e->getMessage());
     }
 
     return null;

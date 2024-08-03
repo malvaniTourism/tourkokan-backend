@@ -53,27 +53,46 @@ class LandingPageController extends BaseController
             ->limit(5)
             ->get();
 
-        #Services categories
-        $categories = Category::whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
+        #categories
+        $categories = Category::with(['subCategories:id,name,code,parent_id,icon,is_hot_category'])
+            ->select('*')
+            ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
+            ->whereNull('parent_id')
+            ->whereStatus(true)
             ->latest()
             ->limit(8)
             ->get();
 
         #Top famouse cities
-        $cities = Site::select(
-            'id',
-            'name',
-            'mr_name',
-            'tag_line',
-            'logo',
-            'icon',
-            'image'
-        )
-            ->withAvg("rating", 'rate')
-            // ->having('rating_avg_rate', '>', 3)
-            ->withCount('photos', 'comment')
-            ->with(['category:id,name,code,parent_id,icon,status,is_hot_category'])
-            ->whereHas('category', function ($query) {
+        // $cities = Site::select(
+        //     'id',
+        //     'name',
+        //     'mr_name',
+        //     'tag_line',
+        //     'logo',
+        //     'icon',
+        //     'image'
+        // )
+        //     ->withAvg("rating", 'rate')
+        //     // ->having('rating_avg_rate', '>', 3)
+        //     ->withCount('photos', 'comment')
+        //     ->with(['category:id,name,code,parent_id,icon,status,is_hot_category'])
+        //     ->whereHas('category', function ($query) {
+        //         $query->where('code', 'city');
+        //     })
+        //     ->selectSub(function ($query) {
+        //         $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
+        //             ->from('favourites')
+        //             ->whereColumn('sites.id', 'favourites.favouritable_id')
+        //             ->where('favourites.favouritable_type', Site::class)
+        //             ->where('favourites.user_id', config('user_id'));
+        //     }, 'is_favorite')
+        //     ->latest()
+        //     // ->limit(8)
+        //     ->get();
+        $cities = Site::withCount(['sites', 'photos', 'comment'])
+            ->withAvg('rating', 'rate')
+            ->whereHas('categories', function ($query) {
                 $query->where('code', 'city');
             })
             ->selectSub(function ($query) {
@@ -84,29 +103,40 @@ class LandingPageController extends BaseController
                     ->where('favourites.user_id', config('user_id'));
             }, 'is_favorite')
             ->latest()
-            // ->limit(8)
-            ->get();
+            ->get()
+            ->map(function ($city) {
+                $city->rating_avg_rate = number_format($city->rating_avg_rate, 1);
+                return $city;
+            });
 
+        $cities->load([
+            'categories:id,name,code,parent_id,icon,status,is_hot_category'
+        ]);
 
-        // #Bus Stops / Depos
-        // $stops = Place::withAvg("rating", 'rate')
-        //     ->select('id', 'name', 'city_id', 'parent_id', 'place_category_id', 'image_url', 'bg_image_url', 'visitors_count')
-        //     ->orWhere('visitors_count', '>=', 5)
-        //     ->whereIn('place_category_id', [3, 4])
-        //     ->latest()
-        //     ->limit(5)
-        //     ->get();
+        foreach ($cities as $city) {
+            $city->setRelation('sites', $city->sites()->select('id', 'name', 'parent_id')->with('categories:id,name,code,parent_id,icon,status,is_hot_category')->limit(5)->get());
+            $city->setRelation('gallery', $city->gallery()->limit(5)->get());
 
+            $city->setRelation('comment', $city->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5)->get()->each(function ($comment) {
+                $comment->setRelation('comments', $comment->comments()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5)->get()->each(function ($reply) {
+                    $reply->setRelation('users', $reply->users()->select('id', 'name', 'email', 'profile_picture')->get());
+                }));
+                $comment->setRelation('users', $comment->users()->select('id', 'name', 'email', 'profile_picture')->get());
+            }));
+        }
+
+        #Routes
         $routes = Route::with([
             'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
-            'routeStops.site:id,name,mr_name,category_id',
-            'routeStops.site.category:id,name,icon',
-            'sourcePlace:id,name,mr_name,category_id',
-            'sourcePlace.category:id,name,icon',
-            'destinationPlace:id,name,mr_name,category_id',
-            'destinationPlace.category:id,name,icon',
+            'routeStops.site:id,name,mr_name',
+            'routeStops.site.categories:id,name,icon',
+            'sourcePlace:id,name,mr_name',
+            'sourcePlace.categories:id,name,icon',
+            'destinationPlace:id,name,mr_name',
+            'destinationPlace.categories:id,name,icon',
             'busType:id,type,logo,meta_data'
         ])->whereHas('routeStops', function ($query) use ($request) {
+            // write code to get user city
             if ($request->has('site_id')) {
                 $query->where('site_id', $request->site_id);
             }

@@ -9,7 +9,6 @@ return [
                 'mr_name',
                 'parent_id',
                 'user_id',
-                'category_id',
                 'bus_stop_type',
                 'tag_line',
                 'description',
@@ -34,14 +33,12 @@ return [
                 'name',
                 'mr_name',
                 'parent_id',
-                'category_id',
                 'bus_stop_type',
                 'icon',
                 'status',
             ]
         ],
     ],
-
     "listTransactions" => [
         "columns" => [
             '_id',
@@ -69,5 +66,52 @@ return [
             'Transaction ID' => ["transactionDetails" => "_id"],
             'Vendor Transaction ID' => ["transactionDetails" => "transaction_id"]
         ]
-    ]
+    ],
+    'listRoutes' => [
+        'list' => [
+            "columns" => [
+                'id',
+                'name',
+                'source_place_id',
+                'destination_place_id',
+                'bus_type_id',
+                'start_time',
+                'end_time',
+                'total_time',
+                'delayed_time',
+                'distance',
+            ]
+        ],
+        'dropdown' =>  [
+            "columns" => [
+                'id',
+                'name'
+            ]
+        ],
+    ],
+    'categories' => [
+        'list' => [
+            "columns" => [
+                'id',
+                'name',
+                'code',
+                'parent_id',
+                'icon',
+                'is_hot_category',
+                'status',
+                'meta_data',
+                'created_at',
+                'updated_at',
+                'deleted_at',
+            ]
+        ],
+        'dropdown' =>  [
+            "columns" => [
+                'id',
+                'name',
+                'code',
+                'parent_id',
+            ]
+        ],
+    ],
 ];

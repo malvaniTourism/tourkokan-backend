@@ -22,8 +22,8 @@ class SiteController extends BaseController
             'search' => 'sometimes|nullable|string|alpha|max:255',
             'type' => 'sometimes|required|string|max:255|in:bus',
             'apitype' => 'required|string|max:255|in:list,dropdown',
-            'category' => ($request->has('type') || $request->has('global')) ? 'nullable|exists:categories,code' : 'nullable|required_without:parent_id|exists:categories,code',
-            'parent_id' => 'nullable|required_with:parent_id|exists:sites,parent_id',
+            'category' => 'nullable|exists:categories,code',
+            'parent_id' => 'nullable|exists:sites,parent_id',
             'global'    => 'sometimes|boolean'
         ]);
 
@@ -31,45 +31,70 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $sites = Site::withCount(['photos', 'comment'])
-            ->with([
-                'sites' => function ($query) {
-                    $query->select(
-                        'id',
-                        'name',
-                        'name',
-                        'parent_id',
-                        'category_id',
-                        'image',
-                        'domain_name',
-                        'description',
-                        'tag_line',
-                        'bus_stop_type',
-                        'icon',
-                        'status',
-                    )
-                        ->where('is_hot_place', true);
-                },
-                'sites.comments',
-                'photos', 'comment', 'category:id,name,code,parent_id,icon,status,is_hot_category'
-            ]);
+        $withArr = [
+            'sites' => function ($query) {
+                $query->select(
+                    'id',
+                    'name',
+                    'mr_name',
+                    'parent_id',
+                    'image',
+                    'domain_name',
+                    'description',
+                    'tag_line',
+                    'bus_stop_type',
+                    'icon',
+                    'status',
+                )
+                    ->with(['rate:id,user_id,rate,rateable_type,rateable_id,status'])
+                    ->where('is_hot_place', true)
+                    ->withAvg("rating", 'rate');
+            },
+            'sites.comment',
+            'photos',
+            'comment',
+            'categories:id,name,code,parent_id,icon,status,is_hot_category',
+            'rate:id,user_id,rate,rateable_type,rateable_id,status',
+            'address:id,email,phone,latitude,longitude,addressable_type,addressable_id'
+        ];
 
-        if ($request->has('category')) {
-            if ($request->has('category') == 'emergency') {
-                $category = Category::where('code', 'emergency')->pluck('id');
+        if ($request->apitype == 'dropdown') {
+            $withArr = [
+                'categories:id,name,code,parent_id,icon,status,is_hot_category'
+            ];
+        }
 
-                $category_ids =  Category::where('parent_id', $category)->get()->pluck('id');
+        $sites = Site::with($withArr);
 
-                $sites = $sites->whereIn('category_id', $category_ids);
+        if (isValidReturn($request, 'category') == "emergency") {
+            // Retrieve the 'emergency' category with its sub-categories
+            $category = Category::with('subCategories')->where('code', 'emergency')->first();
+
+            if ($category) {
+                // Extract the IDs of all sub-categories
+                $ids = $category->subCategories->pluck('id');
+
+                $ids->prepend($category->id);
+
+                // Filter sites where the categories match the extracted sub-category IDs
+                $sites = $sites->whereHas('categories', function ($query) use ($ids) {
+                    $query->whereIn('id', $ids);
+                });
             } else {
-                $sites = $sites->whereHas('category', function ($query) use ($request) {
+                // If no 'emergency' category is found, return an empty result
+                $sites = $sites->whereNull('id'); // Ensures no sites are returned
+            }
+        } else {
+            if ($request->has('category')) {
+                // Filter sites based on the specific category code provided in the request
+                $sites = $sites->whereHas('categories', function ($query) use ($request) {
                     $query->where('code', $request->category);
                 });
             }
         }
 
         if ($request->has('parent_id')) {
-            $sites = $sites->orWhere('parent_id', "=", $request->parent_id);
+            $sites = $sites->where('parent_id', $request->parent_id);
         }
 
         if ($request->has('global')) {
@@ -78,7 +103,7 @@ class SiteController extends BaseController
 
         if ($request->has('search')) {
             $search = $request->input('search');
-            $sites = $sites->where('name', 'like', '%' . $search . '%');
+            $sites = $sites->where('name', 'like', $search . '%');
         }
 
         if ($request->has('type') && $request->input('type') == 'bus') {
@@ -86,7 +111,8 @@ class SiteController extends BaseController
         }
 
         $sites = $sites->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'))
-            ->paginate(15);
+            ->paginate(isValidReturn($request->all(), 'per_page', 15));
+
 
         return $this->sendResponse($sites, 'Sites successfully Retrieved...!');
     }
@@ -111,9 +137,9 @@ class SiteController extends BaseController
 
         $city   =   Site::withCount(['sites', 'photos', 'comment'])
             ->with([
-                'category:id,name,code,parent_id,icon,status,is_hot_category',
+                'categories:id,name,code,parent_id,icon,status,is_hot_category',
                 'sites' => function ($query) {
-                    $query->with('category:id,name,code,parent_id,icon,status,is_hot_category')
+                    $query->with('categories:id,name,code,parent_id,icon,status,is_hot_category')
                         ->limit(5);
                 },
                 'comment' => function ($query) {
@@ -149,10 +175,10 @@ class SiteController extends BaseController
     {
         $places = Site::with([
             'site:id,name,icon',
-            'category:id,name,code,parent_id,icon,status,is_hot_category'
+            'categories:id,name,code,parent_id,icon,status,is_hot_category'
         ])
             ->whereIn('bus_stop_type', ['Depo', 'Stop'])
-            ->select('id', 'name', 'parent_id', 'category_id', 'icon', 'status', 'is_hot_place', 'bus_stop_type')
+            ->select('id', 'name', 'parent_id', 'icon', 'status', 'is_hot_place', 'bus_stop_type')
             ->paginate(10);
 
         return $this->sendResponse($places, 'Stops successfully Retrieved...!');
@@ -176,7 +202,7 @@ class SiteController extends BaseController
         }
 
         $places = Site::withCount(['sites', 'photos', 'comments'])
-            ->with(['photos', 'category:id,name,icon,status']);
+            ->with(['photos', 'categories:id,name,icon,status']);
 
         if ($request->has('search')) {
             $search = $request->input('search');
@@ -211,11 +237,16 @@ class SiteController extends BaseController
      */
     public function addSite(Request $request)
     {
+        if (is_string($request['categories'])) {
+            $request['categories'] = json_decode($request['categories'], true);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|unique:sites,name|string|between:2,100',
             'parent_id' => 'nullable|exists:sites,id',
             'user_id' => 'nullable|exists:users,id',
-            'category_id' => 'required|string|exists:categories,id',
+            'categories' => 'required|array',
+            'categories.*' => 'exists:categories,id',
             'bus_stop_type' => 'nullable|in:Stop,Depo',
             'tag_line' => 'required|string|between:2,100',
             'description' => 'required|string',
@@ -237,6 +268,10 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
+        $validatedData = $validator->validated();
+
+        $input = $request->except(['categories']); // Remove categories from input as we'll handle it separately
+
         $input = $request->all();
 
         $uploadPath = config('constants.upload_path.site');
@@ -248,8 +283,10 @@ class SiteController extends BaseController
                 $input[$field] = uploadFile($image, $uploadPath)['path'];
             }
         }
-        
+
         $site = Site::create($input);
+
+        $site->categories()->attach($validatedData['categories']);
 
         return $this->sendResponse($site, 'Site added successfully...!');
     }
@@ -262,12 +299,20 @@ class SiteController extends BaseController
      */
     public function updateSite(Request $request)
     {
+        // Decode `categories` if it's a JSON string
+        if (is_string($request->input('categories'))) {
+            $request->merge([
+                'categories' => json_decode($request->input('categories'), true)
+            ]);
+        }
+
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:sites,id',
-            'name' => 'sometimes|required|unique:sites,name|string|between:2,100',
+            'name' => 'sometimes|required|unique:sites,name,id|string|between:2,100',
             'parent_id' => 'sometimes|required|exists:sites,id',
             'user_id' => 'sometimes|required|exists:users,id',
-            'category_id' => 'sometimes|required|string|exists:categories,id',
+            'categories' => 'nullable|array',
+            'categories.*' => 'exists:categories,id',
             'bus_stop_type' => 'sometimes|required|in:Stop,Depo',
             'tag_line' => 'sometimes|required|string|between:2,100',
             'description' => 'sometimes|required|string',
@@ -289,7 +334,7 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $input = $request->all();
+        $input = $request->except('categories'); // Exclude categories for separate handling
 
         $site = Site::find($request->id);
 
@@ -309,9 +354,15 @@ class SiteController extends BaseController
             }
         }
 
+        // Update site details
         $site->update($input);
 
-        return $this->sendResponse($site, 'Site added successfully...!');
+        // Update categories if provided
+        if ($request->has('categories')) {
+            $site->categories()->sync($request->input('categories'));
+        }
+
+        return $this->sendResponse($site, 'Site updated successfully...!');
     }
 
     /**
@@ -323,7 +374,7 @@ class SiteController extends BaseController
     public function deleteSite(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'id' => 'required|exists:categories,id'
+            'id' => 'required|exists:sites,id'
         ]);
 
         if ($validator->fails()) {

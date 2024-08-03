@@ -55,7 +55,7 @@ class ContactController extends BaseController
         }
 
         $contact = array(
-            'user_id' => config('user_id') == null ? config('user_id') : null,
+            'user_id' => config('user_id'),
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,

@@ -20,8 +20,8 @@ class BannerController extends BaseController
     public function listBanners()
     {
         $banner = Banner::with(['bannerable' =>  function ($query) {
-            $query->select('id', 'name', 'category_id');
-        }, 'bannerable.category' =>  function ($query) {
+            $query->select('id', 'name');
+        }, 'bannerable.categories' =>  function ($query) {
             $query->select('id', 'name', 'code');
         }])
             ->paginate(10);
@@ -104,8 +104,8 @@ class BannerController extends BaseController
         }
 
         $banner = Banner::with(['bannerable' =>  function ($query) {
-            $query->select('id', 'name', 'category_id');
-        }, 'bannerable.category' =>  function ($query) {
+            $query->select('id', 'name');
+        }, 'bannerable.categories' =>  function ($query) {
             $query->select('id', 'name', 'code');
         }])
             ->find($request->id);

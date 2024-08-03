@@ -149,24 +149,6 @@ class ProcessRouteImport implements ShouldQueue
         $siteRecord['name'] = $name;
         $siteRecord['user_id'] = null;
         $siteRecord['parent_id'] = null;
-
-        $where_category = array(
-            'code' => 'other',
-            'name' => 'Other',
-            'parent_id' => Category::where([
-                'code' => 'destination',
-                'name' => 'Destination'
-            ])->first()->id
-        );
-
-        $category = Category::where($where_category)->first();
-
-        if (!$category) {
-            logger("invalid category");
-            return null;
-        }
-
-        $siteRecord['category_id'] = isValidReturn($category, 'id');
         $siteRecord['bus_stop_type'] = 'Stop';
         $siteRecord['tag_line'] = '';
         $siteRecord['description'] = '';
@@ -183,7 +165,26 @@ class ProcessRouteImport implements ShouldQueue
         $siteRecord['rules'] = null;
         $siteRecord['social_media'] = null;
         $siteRecord['meta_data'] = null;
+
+        // Define the category attributes
+        $where_category = array(
+            'code' => 'other',
+            'name' => 'Other',
+            'parent_id' => null
+        );
+
+        // Attempt to find or create the category
+        $category = Category::firstOrCreate($where_category);
+
+        // Check if the category was created or found
+        if (!$category) {
+            logger("Category could not be created or found");
+            return null;
+        }
+        
         $site = Site::create($siteRecord);
+
+        $site->categories()->attach($category);
 
         return $site;
     }

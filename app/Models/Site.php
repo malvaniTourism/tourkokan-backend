@@ -21,7 +21,6 @@ class Site extends Model
         'name',
         'parent_id',
         'user_id',
-        'category_id',
         'bus_stop_type',
         'tag_line',
         'description',
@@ -65,7 +64,8 @@ class Site extends Model
     {
         $language = config('language');
 
-        return $language === 'en' ? $value :  $this->mr_name;
+        // return $language === 'en' ? $value :  ($this->mr_name == "" ? $value :  $this->mr_name);
+        return empty($language) || $language === 'en' ? $value : ($this->mr_name == "" ? $value : $this->mr_name);
     }
 
     public function getMrNameAttribute($value)
@@ -93,14 +93,19 @@ class Site extends Model
         return $this->hasMany(Site::class, 'parent_id');
     }
 
-    /**
-     * Get the category that owns the Site
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function category()
+    // /**
+    //  * Get the category that owns the Site
+    //  *
+    //  * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+    //  */
+    // public function category()
+    // {
+    //     return $this->belongsTo(Category::class, 'category_id', 'id');
+    // }
+
+    public function categories()
     {
-        return $this->belongsTo(Category::class, 'category_id', 'id');
+        return $this->belongsToMany(Category::class);
     }
 
     /**
@@ -160,5 +165,15 @@ class Site extends Model
     public function banners()
     {
         return $this->morphMany(Banner::class, 'bannerable');
+    }
+
+    /**
+     * Get all of the comment for the Site
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function gallery()
+    {
+        return $this->morphMany(Gallery::class, 'galleryable');
     }
 }

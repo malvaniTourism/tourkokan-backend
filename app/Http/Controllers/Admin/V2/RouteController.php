@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\V2;
 use App\Models\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
+use App\Models\RouteStops;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -25,64 +26,135 @@ class RouteController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function listroutes()
-    {
-        $routes = Route::withCount(['routeStops'])
-            ->with([
-                'sourcePlace:id,name,place_category_id',
-                'sourcePlace.placeCategory:id,name,icon',
-                'destinationPlace:id,name,place_category_id',
-                'destinationPlace.placeCategory:id,name,icon'
-            ])
-            ->select('id', 'source_place_id', 'destination_place_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time')
-            ->paginate();
-
-        return $this->sendResponse($routes, 'Routes successfully Retrieved...!');
-    }
-
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function routes(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'source_place_id' => 'nullable|required_with:destination_place_id|exists:places,id',
-            'destination_place_id' => 'nullable|required_with:source_place_id|exists:places,id',
+            'source_place_id' => 'nullable|required_with:destination_place_id|exists:sites,id',
+            'destination_place_id' => 'nullable|required_with:source_place_id|exists:sites,id',
+            'search' => 'nullable|string|alpha|max:255',
+            'apitype' => 'required|string|max:255|in:list,dropdown',
+            'with_stops' => 'sometimes|required|boolean:true,false',
+            'per_page' => 'nullable|integer|max:50|min:1'
         ]);
 
         if ($validator->fails()) {
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $routeIds = Route::whereHas('routeStops', function ($query) use ($request) {
-            $query->when($request->has('source_place_id') && $request->has('destination_place_id'), function ($subquery) use ($request) {
-               $subquery->where('place_id', $request->source_place_id)
-               ->whereBetween('serial_no', [
-                            DB::raw("(SELECT MIN(serial_no) FROM route_stops WHERE route_id = routes.id AND place_id IN ($request->source_place_id, $request->destination_place_id))"),
-                            DB::raw("(SELECT MAX(serial_no) FROM route_stops WHERE route_id = routes.id AND place_id IN ($request->source_place_id, $request->destination_place_id))"),
-                        ]);
+        // if ($request->source_place_id) {
+        //    return 5;
+        // }
+        // return $request->all();
 
-            });
-        })->pluck('id');
+        // $routeIds = Route::whereHas('routeStops', function ($query) use ($request) {
+        //     if ($request->source_place_id && $request->destination_place_id) {
+        //         $query->where('site_id', $request->source_place_id)
+        //             ->whereBetween('serial_no', [
+        //                 DB::raw("(SELECT MIN(serial_no) FROM route_stops WHERE route_id = routes.id AND site_id IN ($request->source_place_id, $request->destination_place_id))"),
+        //                 DB::raw("(SELECT MAX(serial_no) FROM route_stops WHERE route_id = routes.id AND site_id IN ($request->source_place_id, $request->destination_place_id))"),
+        //             ]);
+        //     }
+        // })->pluck('id');
 
-        $routes = Route::with([
-            'routeStops:id,serial_no,route_id,place_id,arr_time,dept_time,total_time,delayed_time',
-            'routeStops.place:id,name,place_category_id',
-            'routeStops.place.placeCategory:id,name,icon',
-            'sourcePlace:id,name,place_category_id',
-            'sourcePlace.placeCategory:id,name,icon',
-            'destinationPlace:id,name,place_category_id',
-            'destinationPlace.placeCategory:id,name,icon',
-            'busType:id,type,logo,meta_data'
-        ])->select('id', 'source_place_id', 'destination_place_id', 'bus_type_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time');
+        // $where = array(
+        //     'source_place_id' => $request->source_place_id,
+        //     'destination_place_id' => $request->destination_place_id,
+        // );
 
-        $routes->when($request->has('source_place_id') && $request->has('destination_place_id'), function ($query) use ($routeIds) {
-            $query->whereIn('id', $routeIds);
+        // // $routeIds = Route::with('routeStops')->where($where)->get();
+
+        // $whereRouteStops = array(
+        //     'site_id' => $request->source_place_id,
+        //     'site_id' => $request->destination_place_id
+        // );
+        // $routeIds = RouteStops::where($whereRouteStops)->get();
+
+        $routes = RouteStops::where('site_id', $request->source_place_id)
+            ->orWhere('site_id', $request->destination_place_id)
+            ->orderBy('route_id')
+            ->get();
+
+        // Group routes by route id
+        $groupedRoutes = $routes->groupBy('route_id');
+
+        // Filter routes with both source and destination place ids
+        $validRoutes = $groupedRoutes->filter(function ($stops) use ($request) {
+            $sourceStop = $stops->firstWhere('site_id', $request->source_place_id);
+            $destinationStop = $stops->firstWhere('site_id', $request->destination_place_id);
+
+            // Check if both source and destination stops exist in the route
+            if ($sourceStop && $destinationStop) {
+                // Ensure source stop's serial number is less than destination stop's serial number
+                return $sourceStop->serial_no < $destinationStop->serial_no;
+            }
+
+            return false; // Return false if any of the stops is missing
         });
 
-        $routes = $routes->paginate(5);
+        // Get the route_ids of the filtered routes
+        $routeIds = $validRoutes->keys()->toArray();
+
+        // $routeIds = Route::whereHas('routeStops', function ($query) use ($request) {
+        //     if ($request->source_place_id && $request->destination_place_id) {
+        //         $query->whereIn('site_id', [$request->source_place_id, $request->destination_place_id])
+        //             ->where(function ($q) use ($request) {
+        //                 $q->where('serial_no', '>', function ($subQuery) use ($request) {
+        //                     $subQuery->select(DB::raw('MIN(serial_no)'))
+        //                         ->from('route_stops')
+        //                         ->whereColumn('route_stops.route_id', 'routes.id')
+        //                         ->whereIn('site_id', [$request->source_place_id, $request->destination_place_id]);
+        //                 })->where('serial_no', '<', function ($subQuery) use ($request) {
+        //                     $subQuery->select(DB::raw('MAX(serial_no)'))
+        //                         ->from('route_stops')
+        //                         ->whereColumn('route_stops.route_id', 'routes.id')
+        //                         ->whereIn('site_id', [$request->source_place_id, $request->destination_place_id]);
+        //                 });
+        //             });
+        //     }
+        // })->pluck('id');
+
+        $with = [
+            'sourcePlace:id,name,mr_name',
+            'sourcePlace.categories:id,name,icon',
+            'destinationPlace:id,name,mr_name',
+            'destinationPlace.categories:id,name,icon',
+            'busType:id,type,logo,meta_data'
+        ];
+
+        if ($request->with_stops) {
+            $additionalWith = [
+                'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time,distance',
+                'routeStops.site:id,name,mr_name',
+                'routeStops.site.categories:id,name,icon',
+            ];
+
+            $with = array_merge($with, $additionalWith);
+        }
+
+        $routes = Route::with($with)->select(
+            'id',
+            'source_place_id',
+            'destination_place_id',
+            'bus_type_id',
+            'name',
+            'start_time',
+            'end_time',
+            'total_time',
+            'delayed_time',
+            DB::raw('(SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id) AS distance')
+        );
+
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $routes = $routes->where('name', 'like', $search . '%');
+        }
+
+        if ($request->source_place_id && $request->destination_place_id) {
+            $routes->whereIn('id', $routeIds);
+        }
+
+        $routes = $routes->select(isValidReturn(config('grid.listRoutes.' . $request->apitype), 'columns', '*'))
+            ->paginate(isValidReturn($request->all(), 'per_page', 15));
 
         #need to test on both query for performance
 
@@ -95,11 +167,11 @@ class RouteController extends BaseController
         // $routes = Route::with([
         //     'routeStops:id,serial_no,route_id,place_id,arr_time,dept_time,total_time,delayed_time',
         //     'routeStops.place:id,name,place_category_id',
-        //     'routeStops.place.placeCategory:id,name,icon',
+        //     'routeStops.place.category:id,name,icon',
         //     'sourcePlace:id,name,place_category_id',
-        //     'sourcePlace.placeCategory:id,name,icon',
+        //     'sourcePlace.category:id,name,icon',
         //     'destinationPlace:id,name,place_category_id',
-        //     'destinationPlace.placeCategory:id,name,icon',
+        //     'destinationPlace.category:id,name,icon',
         //     'busType:id,type,logo'
         // ])->select('id', 'source_place_id', 'destination_place_id', 'bus_type_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time')
         //     ->whereHas('routeStops', function ($query) use ($request) {
@@ -124,6 +196,85 @@ class RouteController extends BaseController
 
         return $this->sendResponse($routes, 'available routes successfully Retrieved...!');
     }
+
+    // public function routes(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'source_place_id' => 'nullable|required_with:destination_place_id|exists:places,id',
+    //         'destination_place_id' => 'nullable|required_with:source_place_id|exists:places,id',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return $this->sendError($validator->errors(), '', 200);
+    //     }
+
+    //     $routeIds = Route::whereHas('routeStops', function ($query) use ($request) {
+    //         $query->when($request->has('source_place_id') && $request->has('destination_place_id'), function ($subquery) use ($request) {
+    //             $subquery->where('place_id', $request->source_place_id)
+    //                 ->whereBetween('serial_no', [
+    //                     DB::raw("(SELECT MIN(serial_no) FROM route_stops WHERE route_id = routes.id AND place_id IN ($request->source_place_id, $request->destination_place_id))"),
+    //                     DB::raw("(SELECT MAX(serial_no) FROM route_stops WHERE route_id = routes.id AND place_id IN ($request->source_place_id, $request->destination_place_id))"),
+    //                 ]);
+    //         });
+    //     })->pluck('id');
+
+    //     $routes = Route::with([
+    //         'routeStops:id,serial_no,route_id,place_id,arr_time,dept_time,total_time,delayed_time',
+    //         'routeStops.place:id,name,place_category_id',
+    //         'routeStops.place.placeCategory:id,name,icon',
+    //         'sourcePlace:id,name,place_category_id',
+    //         'sourcePlace.placeCategory:id,name,icon',
+    //         'destinationPlace:id,name,place_category_id',
+    //         'destinationPlace.placeCategory:id,name,icon',
+    //         'busType:id,type,logo,meta_data'
+    //     ])->select('id', 'source_place_id', 'destination_place_id', 'bus_type_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time');
+
+    //     $routes->when($request->has('source_place_id') && $request->has('destination_place_id'), function ($query) use ($routeIds) {
+    //         $query->whereIn('id', $routeIds);
+    //     });
+
+    //     $routes = $routes->paginate(5);
+
+    //     #need to test on both query for performance
+
+    //     // $data = $request->validate([
+    //     //     'source_place_id' => 'exists:places,id|required_with:destination_place_id',
+    //     //     'destination_place_id' => 'exists:places,id|required_with:source_place_id',
+    //     // ]);
+
+
+    //     // $routes = Route::with([
+    //     //     'routeStops:id,serial_no,route_id,place_id,arr_time,dept_time,total_time,delayed_time',
+    //     //     'routeStops.place:id,name,place_category_id',
+    //     //     'routeStops.place.placeCategory:id,name,icon',
+    //     //     'sourcePlace:id,name,place_category_id',
+    //     //     'sourcePlace.placeCategory:id,name,icon',
+    //     //     'destinationPlace:id,name,place_category_id',
+    //     //     'destinationPlace.placeCategory:id,name,icon',
+    //     //     'busType:id,type,logo'
+    //     // ])->select('id', 'source_place_id', 'destination_place_id', 'bus_type_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time')
+    //     //     ->whereHas('routeStops', function ($query) use ($request) {
+    //     //         $sourcePlaceId = $request->source_place_id;
+    //     //         $destinationPlaceId = $request->destination_place_id;
+
+    //     //         $query->where('place_id', $sourcePlaceId)
+    //     //             ->whereExists(function ($subquery) use ($sourcePlaceId, $destinationPlaceId) {
+    //     //                 $subquery->select(DB::raw(1))
+    //     //                     ->from('route_stops')
+    //     //                     ->where('route_id', DB::raw('routes.id'))
+    //     //                     ->where('place_id', $destinationPlaceId)
+    //     //                     ->where('serial_no', '>', function ($subsubquery) use ($sourcePlaceId) {
+    //     //                         $subsubquery->select('serial_no')
+    //     //                             ->from('route_stops')
+    //     //                             ->where('route_id', DB::raw('routes.id'))
+    //     //                             ->where('place_id', $sourcePlaceId);
+    //     //                     });
+    //     //             });
+    //     //     })
+    //     //     ->paginate(5);
+
+    //     return $this->sendResponse($routes, 'available routes successfully Retrieved...!');
+    // }
 
     /**
      * Show the form for creating a new resource.
@@ -152,9 +303,29 @@ class RouteController extends BaseController
      * @param  \App\Models\Route  $route
      * @return \Illuminate\Http\Response
      */
-    public function show(Route $route)
+    public function routeDetails(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:routes,id'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        $route = Route::with([
+            'sourcePlace:id,name,mr_name',
+            'sourcePlace.categories:id,name,icon',
+            'destinationPlace:id,name,mr_name',
+            'destinationPlace.categories:id,name,icon',
+            'busType:id,type,logo,meta_data',
+            'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time,distance',
+            'routeStops.site:id,name,mr_name',
+            'routeStops.site.categories:id,name,icon',
+        ])->find($request->id);
+
+
+        return $this->sendResponse($route, 'route successfully Retrieved...!');
     }
 
     /**

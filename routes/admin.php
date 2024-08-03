@@ -15,7 +15,13 @@ use App\Http\Controllers\Admin\AccomodationCategoryController;
 use App\Http\Controllers\Admin\V2\BannerController;
 use App\Http\Controllers\Admin\BusTypeController;
 use App\Http\Controllers\Admin\DropDownController;
+use App\Http\Controllers\Admin\V2\AppVersionController;
+use App\Http\Controllers\Admin\V2\BonusTypesController;
 use App\Http\Controllers\Admin\V2\CategoryController;
+use App\Http\Controllers\Admin\V2\ContactController;
+use App\Http\Controllers\Admin\V2\GalleryController;
+use App\Http\Controllers\Admin\V2\RolesController;
+use App\Http\Controllers\Admin\V2\RouteController;
 use App\Http\Controllers\Admin\V2\SiteController;
 
 /*
@@ -115,7 +121,6 @@ Route::group(['middleware' => 'api', 'prefix' => 'v2/auth'], function ($router) 
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('refresh', [AuthController::class, 'refresh']);
-    Route::post('users', [AuthController::class, 'index']);
     Route::post('sendOtp', [AuthController::class, 'sendOtp']);
     Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
 }); 
@@ -132,7 +137,7 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 
     Route::post('addSite', [SiteController::class, 'addSite']);
     Route::post('updateSite', [SiteController::class, 'updateSite']);
-    Route::delete('deleteSite', [SiteController::class, 'deleteSite']);
+    Route::post('deleteSite', [SiteController::class, 'deleteSite']);
 
     Route::post('bannerDaysDD', [DropDownController::class, 'bannerDaysDD']);
     Route::post('bannerImageOrientationDD', [DropDownController::class, 'bannerImageOrientationDD']);
@@ -144,4 +149,30 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
     Route::post('getBanner', [BannerController::class, 'getBanner']);
     Route::post('updateBanner', [BannerController::class, 'updateBanner']);
     Route::post('deleteBanner', [BannerController::class, 'deleteBanner']);
+
+    Route::post('addBonusType', [BonusTypesController::class, 'addBonusType']);
+    Route::post('listBonusTypes', [BonusTypesController::class, 'listBonusTypes']);
+    Route::post('getBonusType', [BonusTypesController::class, 'getBonusType']);
+    Route::post('deleteBonusType', [BonusTypesController::class, 'deleteBonusType']);
+    Route::post('updateBonusType', [BonusTypesController::class, 'updateBonusType']);
+
+    Route::post('routes', [RouteController::class, 'routes']);
+    Route::post('routeDetails', [RouteController::class, 'routeDetails']);
+
+    Route::post('getQueries', [ContactController::class, 'getQueries']);
+    Route::post('getQuery', [ContactController::class, 'getQuery']);
+    Route::post('updateQuery', [ContactController::class, 'updateQuery']);
+
+    Route::post('allUsers', [AuthController::class, 'allUsers']);
+
+    Route::post('roleDD', [RolesController::class, 'roleDD']);
+
+    Route::post('listAppVersions', [AppVersionController::class, 'listAppVersions']);
+    Route::post('getAppVersion', [AppVersionController::class, 'getAppVersion']);
+    Route::post('addAppVersion', [AppVersionController::class, 'addAppVersion']);
+    Route::post('updateAppVersion', [AppVersionController::class, 'updateAppVersion']);
+    Route::post('deleteAppVersion', [AppVersionController::class, 'deleteAppVersion']);
+
+    Route::post('getGallery', [GalleryController::class, 'getGallery']);
+    Route::post('updateGallery', [GalleryController::class, 'updateGallery']);
 });
