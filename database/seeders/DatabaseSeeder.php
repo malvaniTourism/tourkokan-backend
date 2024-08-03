@@ -19,11 +19,13 @@ class DatabaseSeeder extends Seeder
         $this->call(UserSeeder::class);
         // $this->call(CitySeeder::class);
         $this->call(CategorySeeder::class);
+        $this->call(BonusTypeSeeder::class);
         // $this->call(PlaceCategorySeeder::class);
         // $this->call(PlaceSeeder::class);
         // $this->call(ProjectSeeder::class);
         $this->call(SiteSeeder::class);
         $this->call(BusTypeSeeder::class);
+        $this->call(GallerySeeder::class);
         // $this->call(RouteSeeder::class);
         $this->call(RouteAndRouteStopsSeeder::class);
         // $this->call(ProductCategorySeeder::class);

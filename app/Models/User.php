@@ -61,7 +61,8 @@ class User extends Authenticatable implements JWTSubject
      *
      * @return mixed
      */
-    public function getJWTIdentifier() {
+    public function getJWTIdentifier()
+    {
         return $this->getKey();
     }
 
@@ -70,15 +71,16 @@ class User extends Authenticatable implements JWTSubject
      *
      * @return array
      */
-    public function getJWTCustomClaims() {
+    public function getJWTCustomClaims()
+    {
         return [];
-    } 
+    }
 
     /**
      * Get the roles that owns the User
-    *
-    * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-    */
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
     public function roles()
     {
         return $this->belongsTo(Roles::class, 'role_id');
@@ -94,7 +96,7 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Comment::class, 'user_id');
     }
 
-     /**
+    /**
      * Get all of the product's comments.
      */
     public function commentsOnUser()
@@ -102,7 +104,7 @@ class User extends Authenticatable implements JWTSubject
         return $this->morphMany(Comment::class, 'commentable');
     }
 
-    
+
     /**
      * Get the project that owns the User
      *
@@ -124,7 +126,7 @@ class User extends Authenticatable implements JWTSubject
     }
 
 
-     /**
+    /**
      * Get all of the project's comments.
      */
     public function favourites()
@@ -132,7 +134,7 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Favourite::class, 'user_id');
     }
 
-     /**
+    /**
      * Get all of the contact's comments.
      */
     public function contacts()
@@ -161,5 +163,13 @@ class User extends Authenticatable implements JWTSubject
     public function address()
     {
         return $this->morphMany(Address::class, 'addressable');
+    }
+
+     /**
+     * Get all of the project's comments.
+     */
+    public function wallets()
+    {
+        return $this->hasMany(Wallet::class, 'user_id');
     }
 }

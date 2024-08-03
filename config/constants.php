@@ -29,42 +29,51 @@ return [
     ],
     'banner_levels' => [
         [
+            "id"  => 1,
             "name" =>  "Carousel",
             "code" =>  "carousel"
         ],
         [
+            "id"  => 2,
             "name" =>  "Middle",
             "code" =>  "middle"
         ],
         [
+            "id"  => 3,
             "name" =>  "Footer",
             "code" =>  "footer"
         ]
     ],
     'image_orientation' => [
         [
+            "id"  => 1,
             "name" =>  "Potrait",
             "code" =>  "potrait"
         ],
         [
+            "id"  => 2,
             "name" =>  "Landscape",
             "code" =>  "landscape"
         ]
     ],
     'banner_days' => [
         [
+            "id"  => 1,
             "name" =>  "1 Day",
             "code" =>  "1"
         ],
         [
+            "id"  => 2,
             "name" =>  "3 Day",
             "code" =>  "3"
         ],
         [
+            "id"  => 3,
             "name" =>  "5 Day",
             "code" =>  "5"
         ],
         [
+            "id"  => 4,
             "name" =>  "7 Day",
             "code" =>  "7"
         ]

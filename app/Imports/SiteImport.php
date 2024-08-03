@@ -70,13 +70,12 @@ class SiteImport implements ToCollection, WithHeadingRow
                     'code' => $value['category_code']
                 );
 
-                $category = Category::where($where_category)->first();
+                $category = Category::where($where_category)->pluck('id');
                 if (!$category) {
                     logger("invalid category");
                     continue;
                 }
 
-                $siteRecord['category_id'] = isValidReturn($category, 'id');
                 $siteRecord['bus_stop_type'] = $value['bus_stop_type'];
                 $siteRecord['tag_line'] = $value['tag_line'];
                 $siteRecord['description'] = isValidReturn($value, 'description', "raw");
@@ -93,7 +92,10 @@ class SiteImport implements ToCollection, WithHeadingRow
                 $siteRecord['rules'] = $value['rules'];
                 $siteRecord['social_media'] = $value['social_media'];
                 $siteRecord['meta_data'] = $value['meta_data'];
+
                 $site = Site::create($siteRecord);
+
+                $site->categories()->attach($category);
 
                 if (
                     ($value['email'] !== null && $value['email'] !== "")  ||

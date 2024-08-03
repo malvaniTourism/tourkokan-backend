@@ -35,6 +35,7 @@ use App\Http\Controllers\User\V2\{
     CommentController,
     ContactController,
     FavouriteController,
+    GalleryController,
     RatingController,
     RolesController,
     RouteController,
@@ -186,7 +187,6 @@ Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2/auth'], function 
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('refresh', [AuthController::class, 'refresh']);
-    Route::post('users', [AuthController::class, 'index']);
     Route::post('sendOtp', [AuthController::class, 'sendOtp']);
     Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
     Route::post('updateEmail', [AuthController::class, 'updateEmail']);
@@ -215,9 +215,6 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('updateQuery', [ContactController::class, 'updateQuery']);
     Route::post('deleteQuery', [ContactController::class, 'deleteQuery']);
 
-    Route::post('addAppVersion', [AppVersionController::class, 'addAppVersion']);
-    Route::post('getAppVersion', [AppVersionController::class, 'getAppVersion']);
-
     Route::post('listcategories', [CategoryController::class, 'listcategories']);
     Route::post('getCategory', [CategoryController::class, 'getCategory']);
 
@@ -231,4 +228,7 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('getComment', [CommentController::class, 'getComment']);
     Route::post('updateComment', [CommentController::class, 'updateComment']);
     Route::post('deleteComment', [CommentController::class, 'deleteComment']);
+
+    Route::post('getGallery', [GalleryController::class, 'getGallery']);
+    
 });

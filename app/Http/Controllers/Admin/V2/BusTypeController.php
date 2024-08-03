@@ -51,16 +51,16 @@ class BusTypeController extends BaseController
         $input = $request->all();
         Log::info("upload file starting");
         //Image 1 store      
-        if ($image = $request->file('logo')) {
-            Log::info("inside upload logo");
-            
-            $logo = date('YmdHis') . "." . $image->getClientOriginalExtension();
+        $input = $request->all();
 
-            $path = $request->file('logo')->store(config('constants.upload_path.busType').'/'.$request->type);
+        $uploadPath = config('constants.upload_path.category');
 
-            $input['logo'] = Storage::url($path);
-            
-            Log::info("FILE STORED".$input['logo']);
+        $fileFields = ['icon'];
+
+        foreach ($fileFields as $field) {
+            if ($image = $request->file($field)) {
+                $input[$field] = uploadFile($image, $uploadPath)['path'];
+            }
         }
 
         $busType = BusType::create($input);

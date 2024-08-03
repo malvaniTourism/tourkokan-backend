@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\User\V2;
+namespace App\Http\Controllers\Admin\V2;
 
 use App\Models\AppVersion;
 use Illuminate\Http\Request;
@@ -17,9 +17,20 @@ class AppVersionController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function listAppVersions(Request $request)
     {
-        //
+        try {
+            $app_version = AppVersion::latest()
+                ->paginate(isValidReturn($request->all(), 'per_page', 15));
+
+            if (!$app_version)
+                return $this->sendError('Empty', [], 404);
+
+            return $this->sendResponse($app_version, 'App version successfully Retrieved...!');
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            throw $th;
+        }
     }
 
     /**
@@ -43,7 +54,7 @@ class AppVersionController extends BaseController
         $validator = Validator::make($request->all(), [
             'platform' => 'required|string',
             'version_number' => 'required|string|unique:app_versions',
-            'release_date' => 'required|date',
+            'release_date' => 'required|date_format:Y-m-d H:i:s',
             'release_notes' => 'nullable|string',
             'update_url' => 'nullable|string',
             'meta_data' => 'nullable|json',
@@ -66,7 +77,7 @@ class AppVersionController extends BaseController
      * @param  \App\Models\AppVersion  $appVersion
      * @return \Illuminate\Http\Response
      */
-    public function getAppVersion(AppVersion $appVersion)
+    public function getAppVersion()
     {
         try {
             $app_version = AppVersion::latest()
@@ -83,27 +94,43 @@ class AppVersionController extends BaseController
     }
 
     /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\AppVersion  $appVersion
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(AppVersion $appVersion)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\AppVersion  $appVersion
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, AppVersion $appVersion)
+    public function updateAppVersion(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'platform' => 'sometimes|required|string',
+            'version_number' => 'sometimes|required|string|unique:app_versions,version_number,' . $request->id,
+            'release_date' => 'sometimes|required|date_format:Y-m-d H:i:s',
+            'release_notes' => 'nullable|string',
+            'update_url' => 'nullable|string',
+            'meta_data' => 'nullable|json',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        // Find the app version record by ID
+        $app_version = AppVersion::find($request->id);
+
+        if (!$app_version) {
+            return $this->sendError('App version not found', '', 404);
+        }
+
+        // Update the app version with the validated data
+        $app_version->update($request->all());
+
+        // Clear the cache for app_version
+        Cache::forget('app_version');
+
+        return $this->sendResponse($app_version, 'App version successfully updated');
     }
+
 
     /**
      * Remove the specified resource from storage.
@@ -111,8 +138,16 @@ class AppVersionController extends BaseController
      * @param  \App\Models\AppVersion  $appVersion
      * @return \Illuminate\Http\Response
      */
-    public function destroy(AppVersion $appVersion)
+    public function deleteAppVersion(Request $request)
     {
-        //
+        $app_version = AppVersion::find($request->id);
+
+        if (is_null($app_version)) {
+            return $this->sendError('Empty', [], 404);
+        }
+
+        $app_version->delete($request->id);
+
+        return $this->sendResponse(true, 'App version deleted successfully...!');
     }
 }
