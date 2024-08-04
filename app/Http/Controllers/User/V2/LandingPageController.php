@@ -174,23 +174,24 @@ class LandingPageController extends BaseController
             ->limit(isValidReturn($request, 'per_page', 10))
             ->get();
 
-        $records =  array(
-            'version' => AppVersion::latest()->first(),
-            'user' => config('user'),
-            'banners' => $banners,
-            'routes' => $routes,
-            // 'stops' => $stops,
-            'categories' => $categories,
-            'cities' => $cities,
-            // 'projects' => $projects,
-            // 'products'=>$products,
-            // 'place_category' => $place_category,
-            // 'places' => $places,
-            'gallery' => $gallery,
-            'queries' => $queries,
-            'blogs' => $blogs
-        );
-
+        $records = Cache::remember('landing_page_data', 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs) {
+            return array(
+                'version' => AppVersion::latest()->first(),
+                'user' => config('user'),
+                'banners' => $banners,
+                'routes' => $routes,
+                // 'stops' => $stops,
+                'categories' => $categories,
+                'cities' => $cities,
+                // 'projects' => $projects,
+                // 'products'=>$products,
+                // 'place_category' => $place_category,
+                // 'places' => $places,
+                'gallery' => $gallery,
+                'queries' => $queries,
+                'blogs' => $blogs
+            );
+        });
         return $this->sendResponse($records, 'Landing page data successfully Retrieved...!');
     }
 }
