@@ -20,6 +20,8 @@ use App\Models\Site;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Gallery;
+use App\Models\Contact;
 
 class LandingPageController extends BaseController
 {
@@ -114,7 +116,7 @@ class LandingPageController extends BaseController
         ]);
 
         foreach ($cities as $city) {
-            $city->setRelation('sites', $city->sites()->select('id', 'name', 'parent_id')->with('categories:id,name,code,parent_id,icon,status,is_hot_category')->limit(5)->get());
+            $city->setRelation('sites', $city->sites()->select('id', 'name', 'mr_name', 'parent_id')->with('categories:id,name,code,parent_id,icon,status,is_hot_category')->limit(5)->get());
             $city->setRelation('gallery', $city->gallery()->limit(5)->get());
 
             $city->setRelation('comment', $city->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5)->get()->each(function ($comment) {
@@ -160,8 +162,21 @@ class LandingPageController extends BaseController
             ->limit(5)
             ->get();
 
+
+        $gallery = Gallery::with([
+            'galleryable:id,name,parent_id',
+            'galleryable.categories:id,name,code,parent_id'
+        ])
+            ->limit(isValidReturn($request, 'per_page', 10))
+            ->get();
+
+        $queries = Contact::where('user_id', config('user_id'))
+            ->limit(isValidReturn($request, 'per_page', 10))
+            ->get();
+
         $records =  array(
             'version' => AppVersion::latest()->first(),
+            'user' => config('user'),
             'banners' => $banners,
             'routes' => $routes,
             // 'stops' => $stops,
@@ -171,6 +186,8 @@ class LandingPageController extends BaseController
             // 'products'=>$products,
             // 'place_category' => $place_category,
             // 'places' => $places,
+            'gallery' => $gallery,
+            'queries' => $queries,
             'blogs' => $blogs
         );
 
