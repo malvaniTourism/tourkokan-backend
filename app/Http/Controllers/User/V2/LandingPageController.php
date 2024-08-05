@@ -173,11 +173,18 @@ class LandingPageController extends BaseController
         $queries = Contact::where('user_id', config('user_id'))
             ->limit(isValidReturn($request, 'per_page', 10))
             ->get();
+        $category = Category::with('subCategories')->where('code', 'emergency')->first();
 
-        $records = Cache::remember('landing_page_data', 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs) {
+        $ids = $category->subCategories->pluck('id');
+
+        $emergency = Site::whereHas('categories', function ($query) use ($ids) {
+            $query->whereIn('id', $ids);
+        })->get();
+
+        $records = Cache::remember('landing_page_data', 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs, $emergency) {
             return array(
                 'version' => AppVersion::latest()->first(),
-                'user' => config('user'),
+                'user' => config('user')->load(['addresses']),
                 'banners' => $banners,
                 'routes' => $routes,
                 // 'stops' => $stops,
@@ -189,9 +196,11 @@ class LandingPageController extends BaseController
                 // 'places' => $places,
                 'gallery' => $gallery,
                 'queries' => $queries,
+                'emergencies' => $emergency,
                 'blogs' => $blogs
             );
         });
+
         return $this->sendResponse($records, 'Landing page data successfully Retrieved...!');
     }
 }
