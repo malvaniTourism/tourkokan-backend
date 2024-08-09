@@ -23,7 +23,9 @@ class Site extends Model
         'user_id',
         'bus_stop_type',
         'tag_line',
+        'mr_tag_line',
         'description',
+        'mr_description',
         'domain_name',
         'logo',
         'icon',
@@ -45,7 +47,9 @@ class Site extends Model
      * @var array
      */
     protected $hidden = [
-        'mr_name'
+        'mr_name',
+        'mr_tag_line',
+        'mr_description',
     ];
 
     /**
@@ -68,7 +72,59 @@ class Site extends Model
         return empty($language) || $language === 'en' ? $value : ($this->mr_name == "" ? $value : $this->mr_name);
     }
 
+    /**
+     * Get the tag_line attribute, with translation support.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    public function getTagLineAttribute($value)
+    {
+        $language = config('language');
+        return empty($language) || $language === 'en' ? $value : ($this->mr_tag_line == "" ? $value : $this->mr_tag_line);
+    }
+
+    /**
+     * Get the description attribute, with translation support.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    public function getDescriptionAttribute($value)
+    {
+        $language = config('language');
+        return empty($language) || $language === 'en' ? $value : ($this->mr_description == "" ? $value : $this->mr_description);
+    }
+
+    /**
+     * Get the mr_name attribute.
+     *
+     * @param  string  $value
+     * @return string
+     */
     public function getMrNameAttribute($value)
+    {
+        return $value;
+    }
+
+    /**
+     * Get the mr_tag_line attribute.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    public function getMrTagLineAttribute($value)
+    {
+        return $value;
+    }
+
+    /**
+     * Get the mr_description attribute.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    public function getMrDescriptionAttribute($value)
     {
         return $value;
     }

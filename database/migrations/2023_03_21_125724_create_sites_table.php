@@ -21,7 +21,9 @@ class CreateSitesTable extends Migration
             $table->integer('user_id')->unsigned()->nullable();
             $table->string('bus_stop_type')->nullable();
             $table->string('tag_line')->nullable();
+            $table->string('mr_tag_line')->nullable();
             $table->text('description');
+            $table->text('mr_description');
             $table->string('domain_name')->nullable();
             $table->string('logo')->nullable();
             $table->string('icon')->nullable();

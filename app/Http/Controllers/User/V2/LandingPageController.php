@@ -56,7 +56,7 @@ class LandingPageController extends BaseController
             ->get();
 
         #categories
-        $categories = Category::with(['subCategories:id,name,code,parent_id,icon,is_hot_category'])
+        $categories = Category::with(['subCategories:id,name,mr_name,code,parent_id,icon,is_hot_category'])
             ->select('*')
             ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
             ->whereNull('parent_id')
@@ -116,7 +116,7 @@ class LandingPageController extends BaseController
         ]);
 
         foreach ($cities as $city) {
-            $city->setRelation('sites', $city->sites()->select('id', 'name', 'mr_name', 'parent_id')->with('categories:id,name,code,parent_id,icon,status,is_hot_category')->limit(5)->get());
+            $city->setRelation('sites', $city->sites()->select('id', 'name', 'mr_name', 'parent_id')->with('categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category')->limit(5)->get());
             $city->setRelation('gallery', $city->gallery()->limit(5)->get());
 
             $city->setRelation('comment', $city->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5)->get()->each(function ($comment) {
@@ -131,11 +131,11 @@ class LandingPageController extends BaseController
         $routes = Route::with([
             'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
             'routeStops.site:id,name,mr_name',
-            'routeStops.site.categories:id,name,icon',
+            'routeStops.site.categories:id,name,mr_name,icon',
             'sourcePlace:id,name,mr_name',
-            'sourcePlace.categories:id,name,icon',
+            'sourcePlace.categories:id,name,mr_name,icon',
             'destinationPlace:id,name,mr_name',
-            'destinationPlace.categories:id,name,icon',
+            'destinationPlace.categories:id,name,mr_name,icon',
             'busType:id,type,logo,meta_data'
         ])->whereHas('routeStops', function ($query) use ($request) {
             // write code to get user city
@@ -165,7 +165,7 @@ class LandingPageController extends BaseController
 
         $gallery = Gallery::with([
             'galleryable:id,name,parent_id',
-            'galleryable.categories:id,name,code,parent_id'
+            'galleryable.categories:id,name,mr_name,code,parent_id'
         ])
             ->limit(isValidReturn($request, 'per_page', 10))
             ->get();
