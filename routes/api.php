@@ -230,5 +230,6 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('deleteComment', [CommentController::class, 'deleteComment']);
 
     Route::post('getGallery', [GalleryController::class, 'getGallery']);
+    Route::post('deleteMyAccout', [AuthController::class, 'deleteMyAccout']);
     
 });

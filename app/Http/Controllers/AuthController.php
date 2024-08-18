@@ -496,31 +496,55 @@ class AuthController extends BaseController
     {
         try {
             $validator = Validator::make($request->all(), [
-                'email' => 'sometimes|nullable|required_without:mobile|email|exists:users,email',
+                'email' => [
+                    'sometimes',
+                    'nullable',
+                    'required_without:mobile',
+                    'email',
+                    Rule::exists('users', 'email')->where(function ($query) {
+                        $query->whereNull('deleted_at');
+                    }),
+                ],
                 'mobile' => 'sometimes|nullable|required_without:email|exists:users,mobile',
                 'otp' => 'required',
+                'delete' => 'nullable|boolean'
             ]);
 
             if ($validator->fails()) {
                 return $this->sendError($validator->errors(), '', 200);
             }
 
-            $where_condition = array_filter($request->all());
+            $delete = isValidReturn($request->all(), 'delete');
+            unset($request['delete']);
 
+            $where_condition = array_filter($request->all());
             $user = User::where($where_condition)->first();
 
-            if ($user)
-                User::where($where_condition)->update(array('otp' => null, 'email_verified_at' => Carbon::now(), 'isVerified' => true));
-            else
+            if ($user) {
+                if ($delete) {
+                    Wallet::where('user_id', $user->id)->delete();
+
+                    $user->delete();
+                    return $this->sendResponse(null, 'Your account will be removed within 24 hours.');
+                }
+
+                User::where($where_condition)->update([
+                    'otp' => null,
+                    'email_verified_at' => Carbon::now(),
+                    'isVerified' => true
+                ]);
+
+                $token = JWTAuth::fromUser($user);
+                return $this->createNewToken($token, 'Logged In Successfully!');
+            } else {
                 return $this->sendError('Invalid OTP', [], 200);
-
-            $token = JWTAuth::fromUser($user);
-
-            return $this->createNewToken($token, 'Loged In Succesfull!');
+            }
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
+            return $this->sendError('An error occurred.', [], 500);
         }
     }
+
 
     public function getAllFavourites($id)
     {
@@ -543,5 +567,37 @@ class AuthController extends BaseController
         }
 
         return $this->sendResponse($favourites, 'Favourites successfully Retrieved...!');
+    }
+
+    public function deleteMyAccout(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => [
+                    'sometimes',
+                    'required',
+                    'email',
+                    Rule::exists('users', 'email')->where(function ($query) {
+                        $query->whereNull('deleted_at');
+                    }),
+                ],
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError($validator->errors(), '', 200);
+            }
+
+            if (isValidReturn($request->all(), 'email')) {
+                $destination = ['email' => $request->email];
+            } else {
+                $destination = ['email' => config('user')->email];
+            }
+
+            $data = sendOTP($destination);
+
+            return $this->sendResponse($data, 'OTP successfully sent!');
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+        }
     }
 }
