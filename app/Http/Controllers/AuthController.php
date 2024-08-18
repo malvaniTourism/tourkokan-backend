@@ -34,7 +34,7 @@ class AuthController extends BaseController
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail', 'isVerifiedEmail']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail', 'isVerifiedEmail', 'deleteMyAccount']]);
     }
 
     public function allUsers()
@@ -525,7 +525,7 @@ class AuthController extends BaseController
                     Wallet::where('user_id', $user->id)->delete();
 
                     $user->delete();
-                    return $this->sendResponse(null, 'Your account will be removed within 24 hours.');
+                    return $this->sendResponse(null, 'Your account has been removed from our database.');
                 }
 
                 User::where($where_condition)->update([
@@ -569,7 +569,7 @@ class AuthController extends BaseController
         return $this->sendResponse($favourites, 'Favourites successfully Retrieved...!');
     }
 
-    public function deleteMyAccout(Request $request)
+    public function deleteMyAccount(Request $request)
     {
         try {
             $validator = Validator::make($request->all(), [
