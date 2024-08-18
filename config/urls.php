@@ -13,6 +13,7 @@ return [
         'updateEmail',
         'addAppVersion',
         'isVerifiedEmail',
-        'addGuestQuery'
+        'addGuestQuery',
+        'deleteMyAccount'
     ]
 ];

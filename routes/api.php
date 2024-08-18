@@ -181,6 +181,7 @@ use App\Http\Controllers\User\V2\{
 Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2'], function ($router) {
     Route::get('roleDD', [RolesController::class, 'roleDD']);
     Route::post('addGuestQuery', [ContactController::class, 'addQuery']);
+    Route::post('deleteMyAccount', [AuthController::class, 'deleteMyAccount']);
 });
 
 Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2/auth'], function ($router) {
@@ -230,5 +231,4 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('deleteComment', [CommentController::class, 'deleteComment']);
 
     Route::post('getGallery', [GalleryController::class, 'getGallery']);
-    
 });

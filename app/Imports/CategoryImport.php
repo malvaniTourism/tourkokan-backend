@@ -37,6 +37,7 @@ class CategoryImport implements ToCollection, WithHeadingRow
             if (is_null($exists)) {
                 $obj = new Category();
                 $obj->name              = $value['name'];
+                $obj->mr_name           = $value['mr_name'];
                 $obj->code              = strtolower($value['code']);
                 $obj->parent_id         = $parent_id;
                 $obj->description       = isValidReturn($value, 'description');
@@ -47,6 +48,7 @@ class CategoryImport implements ToCollection, WithHeadingRow
                 $obj->save();
             } else {
                 $exists->name              = $value['name'];
+                $exists->mr_name           = $value['mr_name'];
                 $exists->code              = strtolower($value['code']);
                 $exists->parent_id         = $parent_id;
                 $exists->description       = isValidReturn($value, 'description');

@@ -5,6 +5,7 @@ import About from '../components/About';
 import Contact from '../components/Contact';
 import Footer from '../components/Footer';
 import Team from '../components/Team';
+import DeleteMyAccount from '../components/DeleteMyAccount ';
 
 function Home() {
     return (
@@ -14,8 +15,11 @@ function Home() {
             <div id='About'>
                 <About />
             </div>
-            <div id='Contact' style={{padding: 50, backgroundColor: "#152F4F"}}>
+            <div id='Contact' style={{ padding: 50, backgroundColor: "#152F4F" }}>
                 <Contact />
+            </div>
+            <div id='DeleteMyAccount'>
+                <DeleteMyAccount />
             </div>
             {/* <Team /> */}
             <Footer />
