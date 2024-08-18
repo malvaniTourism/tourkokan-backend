@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Button, Container, Modal } from 'react-bootstrap';
-import './styles.css'
+import './styles.css';
 
 const Contact = () => {
     const [name, setName] = useState('');
@@ -9,10 +9,34 @@ const Contact = () => {
     const [message, setMessage] = useState('');
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showFailureModal, setShowFailureModal] = useState(false);
+    const [errors, setErrors] = useState({});
     const appUrl = process.env.MIX_APP_URL; // Accessing the base URL from environment variables
+
+    const validateForm = () => {
+        const newErrors = {};
+
+        if (!name.trim()) {
+            newErrors.name = 'Name is required';
+        }
+
+        if (!message.trim()) {
+            newErrors.message = 'Message is required';
+        }
+
+        if (!email.trim() && !phone.trim()) {
+            newErrors.contact = 'Either email or phone is required';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validateForm()) {
+            return; // If validation fails, don't proceed with submission
+        }
 
         try {
             const response = await fetch(`${appUrl}/api/v2/addGuestQuery`, {
@@ -25,12 +49,12 @@ const Contact = () => {
 
             if (response.ok) {
                 // Handle success
-                  // Reset form fields
-                  setName('');
-                  setEmail('');
-                  setPhone('');
-                  setMessage('');
-  
+                // Reset form fields
+                setName('');
+                setEmail('');
+                setPhone('');
+                setMessage('');
+
                 setShowSuccessModal(true);
             } else {
                 // Handle failure
@@ -39,6 +63,7 @@ const Contact = () => {
         } catch (error) {
             // Handle error
             console.error('Error:', error);
+            setShowFailureModal(true);
         }
     };
 
@@ -55,7 +80,11 @@ const Contact = () => {
                             placeholder="Enter your name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
+                            isInvalid={!!errors.name}
                         />
+                        <Form.Control.Feedback type="invalid">
+                            {errors.name}
+                        </Form.Control.Feedback>
                     </Form.Group>
 
                     <Form.Group controlId="formEmail">
@@ -66,6 +95,7 @@ const Contact = () => {
                             placeholder="Enter your email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            isInvalid={!!errors.contact && !phone.trim()}
                         />
                     </Form.Group>
 
@@ -73,11 +103,15 @@ const Contact = () => {
                         <Form.Label>Phone</Form.Label>
                         <Form.Control
                             className='inpuField'
-                            type="phone"
+                            type="tel"
                             placeholder="Enter your phone number"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
+                            isInvalid={!!errors.contact && !email.trim()}
                         />
+                        <Form.Control.Feedback type="invalid">
+                            {errors.contact}
+                        </Form.Control.Feedback>
                     </Form.Group>
 
                     <Form.Group controlId="formMessage">
@@ -89,7 +123,11 @@ const Contact = () => {
                             placeholder="Enter your message"
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
+                            isInvalid={!!errors.message}
                         />
+                        <Form.Control.Feedback type="invalid">
+                            {errors.message}
+                        </Form.Control.Feedback>
                     </Form.Group>
 
                     <Button variant="primary" type="submit" style={{ marginTop: 20 }}>
@@ -124,7 +162,7 @@ const Contact = () => {
                 </Modal.Footer>
             </Modal>
         </Container>
-    )
-}
+    );
+};
 
 export default Contact;

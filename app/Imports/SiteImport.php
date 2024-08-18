@@ -78,7 +78,9 @@ class SiteImport implements ToCollection, WithHeadingRow
 
                 $siteRecord['bus_stop_type'] = $value['bus_stop_type'];
                 $siteRecord['tag_line'] = $value['tag_line'];
+                $siteRecord['mr_tag_line'] = $value['mr_tag_line'];
                 $siteRecord['description'] = isValidReturn($value, 'description', "raw");
+                $siteRecord['mr_description'] = isValidReturn($value, 'mr_description', "raw");
                 $siteRecord['domain_name'] = $value['domain_name'];
                 $siteRecord['logo'] = isValidReturn($value, 'logo');
                 $siteRecord['icon'] = isValidReturn($value, 'icon');

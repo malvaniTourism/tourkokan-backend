@@ -60,6 +60,19 @@ class Category extends Model
     //     return $this->hasMany(Site::class, 'category_id', 'id');
     // }
 
+    public function getNameAttribute($value)
+    {
+        $language = config('language');
+
+        // return $language === 'en' ? $value :  ($this->mr_name == "" ? $value :  $this->mr_name);
+        return empty($language) || $language === 'en' ? $value : ($this->mr_name == "" ? $value : $this->mr_name);
+    }
+
+    public function getMrNameAttribute($value)
+    {
+        return $value;
+    }
+
     public function sites()
     {
         return $this->belongsToMany(Site::class);
