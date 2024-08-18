@@ -96,10 +96,9 @@ class AuthController extends BaseController
     public function register(Request $request)
     {
         try {
-            $prefix = $request->route()->getPrefix();
-
-            $prefixParts = explode('/', $request->route()->getPrefix());
-            $prefix = $prefixParts[0];
+            // $prefix = $request->route()->getPrefix();
+            // $prefixParts = explode('/', $request->route()->getPrefix());
+            // $prefix = $prefixParts[0];
 
             // there is error in validation for superadmin role return error
             $validator = Validator::make(
