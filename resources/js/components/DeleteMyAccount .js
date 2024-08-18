@@ -129,6 +129,12 @@ const DeleteMyAccount = () => {
         <Container>
             <div style={{ borderRadius: 15, padding: 10, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
                 <h1 style={{ color: "#fff" }}>Delete Account</h1>
+                <h1 style={{ color: "#333", textAlign: "center", marginBottom: 20 }}>Delete Your Account</h1>
+                <p style={{ textAlign: "center", marginBottom: 20, fontSize: '16px', color: '#666' }}>
+                    We're sorry to see you go. If you're sure you want to delete your account, please enter your email address below.
+                    An OTP (One-Time Password) will be sent to your email for verification. After verifying the OTP, your account will be permanently deleted.
+                    Please note that this action cannot be undone.
+                </p>
                 <Form onSubmit={handleDeleteRequest} style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
                     <Form.Group controlId="formEmail">
                         <Form.Label>Email</Form.Label>
