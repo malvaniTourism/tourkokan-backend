@@ -18,6 +18,7 @@ class ContactController extends BaseController
     public function getQueries()
     {
         $contacts = Contact::where('user_id', config('user_id'))
+            ->orderBy('created_at', 'DESC')
             ->paginate(10);
 
         return $this->sendResponse($contacts, 'Contacts successfully Retrieved...!');

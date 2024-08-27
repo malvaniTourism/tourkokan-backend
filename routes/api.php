@@ -206,6 +206,7 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
 
     Route::post('listroutes', [RouteController::class, 'listroutes']);
     Route::post('routes', [RouteController::class, 'routes']);
+    Route::post('downloadRoute', [RouteController::class, 'downloadRoute']);
 
     Route::post('favourites', [FavouriteController::class, 'index']);
     Route::post('addDeleteFavourite', [FavouriteController::class, 'addDeleteFavourite']);
