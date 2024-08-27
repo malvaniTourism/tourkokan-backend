@@ -40,7 +40,7 @@ function MyCarousel() {
                 <img
                     className="d-block w-100"
                     style={{ height: "90vh" }}
-                    src="/assets/corousel/angnewadi.jpg"
+                    src="/assets/corousel/agnewadi.jpg"
                     alt="Third slide"
                 />
                 <Carousel.Caption>

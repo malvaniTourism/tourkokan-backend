@@ -181,7 +181,7 @@ class LandingPageController extends BaseController
             $query->whereIn('id', $ids);
         })->get();
 
-        $records = Cache::remember('landing_page_data', 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs, $emergency) {
+        $records = Cache::remember('landing_page_data' . config('user')->id, 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs, $emergency) {
             return array(
                 'version' => AppVersion::latest()->first(),
                 'user' => config('user')->load(['addresses']),
@@ -201,6 +201,12 @@ class LandingPageController extends BaseController
             );
         });
 
-        return $this->sendResponse($records, 'Landing page data successfully Retrieved...!');
+        $cachedData = Cache::get('landing_page_data' . config('user')->id);
+
+        if ($cachedData) {
+            $cachedData['cities'] = $cities;
+        }
+
+        return $this->sendResponse($cachedData, 'Landing page data successfully Retrieved...!');
     }
 }
