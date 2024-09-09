@@ -405,7 +405,24 @@ class AuthController extends BaseController
                 return $this->sendError('Unable to change email', '', 200);
             }
 
-            $otpSent = sendOTP(['email' => $request->new_email]);
+            $otp =  random_int(100000, 999999);    
+            $otpCreatedAt = Carbon::parse($user->otp_created_at);
+            $now = Carbon::now();
+    
+            if ($user->otp_created_at != null && $now->diffInMinutes($otpCreatedAt) < 5) {
+                return $this->sendError('OTP has already been sent. Please wait 5 minutes before requesting a new one.', '', 200);
+            }
+    
+            $updateStatus =  array(
+                'otp' => $otp,
+                'otp_created_at' =>  Carbon::now(),
+            );
+    
+            $user->update($updateStatus);
+    
+            $destination = array_key_first($request->all()) == 'email' ? 'email' : 'mobile';
+    
+            $otpSent = sendOTP($otp, $destination, $user);
 
             return $this->sendResponse($otpSent, 'Email successfully changed & OTP has been sent to your new email ..!');
         } catch (\Throwable $th) {
@@ -487,7 +504,27 @@ class AuthController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $data = sendOTP(array_filter($request->all()));
+        $otp =  random_int(100000, 999999);
+
+        $user = User::where(array_filter($request->all()))->first();
+
+        $otpCreatedAt = Carbon::parse($user->otp_created_at);
+        $now = Carbon::now();
+
+        if ($user->otp_created_at != null && $now->diffInMinutes($otpCreatedAt) < 5) {
+            return $this->sendError('OTP has already been sent. Please wait 5 minutes before requesting a new one.', '', 200);
+        }
+
+        $updateStatus =  array(
+            'otp' => $otp,
+            'otp_created_at' =>  Carbon::now(),
+        );
+
+        $user->update($updateStatus);
+
+        $destination = array_key_first($request->all()) == 'email' ? 'email' : 'mobile';
+
+        $data = sendOTP($otp, $destination, $user);
 
         return $this->sendResponse($data, 'OTP successfully sent!');
     }
@@ -572,7 +609,9 @@ class AuthController extends BaseController
     public function deleteMyAccount(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
+            $req = $request->only('email');
+
+            $validator = Validator::make($req, [
                 'email' => [
                     'sometimes',
                     'required',
@@ -587,15 +626,39 @@ class AuthController extends BaseController
                 return $this->sendError($validator->errors(), '', 200);
             }
 
-            if (isValidReturn($request->all(), 'email')) {
-                $destination = ['email' => $request->email];
+            $filter = [];
+
+            if (isValidReturn($req, 'email')) {
+                $filter = ['email' => $request->email];
             } else {
-                $destination = ['email' => config('user')->email];
+                logger("not yet develpped");
+                $filter = ['email' => config('user')->email];
             }
 
-            $data = sendOTP($destination);
+            $otp =  random_int(100000, 999999);
+
+            $user = User::where($filter)->first();
+    
+            $otpCreatedAt = Carbon::parse($user->otp_created_at);
+            $now = Carbon::now();
+    
+            if ($user->otp_created_at != null && $now->diffInMinutes($otpCreatedAt) < 5) {
+                return $this->sendError('OTP has already been sent. Please wait 5 minutes before requesting a new one.', '', 200);
+            }
+    
+            $updateStatus =  array(
+                'otp' => $otp,
+                'otp_created_at' =>  Carbon::now(),
+            );
+    
+            $user->update($updateStatus);
+    
+            $destination = array_key_first($filter) == 'email' ? 'email' : 'mobile';
+    
+            $data = sendOTP($otp, $destination, $user, 'account_delete');    
 
             return $this->sendResponse($data, 'OTP successfully sent!');
+
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
