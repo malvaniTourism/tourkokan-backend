@@ -14,6 +14,7 @@ return [
         'addAppVersion',
         'isVerifiedEmail',
         'addGuestQuery',
-        'deleteMyAccount'
+        'deleteMyAccount',
+        'googleAuth'
     ]
 ];

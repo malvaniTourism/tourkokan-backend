@@ -24,6 +24,8 @@ use App\Models\BonusTypes;
 use App\Models\Wallet;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
+use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Facades\Http;
 
 class AuthController extends BaseController
 {
@@ -34,7 +36,7 @@ class AuthController extends BaseController
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail', 'isVerifiedEmail', 'deleteMyAccount']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail', 'isVerifiedEmail', 'deleteMyAccount', 'googleAuth']]);
     }
 
     public function allUsers()
@@ -405,23 +407,23 @@ class AuthController extends BaseController
                 return $this->sendError('Unable to change email', '', 200);
             }
 
-            $otp =  random_int(100000, 999999);    
+            $otp =  random_int(100000, 999999);
             $otpCreatedAt = Carbon::parse($user->otp_created_at);
             $now = Carbon::now();
-    
+
             if ($user->otp_created_at != null && $now->diffInMinutes($otpCreatedAt) < 5) {
                 return $this->sendError('OTP has already been sent. Please wait 5 minutes before requesting a new one.', '', 200);
             }
-    
+
             $updateStatus =  array(
                 'otp' => $otp,
                 'otp_created_at' =>  Carbon::now(),
             );
-    
+
             $user->update($updateStatus);
-    
+
             $destination = array_key_first($request->all()) == 'email' ? 'email' : 'mobile';
-    
+
             $otpSent = sendOTP($otp, $destination, $user);
 
             return $this->sendResponse($otpSent, 'Email successfully changed & OTP has been sent to your new email ..!');
@@ -638,29 +640,90 @@ class AuthController extends BaseController
             $otp =  random_int(100000, 999999);
 
             $user = User::where($filter)->first();
-    
+
             $otpCreatedAt = Carbon::parse($user->otp_created_at);
             $now = Carbon::now();
-    
+
             if ($user->otp_created_at != null && $now->diffInMinutes($otpCreatedAt) < 5) {
                 return $this->sendError('OTP has already been sent. Please wait 5 minutes before requesting a new one.', '', 200);
             }
-    
+
             $updateStatus =  array(
                 'otp' => $otp,
                 'otp_created_at' =>  Carbon::now(),
             );
-    
+
             $user->update($updateStatus);
-    
+
             $destination = array_key_first($filter) == 'email' ? 'email' : 'mobile';
-    
-            $data = sendOTP($otp, $destination, $user, 'account_delete');    
+
+            $data = sendOTP($otp, $destination, $user, 'account_delete');
 
             return $this->sendResponse($data, 'OTP successfully sent!');
-
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
+    }
+    public function googleAuth(Request $request)
+    {
+        $token = $request->input('token');
+
+        $googleUser = Http::get('https://oauth2.googleapis.com/tokeninfo', [
+            'id_token' => $token,
+        ])->json();
+
+        if (isset($googleUser['sub'])) {
+
+            try {
+                // // Find or create user based on Google ID
+                // $user = User::updateOrCreate([
+                //     'google_id' => $googleUser['sub']
+                // ], [
+                //     'name' => $googleUser['name'],
+                //     'email' => $googleUser['email'],
+                //     // Add additional user information
+                // ]);
+
+                $data = array(
+                    'email' => $googleUser['email']
+                );
+
+                $validator = Validator::make($data, [
+                    'email' => [
+                        'sometimes',
+                        'nullable',
+                        'required_without:mobile',
+                        'email',
+                        Rule::exists('users', 'email')->where(function ($query) {
+                            $query->whereNull('deleted_at');
+                        }),
+                    ]
+                ]);
+
+                if ($validator->fails()) {
+                    return $this->sendError($validator->errors(), '', 200);
+                }
+
+                $where_condition = array_filter($data);
+
+                $user = User::where($where_condition)->first();
+
+                if ($user) {
+                    User::where($where_condition)->update([
+                        'email_verified_at' => Carbon::now(),
+                        'isVerified' => true
+                    ]);
+
+                    $token = JWTAuth::fromUser($user);
+                    return $this->createNewToken($token, 'Logged In Successfully!');
+                } else {
+                    return $this->sendError('Invalid user', [], 200);
+                }
+            } catch (\Throwable $th) {
+                Log::error($th->getMessage());
+                return $this->sendError('An error occurred.', [], 500);
+            }
+        }
+        return $this->sendError('Unauthorized', '', 401);
     }
 }

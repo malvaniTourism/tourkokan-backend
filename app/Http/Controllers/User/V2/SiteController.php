@@ -235,7 +235,7 @@ class SiteController extends BaseController
                 ]);
         }
 
-        $sites = $sites->paginate(15);
+        $sites = $sites->paginate(25);
 
         return $this->sendResponse($sites, 'Sites successfully Retrieved...!');
     }

@@ -193,6 +193,7 @@ Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2/auth'], function 
     Route::post('updateEmail', [AuthController::class, 'updateEmail']);
     Route::post('isVerifiedEmail', [AuthController::class, 'isVerifiedEmail']);
     Route::post('deleteMyAccount', [AuthController::class, 'deleteMyAccount']); // As per need make changes not tested
+    Route::post('googleAuth', [AuthController::class, 'googleAuth']);
 });
 
 Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], function ($router) {
