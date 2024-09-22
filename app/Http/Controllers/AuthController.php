@@ -664,60 +664,84 @@ class AuthController extends BaseController
             Log::error($th->getMessage());
         }
     }
+
     public function googleAuth(Request $request)
     {
         $token = $request->input('token');
-
+    
         $googleUser = Http::get('https://oauth2.googleapis.com/tokeninfo', [
             'id_token' => $token,
         ])->json();
-
+    
         if (isset($googleUser['sub'])) {
-
+    
             try {
-                // // Find or create user based on Google ID
-                // $user = User::updateOrCreate([
-                //     'google_id' => $googleUser['sub']
-                // ], [
-                //     'name' => $googleUser['name'],
-                //     'email' => $googleUser['email'],
-                //     // Add additional user information
+                $data = [
+                    'email' => $googleUser['email'],
+                ];
+    
+                // $validator = Validator::make($data, [
+                //     'email' => [
+                //         'sometimes',
+                //         'nullable',
+                //         'required_without:mobile',
+                //         'email',
+                //         Rule::exists('users', 'email')->where(function ($query) {
+                //             $query->whereNull('deleted_at');
+                //         }),
+                //     ]
                 // ]);
-
-                $data = array(
-                    'email' => $googleUser['email']
-                );
-
-                $validator = Validator::make($data, [
-                    'email' => [
-                        'sometimes',
-                        'nullable',
-                        'required_without:mobile',
-                        'email',
-                        Rule::exists('users', 'email')->where(function ($query) {
-                            $query->whereNull('deleted_at');
-                        }),
-                    ]
-                ]);
-
-                if ($validator->fails()) {
-                    return $this->sendError($validator->errors(), '', 200);
-                }
-
+    
+                // if ($validator->fails()) {
+                //     return $this->sendError($validator->errors(), '', 200);
+                // }
+    
                 $where_condition = array_filter($data);
-
                 $user = User::where($where_condition)->first();
-
+    
                 if ($user) {
                     User::where($where_condition)->update([
                         'email_verified_at' => Carbon::now(),
-                        'isVerified' => true
+                        'isVerified' => true,
                     ]);
-
+    
                     $token = JWTAuth::fromUser($user);
                     return $this->createNewToken($token, 'Logged In Successfully!');
                 } else {
-                    return $this->sendError('Invalid user', [], 200);
+                    // Create a new user if not found
+                    $password = Str::random(10);
+                    $roles = Roles::where('code', 'tourist')->first();
+    
+                    if (!$roles) {
+                        return $this->sendError('Role not found', '', 200);
+                    }
+    
+                    $input = [
+                        'name' => $googleUser['name'],
+                        'email' => $googleUser['email'],
+                        'password' => bcrypt($password), // Store hashed password
+                        'role_id' => $roles->id,
+                        'email_verified_at' => Carbon::now(),
+                        'isVerified' => true,
+                        'uid' => Str::random(10), // Assuming uid as coupon code
+                    ];
+    
+                    $user = User::create($input);
+    
+                    // Add joining bonus
+                    $joiningBonus = BonusTypes::where('code', 'joining_bonus_coins')->first();
+    
+                    if (!$joiningBonus) {
+                        return $this->sendError('Joining bonus not found', '', 200);
+                    }
+    
+                    $user->bonuses()->create([
+                        'bonus_type_id' => $joiningBonus->id,
+                        'amount' => $joiningBonus->amount, // Assuming you have an 'amount' column in the bonus type
+                    ]);
+    
+                    $token = JWTAuth::fromUser($user);
+                    return $this->createNewToken($token, 'Account Created Successfully!');
                 }
             } catch (\Throwable $th) {
                 Log::error($th->getMessage());
