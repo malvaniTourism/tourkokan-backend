@@ -674,7 +674,6 @@ class AuthController extends BaseController
         ])->json();
     
         if (isset($googleUser['sub'])) {
-    
             try {
                 $data = [
                     'email' => $googleUser['email'],
@@ -725,20 +724,63 @@ class AuthController extends BaseController
                         'isVerified' => true,
                         'uid' => Str::random(10), // Assuming uid as coupon code
                     ];
+                    
+                    $joiningBonus = BonusTypes::where(['code' => 'joining_bonus_coins'])->first();
+
+                    if (!$joiningBonus) {
+                        return $this->sendError('Something went wrong', '', 200);
+                    }
     
                     $user = User::create($input);
     
-                    // Add joining bonus
-                    $joiningBonus = BonusTypes::where('code', 'joining_bonus_coins')->first();
-    
-                    if (!$joiningBonus) {
-                        return $this->sendError('Joining bonus not found', '', 200);
+                    $referrer = [];
+
+                    if (isValidReturn($request, 'referral_code')) {
+                        $referrer = User::where('uid', $request['referral_code'])->first();
+        
+                        if (!$referrer) {
+                            return $this->sendError('Invalid Referral Code...!', '', 200);
+                        }
+        
+                        $referralBonus = BonusTypes::where(['code' => 'referral_bonus_coins'])->first();
+        
+                        if (!$referralBonus) {
+                            return $this->sendError('Something went wrong', '', 200);
+                        }
+        
+                        $referrerWallet = new Wallet([
+                            'user_id' => $referrer->id,
+                            'bonus_id' => $referralBonus->id,
+                            'amount' => $referralBonus->amount,
+                            'description' => "Referral bonus on successful registration of a new user",
+                            'referee_id' => $user->id
+                        ]);
+        
+                        $referrer->wallets()->save($referrerWallet);
                     }
-    
-                    $user->bonuses()->create([
-                        'bonus_type_id' => $joiningBonus->id,
-                        'amount' => $joiningBonus->amount, // Assuming you have an 'amount' column in the bonus type
+        
+                    $newUserWallet = new Wallet([
+                        'user_id' => $user->id,
+                        'bonus_id' => $joiningBonus->id,
+                        'amount' => $joiningBonus->amount,
+                        'description' => "Joining bonus on successfull registration",
+                        'referrer_id' => isValidReturn($referrer, 'id')
                     ]);
+        
+                    $user->wallets()->save($newUserWallet);
+        
+                    $user = User::select('id', 'role_id', 'name', 'email', 'isVerified', 'profile_picture', 'gender', 'uid')->find($user->id);
+        
+                    if ($request->has(['latitude', 'longitude'])) {
+                        $locationDetails = getLocationDetails($request->latitude, $request->longitude);
+        
+                        if ($locationDetails && $locationDetails != 400) {
+                            $user->address()->create($locationDetails);
+                        }
+                    }
+                    
+                    logger($user);
+
     
                     $token = JWTAuth::fromUser($user);
                     return $this->createNewToken($token, 'Account Created Successfully!');
