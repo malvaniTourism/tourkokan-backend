@@ -34,7 +34,9 @@ class User extends Authenticatable implements JWTSubject
         'privilage',
         'profile_picture',
         'isVerified',
-        'uid'
+        'uid',
+        'otp',
+        'otp_created_at'
     ];
 
     /**
@@ -54,6 +56,7 @@ class User extends Authenticatable implements JWTSubject
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'otp_created_at' => 'datetime',
     ];
 
     /**

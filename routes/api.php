@@ -192,6 +192,8 @@ Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2/auth'], function 
     Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
     Route::post('updateEmail', [AuthController::class, 'updateEmail']);
     Route::post('isVerifiedEmail', [AuthController::class, 'isVerifiedEmail']);
+    Route::post('deleteMyAccount', [AuthController::class, 'deleteMyAccount']); // As per need make changes not tested
+    Route::post('googleAuth', [AuthController::class, 'googleAuth']);
 });
 
 Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], function ($router) {
@@ -232,4 +234,19 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('deleteComment', [CommentController::class, 'deleteComment']);
 
     Route::post('getGallery', [GalleryController::class, 'getGallery']);
+});
+use Illuminate\Support\Facades\Mail;
+
+Route::get('/send-test-email', function () {
+    $details = [
+        'subject' => 'Test Email from Laravel',
+        'body' => 'This is a test email sent from Laravel using webmail configuration.'
+    ];
+
+    Mail::raw($details['body'], function($message) use ($details) {
+        $message->to('kamblepranav747@gmail.com')
+                ->subject($details['subject']);
+    });
+
+    return 'Test email sent successfully!';
 });

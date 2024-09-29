@@ -24,6 +24,8 @@ use App\Models\BonusTypes;
 use App\Models\Wallet;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
+use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Facades\Http;
 
 class AuthController extends BaseController
 {
@@ -34,7 +36,7 @@ class AuthController extends BaseController
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail', 'isVerifiedEmail', 'deleteMyAccount']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail', 'isVerifiedEmail', 'deleteMyAccount', 'googleAuth']]);
     }
 
     public function allUsers()
@@ -405,7 +407,24 @@ class AuthController extends BaseController
                 return $this->sendError('Unable to change email', '', 200);
             }
 
-            $otpSent = sendOTP(['email' => $request->new_email]);
+            $otp =  random_int(100000, 999999);
+            $otpCreatedAt = Carbon::parse($user->otp_created_at);
+            $now = Carbon::now();
+
+            if ($user->otp_created_at != null && $now->diffInMinutes($otpCreatedAt) < 5) {
+                return $this->sendError('OTP has already been sent. Please wait 5 minutes before requesting a new one.', '', 200);
+            }
+
+            $updateStatus =  array(
+                'otp' => $otp,
+                'otp_created_at' =>  Carbon::now(),
+            );
+
+            $user->update($updateStatus);
+
+            $destination = array_key_first($request->all()) == 'email' ? 'email' : 'mobile';
+
+            $otpSent = sendOTP($otp, $destination, $user);
 
             return $this->sendResponse($otpSent, 'Email successfully changed & OTP has been sent to your new email ..!');
         } catch (\Throwable $th) {
@@ -487,7 +506,27 @@ class AuthController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $data = sendOTP(array_filter($request->all()));
+        $otp =  random_int(100000, 999999);
+
+        $user = User::where(array_filter($request->all()))->first();
+
+        $otpCreatedAt = Carbon::parse($user->otp_created_at);
+        $now = Carbon::now();
+
+        if ($user->otp_created_at != null && $now->diffInMinutes($otpCreatedAt) < 5) {
+            return $this->sendError('OTP has already been sent. Please wait 5 minutes before requesting a new one.', '', 200);
+        }
+
+        $updateStatus =  array(
+            'otp' => $otp,
+            'otp_created_at' =>  Carbon::now(),
+        );
+
+        $user->update($updateStatus);
+
+        $destination = array_key_first($request->all()) == 'email' ? 'email' : 'mobile';
+
+        $data = sendOTP($otp, $destination, $user);
 
         return $this->sendResponse($data, 'OTP successfully sent!');
     }
@@ -572,7 +611,9 @@ class AuthController extends BaseController
     public function deleteMyAccount(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
+            $req = $request->only('email');
+
+            $validator = Validator::make($req, [
                 'email' => [
                     'sometimes',
                     'required',
@@ -587,17 +628,172 @@ class AuthController extends BaseController
                 return $this->sendError($validator->errors(), '', 200);
             }
 
-            if (isValidReturn($request->all(), 'email')) {
-                $destination = ['email' => $request->email];
+            $filter = [];
+
+            if (isValidReturn($req, 'email')) {
+                $filter = ['email' => $request->email];
             } else {
-                $destination = ['email' => config('user')->email];
+                logger("not yet develpped");
+                $filter = ['email' => config('user')->email];
             }
 
-            $data = sendOTP($destination);
+            $otp =  random_int(100000, 999999);
+
+            $user = User::where($filter)->first();
+
+            $otpCreatedAt = Carbon::parse($user->otp_created_at);
+            $now = Carbon::now();
+
+            if ($user->otp_created_at != null && $now->diffInMinutes($otpCreatedAt) < 5) {
+                return $this->sendError('OTP has already been sent. Please wait 5 minutes before requesting a new one.', '', 200);
+            }
+
+            $updateStatus =  array(
+                'otp' => $otp,
+                'otp_created_at' =>  Carbon::now(),
+            );
+
+            $user->update($updateStatus);
+
+            $destination = array_key_first($filter) == 'email' ? 'email' : 'mobile';
+
+            $data = sendOTP($otp, $destination, $user, 'account_delete');
 
             return $this->sendResponse($data, 'OTP successfully sent!');
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
+    }
+
+    public function googleAuth(Request $request)
+    {
+        $token = $request->input('token');
+    
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'language' => 'sometimes|required|in:mr,en',
+                'latitude' => 'sometimes|required_with:longitude',
+                'longitude' => 'sometimes|required_with:latitude',
+                'referral_code' => 'sometimes|nullable|exists:users,uid',
+            ],
+            [
+                'referral_code.exists' => 'Invalid Referral Code...!'
+            ]
+        );
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), [], 200);
+        }
+
+        $googleUser = Http::get('https://oauth2.googleapis.com/tokeninfo', [
+            'id_token' => $token,
+        ])->json();
+    
+        if (isset($googleUser['sub'])) {
+    
+            try {
+                $data = [
+                    'email' => $googleUser['email'],
+                ];
+
+                $where_condition = array_filter($data);
+                
+                $user = User::where($where_condition)->first();
+    
+                if ($user) {
+                    User::where($where_condition)->update([
+                        'email_verified_at' => Carbon::now(),
+                        'isVerified' => true,
+                    ]);
+    
+                    $token = JWTAuth::fromUser($user);
+                    return $this->createNewToken($token, 'Logged In Successfully!');
+                } else {
+                    // Create a new user if not found
+                    $password = Str::random(10);
+                    $roles = Roles::where('code', 'tourist')->first();
+    
+                    if (!$roles) {
+                        return $this->sendError('Role not found', '', 200);
+                    }
+    
+                    $input = [
+                        'name' => $googleUser['name'],
+                        'email' => $googleUser['email'],
+                        'password' => bcrypt($password), // Store hashed password
+                        'role_id' => $roles->id,
+                        'email_verified_at' => Carbon::now(),
+                        'isVerified' => true,
+                        'profile_picture' => $googleUser['picture'],
+                        'uid' => Str::random(10), // Assuming uid as coupon code
+                    ];
+                    
+                    $joiningBonus = BonusTypes::where(['code' => 'joining_bonus_coins'])->first();
+
+                    if (!$joiningBonus) {
+                        return $this->sendError('Something went wrong', '', 200);
+                    }
+    
+                    $user = User::create($input);
+    
+                    $referrer = [];
+
+                    if (isValidReturn($request, 'referral_code')) {
+                        $referrer = User::where('uid', $request['referral_code'])->first();
+        
+                        if (!$referrer) {
+                            return $this->sendError('Invalid Referral Code...!', '', 200);
+                        }
+        
+                        $referralBonus = BonusTypes::where(['code' => 'referral_bonus_coins'])->first();
+        
+                        if (!$referralBonus) {
+                            return $this->sendError('Something went wrong', '', 200);
+                        }
+        
+                        $referrerWallet = new Wallet([
+                            'user_id' => $referrer->id,
+                            'bonus_id' => $referralBonus->id,
+                            'amount' => $referralBonus->amount,
+                            'description' => "Referral bonus on successful registration of a new user",
+                            'referee_id' => $user->id
+                        ]);
+        
+                        $referrer->wallets()->save($referrerWallet);
+                    }
+        
+                    $newUserWallet = new Wallet([
+                        'user_id' => $user->id,
+                        'bonus_id' => $joiningBonus->id,
+                        'amount' => $joiningBonus->amount,
+                        'description' => "Joining bonus on successfull registration",
+                        'referrer_id' => isValidReturn($referrer, 'id')
+                    ]);
+        
+                    $user->wallets()->save($newUserWallet);
+        
+                    $user = User::select('id', 'role_id', 'name', 'email', 'isVerified', 'profile_picture', 'gender', 'uid')->find($user->id);
+        
+                    if ($request->has(['latitude', 'longitude'])) {
+                        $locationDetails = getLocationDetails($request->latitude, $request->longitude);
+        
+                        if ($locationDetails && $locationDetails != 400) {
+                            $user->address()->create($locationDetails);
+                        }
+                    }
+                    
+                    logger($user);
+
+    
+                    $token = JWTAuth::fromUser($user);
+                    return $this->createNewToken($token, 'Account Created Successfully!');
+                }
+            } catch (\Throwable $th) {
+                Log::error($th->getMessage());
+                return $this->sendError('An error occurred.', [], 500);
+            }
+        }
+        return $this->sendError('Unauthorized', '', 401);
     }
 }

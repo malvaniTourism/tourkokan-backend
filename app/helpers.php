@@ -227,80 +227,87 @@ function getLocationDetails($latitude, $longitude)
 }
 
 
-function sendOTP($destination)
+function sendOTP($otp, $destination, $user, $use = 'login')
 {
-    $user = User::where($destination)->first();
+    $otpMessage = '';
+    $subject = 'Tourkokan OTP'; // Default subject
 
-    if ($user) {
-        $otp =  random_int(100000, 999999);
+    if ($use === 'login') {
+        $otpMessage = 'Your One-Time Password (OTP) for logging into Tourkokan is:';
+    } elseif ($use === 'account_delete') {
+        $otpMessage = 'Your One-Time Password (OTP) to delete your account on Tourkokan is:';
+        $subject = 'Tourkokan Account Deletion OTP'; // You can also change the subject accordingly
+    }
 
-        User::where($destination)->update(array('otp' => $otp));
+    $data = [
+        'subject' => $subject,
+        'content' => '
+        <html>
+        <head>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 0;
+                    padding: 0;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: auto;
+                    padding: 20px;
+                    border: 1px solid #ccc;
+                    border-radius: 5px;
+                }
+                h2 {
+                    color: #333;
+                }
+                p {
+                    margin-bottom: 15px;
+                }
+                .otp {
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #007bff;
+                }
+                .signature {
+                    margin-top: 20px;
+                    color: #666;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2> Tourkokan </h2>
+                <p>Hello,</p>
+                <p>' . $otpMessage . ' <span class="otp">' . $otp . '</span></p>
+                <p>Please use this OTP to complete your process. If you did not request this OTP, please ignore this message.</p>
+                <p>Thank you,</p>
+                <p class="signature">Team Tourkokan</p>
+            </div>
+        </body>
+        </html>
+    ',
+    ];
 
-        $data = [
-            'subject' => 'Tourkokan OTP',
-            'content' => '
-                <html>
-                <head>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            line-height: 1.6;
-                            margin: 0;
-                            padding: 0;
-                        }
-                        .container {
-                            max-width: 600px;
-                            margin: auto;
-                            padding: 20px;
-                            border: 1px solid #ccc;
-                            border-radius: 5px;
-                        }
-                        h2 {
-                            color: #333;
-                        }
-                        p {
-                            margin-bottom: 15px;
-                        }
-                        .otp {
-                            font-size: 24px;
-                            font-weight: bold;
-                            color: #007bff;
-                        }
-                        .signature {
-                            margin-top: 20px;
-                            color: #666;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <h2> Tourkokan </h2>
-                        <p>Hello,</p>
-                        <p>Your One-Time Password (OTP) for accessing Tourkokan is: <span class="otp">' . $otp . '</span></p>
-                        <p>Please use this OTP to complete your login process. If you did not request this OTP, please ignore this message.</p>
-                        <p>Thank you,</p>
-                        <p class="signature">Team Tourkokan</p>
-                    </div>
-                </body>
-                </html>
-            ',
-        ];
+    switch ($destination) {
+        case 'email':
+            $data['email'] = $user->email;
 
-
-        if (array_key_first($destination) == 'email') {
-            $data['email'] = $destination['email'];
-
-            Mail::send('email-template', $data, function ($message) use ($data, $destination) {
-                $message->to($destination['email'])
+            Mail::send('email-template', $data, function ($message) use ($data) {
+                $message->to($data['email'])
                     ->subject($data['subject'])
                     ->from('no-reply@tourkokan.com', 'Tourkokan');
             });
-        }
+            break;
 
-        if (array_key_first($destination) == 'mobile') {
-            #send otp using sms gateway
-        }
+        case 'mobile':
+            return 'not yet implemented';
+            break;
 
-        return 1;
+        default:
+            return 'Invalid choice';
+            break;
     }
+
+    return 1;
 }
