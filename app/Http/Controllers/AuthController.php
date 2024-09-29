@@ -669,33 +669,36 @@ class AuthController extends BaseController
     {
         $token = $request->input('token');
     
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'language' => 'sometimes|required|in:mr,en',
+                'latitude' => 'sometimes|required_with:longitude',
+                'longitude' => 'sometimes|required_with:latitude',
+                'referral_code' => 'sometimes|nullable|exists:users,uid',
+            ],
+            [
+                'referral_code.exists' => 'Invalid Referral Code...!'
+            ]
+        );
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), [], 200);
+        }
+
         $googleUser = Http::get('https://oauth2.googleapis.com/tokeninfo', [
             'id_token' => $token,
         ])->json();
     
         if (isset($googleUser['sub'])) {
+    
             try {
                 $data = [
                     'email' => $googleUser['email'],
                 ];
-    
-                // $validator = Validator::make($data, [
-                //     'email' => [
-                //         'sometimes',
-                //         'nullable',
-                //         'required_without:mobile',
-                //         'email',
-                //         Rule::exists('users', 'email')->where(function ($query) {
-                //             $query->whereNull('deleted_at');
-                //         }),
-                //     ]
-                // ]);
-    
-                // if ($validator->fails()) {
-                //     return $this->sendError($validator->errors(), '', 200);
-                // }
-    
+
                 $where_condition = array_filter($data);
+                
                 $user = User::where($where_condition)->first();
     
                 if ($user) {
@@ -722,6 +725,7 @@ class AuthController extends BaseController
                         'role_id' => $roles->id,
                         'email_verified_at' => Carbon::now(),
                         'isVerified' => true,
+                        'profile_picture' => $googleUser['picture'],
                         'uid' => Str::random(10), // Assuming uid as coupon code
                     ];
                     
