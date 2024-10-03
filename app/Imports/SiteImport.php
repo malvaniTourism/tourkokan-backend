@@ -38,6 +38,7 @@ class SiteImport implements ToCollection, WithHeadingRow
                 $siteExist = Site::where(array_filter($where_site))->first();
 
                 if ($siteExist) {
+                    $siteExist->update(['mr_description' => $value['mr_description']]);
                     continue;
                 }
 
