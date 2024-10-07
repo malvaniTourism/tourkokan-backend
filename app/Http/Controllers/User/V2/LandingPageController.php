@@ -62,7 +62,6 @@ class LandingPageController extends BaseController
             ->whereNull('parent_id')
             ->whereStatus(true)
             ->latest()
-            ->limit(8)
             ->get();
 
         #Top famouse cities
