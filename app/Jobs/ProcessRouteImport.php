@@ -86,10 +86,10 @@ class ProcessRouteImport implements ShouldQueue
                         'name' => $value['route_name'],
                         'description' => null,
                         'meta_data' => null,
-                        'start_time' => $start_time,
-                        'end_time' => $end_time,
-                        'total_time' => $end_time->diff($start_time)->format('%H:%i:%s'),
-                        'delayed_time' => $faker->time(),
+                        'start_time' => null, // $start_time,
+                        'end_time' => null, // $end_time,
+                        'total_time' => null, // $end_time->diff($start_time)->format('%H:%i:%s'),
+                        'delayed_time' => null, // $faker->time(),
                         'distance' => isValidReturn($value, 'dist_km'),
                     );
 
@@ -113,10 +113,10 @@ class ProcessRouteImport implements ShouldQueue
                         'route_id' => $route->id,
                         'site_id' => $stopSite->id,
                         'meta_data' => null,
-                        'arr_time' => $start_time,
-                        'dept_time' => $end_time,
-                        'total_time' => $end_time->diff($start_time)->format('%H:%i:%s'),
-                        'delayed_time' => $faker->time(),
+                        'arr_time' => null, //$start_time,
+                        'dept_time' => null, // $end_time,
+                        'total_time' => null, // $end_time->diff($start_time)->format('%H:%i:%s'),
+                        'delayed_time' => null, // $faker->time(),
                         'distance' => $value['dist_km']
                     );
 
