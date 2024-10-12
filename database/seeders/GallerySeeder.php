@@ -55,7 +55,7 @@ class GallerySeeder extends Seeder
                 $subSiteName = $parts[0];
 
                 // Check if a Site record exists with the specified name
-                if (!Site::where("name", $subSiteName)
+                if (Site::where("name", $subSiteName)
                     ->where("parent_id", $value->id)
                     ->orWhere(function ($query) use ($subSiteName) {
                         $query->where("parent_id", 1)
