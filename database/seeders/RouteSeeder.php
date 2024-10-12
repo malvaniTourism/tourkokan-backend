@@ -44,10 +44,10 @@ class RouteSeeder extends Seeder
                     'name' => $source_place->name . "-> To ->" . $destination_place->name,
                     'description' => $faker->text(),
                     'meta_data' => $string,
-                    'start_time' => $start_time,
-                    'end_time' => $end_time,
-                    'total_time' => $end_time->diff($start_time),
-                    'delayed_time' => $faker->time()
+                    'start_time' => null, //$start_time,
+                    'end_time' => null, //$end_time,
+                    'total_time' => null, //$end_time->diff($start_time),
+                    'delayed_time' => null, //$faker->time()
                 );
 
                 Route::create($data);
