@@ -38,20 +38,40 @@ class GallerySeeder extends Seeder
             // Define the directory path
             $directoryPath = public_path('assets/city/' . $value->name);
 
+            if (!is_dir($directoryPath)) {
+                continue;
+            }
             // Retrieve all files from the directory
             $files = File::allFiles($directoryPath);
 
             $insertArr = [];
 
-            // Iterate through the files and print their paths
             foreach ($files as $file) {
+                $subSite = $file->getRelativePathname();
+
+                $parts = explode('\\', $subSite);
+
+                // The first part of the split array will be the desired string
+                $subSiteName = $parts[0];
+
+                // Check if a Site record exists with the specified name
+                if (Site::where("name", $subSiteName)
+                    ->where("parent_id", $value->id)
+                    ->orWhere(function ($query) use ($subSiteName) {
+                        $query->where("parent_id", 1)
+                            ->where("name", $subSiteName); // Ensures the name condition is also checked
+                    })
+                    ->exists()) {
+                    continue;
+                }
+
                 $exist = Gallery::where('title',  pathinfo($file->getFilename(), PATHINFO_FILENAME))->first();
 
                 if (!$exist) {
-                    $sourceFilePath = public_path('assets/city/' . $value->name . '/' . $file->getFilename());
-                    $destinationFilePath = config('constants.upload_path.site') . '/' . $value->name . '/' . $file->getFilename();
+                    $sourceFilePath = $directoryPath . DIRECTORY_SEPARATOR . $subSite;
+                    $destinationFilePath = config('constants.upload_path.site') . '/' . $value->name . '/' . $subSiteName . '/' . $file->getFilename();
 
-                    // Copy the file from the public folder to the storage/app folder
+                    // // Copy the file from the public folder to the storage/app folder
                     Storage::put($destinationFilePath, file_get_contents($sourceFilePath));
 
                     $path = Storage::url($destinationFilePath);
@@ -67,7 +87,7 @@ class GallerySeeder extends Seeder
             }
             if (!empty($insertArr)) {
                 Gallery::insert($insertArr);
-            }
+            }            
         }
     }
 }
