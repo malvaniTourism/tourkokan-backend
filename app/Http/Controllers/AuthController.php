@@ -664,7 +664,7 @@ class AuthController extends BaseController
             Log::error($th->getMessage());
         }
     }
-
+    
     public function googleAuth(Request $request)
     {
         $token = $request->input('token');
@@ -699,17 +699,33 @@ class AuthController extends BaseController
 
                 $where_condition = array_filter($data);
                 
-                $user = User::where($where_condition)->first();
-    
+                $user = User::with('addresses')->where($where_condition)->first();
+                    
                 if ($user) {
-                    User::where($where_condition)->update([
-                        'email_verified_at' => Carbon::now(),
-                        'isVerified' => true,
-                    ]);
-    
-                    $token = JWTAuth::fromUser($user);
-                    return $this->createNewToken($token, 'Logged In Successfully!');
+                    if($user->addresses->isEmpty()){
+                        return $this->sendError('Something went wrong please contact us', [], 200);
+                    }else{
+                        User::where($where_condition)->update([
+                            'email_verified_at' => Carbon::now(),
+                            'isVerified' => true,
+                        ]);
+        
+                        $token = JWTAuth::fromUser($user);
+                        return $this->createNewToken($token, 'Logged In Successfully!');
+                    }
                 } else {
+                    $validator = Validator::make(
+                        $request->all(),
+                        [
+                            'latitude' => 'required_with:longitude',
+                            'longitude' => 'required_with:latitude',
+                        ]
+                    );
+            
+                    if ($validator->fails()) {
+                        return $this->sendError($validator->errors(), [], 200);
+                    }
+                    
                     // Create a new user if not found
                     $password = Str::random(10);
                     $roles = Roles::where('code', 'tourist')->first();
@@ -782,9 +798,6 @@ class AuthController extends BaseController
                             $user->address()->create($locationDetails);
                         }
                     }
-                    
-                    logger($user);
-
     
                     $token = JWTAuth::fromUser($user);
                     return $this->createNewToken($token, 'Account Created Successfully!');
