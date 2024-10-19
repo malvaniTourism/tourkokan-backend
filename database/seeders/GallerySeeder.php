@@ -54,40 +54,42 @@ class GallerySeeder extends Seeder
                 // The first part of the split array will be the desired string
                 $subSiteName = $parts[0];
 
-                // Check if a Site record exists with the specified name
-                if (Site::where("name", $subSiteName)
+                $site =  Site::where("name", $subSiteName)
                     ->where("parent_id", $value->id)
                     ->orWhere(function ($query) use ($subSiteName) {
                         $query->where("parent_id", 1)
                             ->where("name", $subSiteName); // Ensures the name condition is also checked
                     })
-                    ->exists()) {
+                    ->first();
+
+                // Check if a Site record exists with the specified name
+                if (!$site) {
                     continue;
                 }
 
-                $exist = Gallery::where('title',  pathinfo($file->getFilename(), PATHINFO_FILENAME))->first();
+                $title = pathinfo($file->getFilename(), PATHINFO_FILENAME);
+                $exist = Gallery::where('title', $title)->exists();
 
-                if (!$exist) {
-                    $sourceFilePath = $directoryPath . DIRECTORY_SEPARATOR . $subSite;
-                    $destinationFilePath = config('constants.upload_path.site') . '/' . $value->name . '/' . $subSiteName . '/' . $file->getFilename();
-
-                    // // Copy the file from the public folder to the storage/app folder
-                    Storage::put($destinationFilePath, file_get_contents($sourceFilePath));
-
-                    $path = Storage::url($destinationFilePath);
-
-                    $insertArr[] = array(
-                        'title' => $file->getFilename(),
-                        'description' => Str::random(16),
-                        'path' => $path,
-                        'galleryable_type' => $commentableType,
-                        'galleryable_id' => $value->id,
-                    );
+                if ($exist) {
+                    continue;
                 }
+
+                $sourceFilePath = $directoryPath . DIRECTORY_SEPARATOR . $subSite;
+                $destinationFilePath = config('constants.upload_path.site') . '/' . $value->name . '/' . $subSiteName . '/' . $file->getFilename();
+
+                // // Copy the file from the public folder to the storage/app folder
+                Storage::put($destinationFilePath, file_get_contents($sourceFilePath));
+
+                $path = Storage::url($destinationFilePath);
+
+                Gallery::create([
+                    'title' => $title,
+                    'description' => Str::random(16),
+                    'path' => $path,
+                    'galleryable_type' => $commentableType,
+                    'galleryable_id' => isValidReturn($site, 'id', $value->id),
+                ]);
             }
-            if (!empty($insertArr)) {
-                Gallery::insert($insertArr);
-            }            
         }
     }
 }
