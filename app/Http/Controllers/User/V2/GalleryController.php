@@ -41,7 +41,12 @@ class GalleryController extends BaseController
             })
                 ->where('title', 'like',  '%' . $search . '%');
         } elseif ($request->has('search')) {
-            $gallery = $gallery->where('title', 'like', '%' . $search . '%');
+            $gallery = $gallery->where(function ($query) use ($search) {
+                $query->where('title', 'like', '%' . $search . '%')
+                      ->orWhereHas('galleryable', function ($query) use ($search) {
+                          $query->where('name', 'like', '%' . $search . '%');
+                      });
+            });
         }
 
         $gallery = $gallery->paginate(isValidReturn($request, 'per_page', 10));
