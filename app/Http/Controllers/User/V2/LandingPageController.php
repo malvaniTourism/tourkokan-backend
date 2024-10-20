@@ -151,7 +151,7 @@ class LandingPageController extends BaseController
             'end_time',
             'total_time',
             'delayed_time',
-            DB::raw('(SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id) AS distance')
+            DB::raw('ROUND((SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id), 2) AS distance')
         )
             ->latest()
             ->limit(5)
