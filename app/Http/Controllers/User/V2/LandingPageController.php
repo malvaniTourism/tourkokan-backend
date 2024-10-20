@@ -128,7 +128,7 @@ class LandingPageController extends BaseController
 
         #Routes
         $routes = Route::with([
-            'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
+            'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time,distance',
             'routeStops.site:id,name,mr_name',
             'routeStops.site.categories:id,name,mr_name,icon',
             'sourcePlace:id,name,mr_name',
