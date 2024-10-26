@@ -32,7 +32,16 @@ function NavigationBar() {
                             <Nav.Link href="/#Contact">Contact Us</Nav.Link>
                         </Nav>
                         <Form className="d-flex">
-                            <Button variant="outline-primary" onClick={handleShow}>Download</Button>
+                            <Button variant="outline-primary"
+                                onClick={() => window.open("https://play.google.com/store/apps/details?id=com.tourkokan&pcampaignid=web_share", "_blank")}
+                            >
+                                <img
+                                    src="https://static-00.iconduck.com/assets.00/google-play-icon-239x256-sm9pj90g.png"
+                                    alt="Play Store Logo"
+                                    style={{ width: '20px', height: '20px', marginRight: '5px' }}
+                                />
+                                Download
+                            </Button>
                         </Form>
                     </Navbar.Collapse>
                 </Container>
