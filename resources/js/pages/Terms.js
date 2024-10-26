@@ -9,8 +9,8 @@ const Terms = () => {
     const { app } = useParams();
 
     return (
-        <div>
-             {!app && <NavigationBar />} 
+        <div style={{ paddingTop: "100px" }}> {/* Adjust padding based on navbar height */}
+            {!app && <NavigationBar />}
             <Container>
                 <h1>Terms and Conditions for TourKokan</h1>
                 <p>Welcome to TourKokan! These terms and conditions outline the rules and regulations for the use of the TourKokan mobile application ("App"). By accessing this App, we assume you accept these terms and conditions. Do not continue to use TourKokan if you do not agree to take all of the terms and conditions stated on this page.</p>
@@ -49,7 +49,7 @@ const Terms = () => {
                 <p>If you have any questions about these Terms, please contact us at <a href="mailto:support@tourkokan.com">support@tourkokan.com</a>.</p>
                 <p>This document was last updated on 06th April 2024.</p>
             </Container>
-            {!app && <Footer />} 
+            {!app && <Footer />}
         </div>
     )
 }
