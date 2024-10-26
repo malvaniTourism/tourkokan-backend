@@ -135,6 +135,7 @@ class SiteController extends BaseController
         }
 
         $withArr = [
+            'site:id,parent_id,name',
             'sites' => function ($query) use ($user) {
                 $query->select(
                     'id',
