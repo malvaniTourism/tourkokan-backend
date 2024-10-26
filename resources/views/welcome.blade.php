@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tourkokan | Sun Sand & Serenity</title>
     <meta name="description" content="Explore the beauty of the Konkan region with Tourkokan. Dive into adventures, cultural experiences, and scenic wonders. Your gateway to unforgettable memories!">
-    <meta name="keywords" content="Tourkokan, Sindhudurg, Konkan, tourism, travel, adventures, scenic spots, temples, forts, beaches">
+    <meta name="keywords" content="Tourkokan, Konkan, Sindhudurg, tourism, travel, MSRTC timetable, ACT timetable, AST timetbale, adventures, scenic spots, beaches, forts, temples, historical sites, cultural experiences, travel guide, explore Konkan, adventure tourism, Konkan attractions, local cuisine">
     <meta name="author" content="Tourkokan">
     <link rel="canonical" href="{{ url()->current() }}">
     <meta http-equiv="Content-Language" content="en">
