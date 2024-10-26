@@ -12,7 +12,7 @@ function NavigationBar() {
 
     return (
         <>
-            <Navbar bg="light" expand="lg" className="bg-body-tertiary">
+            <Navbar fixed="top" bg="light" expand="lg" className="bg-body-tertiary">
                 <Container>
                     <Navbar.Brand href="#home" style={{ display: "flex", alignItems: "center" }}>
                         <img
@@ -25,15 +25,30 @@ function NavigationBar() {
                         Tourkokan
                     </Navbar.Brand>
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />
-                    <Navbar.Collapse id="basic-navbar-nav">
-                        <Nav className="me-auto">
-                            <Nav.Link href="/">Home</Nav.Link>
-                            <Nav.Link href="/#About">About Us</Nav.Link>
-                            <Nav.Link href="/#Contact">Contact Us</Nav.Link>
+                    <Navbar.Collapse id="basic-navbar-nav" className="w-100">
+                        <Nav className="mx-auto justify-content-center custom-nav text-center">
+                            <Nav.Link href="/" className="mx-3">Home</Nav.Link>
+                            <Nav.Link href="/#About" className="mx-3">About Us</Nav.Link>
+                            <Nav.Link href="/#Contact" className="mx-3">Contact Us</Nav.Link>
                         </Nav>
-                        <Form className="d-flex">
+
+                        {/* Button will exist in all modes but centered only on mobile */}
+                        <Form className="d-flex justify-content-center d-lg-none"> {/* Only for mobile view */}
                             <Button variant="outline-primary"
                                 onClick={() => window.open("https://play.google.com/store/apps/details?id=com.tourkokan&pcampaignid=web_share", "_blank")}
+                            >
+                                <img
+                                    src="https://static-00.iconduck.com/assets.00/google-play-icon-239x256-sm9pj90g.png"
+                                    alt="Play Store Logo"
+                                    style={{ width: '20px', height: '20px', marginRight: '5px' }}
+                                />
+                                Download
+                            </Button>
+                        </Form>
+                        <Form className="d-none d-lg-flex"> {/* Visible only on desktop */}
+                            <Button variant="outline-primary"
+                                onClick={() => window.open("https://play.google.com/store/apps/details?id=com.tourkokan&pcampaignid=web_share", "_blank")}
+                                className="ms-3" // Margin start for desktop alignment
                             >
                                 <img
                                     src="https://static-00.iconduck.com/assets.00/google-play-icon-239x256-sm9pj90g.png"

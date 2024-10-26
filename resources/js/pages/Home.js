@@ -9,7 +9,7 @@ import DeleteMyAccount from '../components/DeleteMyAccount ';
 
 function Home() {
     return (
-        <div>
+        <div style={{ paddingTop: "100px" }}> {/* Adjust padding based on navbar height */}
             <NavigationBar />
             <Carousel />
             <div id='About'>
@@ -24,6 +24,7 @@ function Home() {
             {/* <Team /> */}
             <Footer />
         </div>
+
     );
 }
 
