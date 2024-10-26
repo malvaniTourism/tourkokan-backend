@@ -18,14 +18,14 @@
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:title" content="Tourkokan | Home">
     <meta property="og:description" content="Explore the beauty of the Konkan region with Tourkokan. Dive into adventures, cultural experiences, and scenic wonders. Your gateway to unforgettable memories!">
-    <meta property="og:image" content="{{ asset('assets/images/og-image.jpg') }}">
+    <meta property="og:image" content="{{ asset('logo.png') }}">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="{{ url()->current() }}">
     <meta property="twitter:title" content="Tourkokan | Home">
     <meta property="twitter:description" content="Explore the beauty of the Konkan region with Tourkokan. Dive into adventures, cultural experiences, and scenic wonders. Your gateway to unforgettable memories!">
-    <meta property="twitter:image" content="{{ asset('assets/images/twitter-image.jpg') }}">
+    <meta property="twitter:image" content="{{ asset('logo.png') }}">
 
     <!-- Favicon -->
     <link rel="icon" sizes="200x200" href="{{ asset('logo.png') }}" type="image/x-icon">
