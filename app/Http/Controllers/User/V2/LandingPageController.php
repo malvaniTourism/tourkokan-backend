@@ -55,12 +55,17 @@ class LandingPageController extends BaseController
             ->limit(5)
             ->get();
 
-        #categories
-        $categories = Category::with(['subCategories:id,name,mr_name,code,parent_id,icon,is_hot_category'])
-            ->select('*')
+        $categories = Category::with([
+            'subCategories' => function ($query) {
+                $query->whereHas('sites') // Optional: Only get subcategories that have associated sites
+                    ->select('id', 'name', 'mr_name', 'code', 'parent_id', 'icon', 'is_hot_category'); // Select specific fields
+            }
+        ])
+            ->select('id', 'name', 'code', 'icon', 'is_hot_category') // Specify fields at the main category level
             ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
             ->whereNull('parent_id')
             ->whereStatus(true)
+            ->whereHas('subCategories.sites') // Ensures only categories with subcategories are fetched
             ->latest()
             ->get();
 
@@ -115,7 +120,7 @@ class LandingPageController extends BaseController
         ]);
 
         foreach ($cities as $city) {
-            $city->setRelation('sites', $city->sites()->select('id', 'name', 'mr_name', 'parent_id')->with('categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category')->limit(5)->get());
+            $city->setRelation('sites', $city->sites()->select('id', 'name', 'mr_name', 'parent_id')->with(['categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category', 'site:id,parent_id,name,mr_name'])->limit(5)->get());
             $city->setRelation('gallery', $city->gallery()->limit(5)->get());
 
             $city->setRelation('comment', $city->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5)->get()->each(function ($comment) {
