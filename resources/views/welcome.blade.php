@@ -101,7 +101,7 @@
     <div id="app"></div>
 
     <!-- WhatsApp Floating Button -->
-    <a href="https://wa.me/+91 8454025747" target="_blank" id="whatsapp-button">
+    <a href="https://wa.me/8454025747" target="_blank" id="whatsapp-button">
         <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" />
     </a>
 
