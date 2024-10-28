@@ -159,3 +159,6 @@ footer .social-icon li i:hover {
 .social-icon li {
     margin: 5px;
 }
+.custom-nav .nav-link {
+    font-size: 1.10rem; /* Adjust as needed */
+}

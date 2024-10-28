@@ -3,7 +3,7 @@ import About from '../components/About';
 
 function AboutUs() {
     return (
-        <div>
+        <div style={{ paddingTop: "100px" }}> {/* Adjust padding based on navbar height */}
             <h1>About Page</h1>
             <About />
         </div>

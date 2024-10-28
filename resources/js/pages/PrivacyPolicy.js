@@ -6,7 +6,7 @@ import Container from 'react-bootstrap/Container';
 
 const PrivacyPolicy = () => {
     return (
-        <div>
+        <div style={{ paddingTop: "100px" }}> {/* Adjust padding based on navbar height */}
             <NavigationBar />
             <Container>
                 <div style={{ textAlign: "justify" }}>

@@ -20,8 +20,8 @@ class SiteController extends BaseController
     {
         $user = auth()->user();
 
-        $city = Site::withCount(['photos', 'comment'])
-            ->with(['photos', 'comment', 'categories:id,name,code,parent_id,icon,status,is_hot_category'])
+        $city = Site::withCount(['gallery', 'comment'])
+            ->with(['gallery', 'comment', 'categories:id,name,code,parent_id,icon,status,is_hot_category'])
             ->selectSub(function ($query) use ($user) {
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
@@ -56,7 +56,7 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $city   =   Site::withCount(['sites', 'photos', 'comment'])
+        $city   =   Site::withCount(['sites', 'gallery', 'comment'])
             ->withAvg('rating', 'rate')
             ->with([
                 'categories:id,name,code,parent_id,icon,status,is_hot_category',
@@ -78,7 +78,7 @@ class SiteController extends BaseController
                 'comment.comments.users' => function ($query) {
                     $query->select('id', 'name', 'email', 'profile_picture');
                 },
-                'photos'
+                'gallery'
             ])
             ->selectSub(function ($query) use ($user_id) {
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
@@ -135,6 +135,7 @@ class SiteController extends BaseController
         }
 
         $withArr = [
+            'site:id,parent_id,name',
             'sites' => function ($query) use ($user) {
                 $query->select(
                     'id',
@@ -149,7 +150,7 @@ class SiteController extends BaseController
                     'icon',
                     'status',
                 )
-                    ->with(['rate:id,user_id,rate,rateable_type,rateable_id,status'])
+                    ->with(['rate:id,user_id,rate,rateable_type,rateable_id,status', 'gallery'])
                     ->where('is_hot_place', true)
                     ->selectSub(function ($query) use ($user) {
                         $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
@@ -158,10 +159,11 @@ class SiteController extends BaseController
                             ->where('favourites.favouritable_type', Site::class)
                             ->where('favourites.user_id', $user->id);
                     }, 'is_favorite')
+                    ->orderBy('name', 'asc')
                     ->withAvg("rating", 'rate');
             },
             'sites.comment',
-            'photos',
+            'gallery',
             'comment',
             'categories:id,name,code,parent_id,icon,status,is_hot_category',
             'rate:id,user_id,rate,rateable_type,rateable_id,status',
@@ -230,7 +232,7 @@ class SiteController extends BaseController
             }, 'is_favorite')
                 ->withAvg("rating", 'rate')
                 ->withCount([
-                    'photos',
+                    'gallery',
                     'comment'
                 ]);
         }

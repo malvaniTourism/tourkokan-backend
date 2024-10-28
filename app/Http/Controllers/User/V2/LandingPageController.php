@@ -55,12 +55,17 @@ class LandingPageController extends BaseController
             ->limit(5)
             ->get();
 
-        #categories
-        $categories = Category::with(['subCategories:id,name,mr_name,code,parent_id,icon,is_hot_category'])
-            ->select('*')
+        $categories = Category::with([
+            'subCategories' => function ($query) {
+                $query->whereHas('sites') // Optional: Only get subcategories that have associated sites
+                    ->select('id', 'name', 'mr_name', 'code', 'parent_id', 'icon', 'is_hot_category'); // Select specific fields
+            }
+        ])
+            ->select('id', 'name', 'code', 'icon', 'is_hot_category') // Specify fields at the main category level
             ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
             ->whereNull('parent_id')
             ->whereStatus(true)
+            ->whereHas('subCategories.sites') // Ensures only categories with subcategories are fetched
             ->latest()
             ->get();
 
@@ -115,7 +120,7 @@ class LandingPageController extends BaseController
         ]);
 
         foreach ($cities as $city) {
-            $city->setRelation('sites', $city->sites()->select('id', 'name', 'mr_name', 'parent_id')->with('categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category')->limit(5)->get());
+            $city->setRelation('sites', $city->sites()->select('id', 'name', 'mr_name', 'parent_id')->with(['categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category', 'site:id,parent_id,name,mr_name'])->limit(5)->get());
             $city->setRelation('gallery', $city->gallery()->limit(5)->get());
 
             $city->setRelation('comment', $city->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5)->get()->each(function ($comment) {
@@ -128,7 +133,7 @@ class LandingPageController extends BaseController
 
         #Routes
         $routes = Route::with([
-            'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
+            'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time,distance',
             'routeStops.site:id,name,mr_name',
             'routeStops.site.categories:id,name,mr_name,icon',
             'sourcePlace:id,name,mr_name',
@@ -151,7 +156,7 @@ class LandingPageController extends BaseController
             'end_time',
             'total_time',
             'delayed_time',
-            DB::raw('(SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id) AS distance')
+            DB::raw('ROUND((SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id), 2) AS distance')
         )
             ->latest()
             ->limit(5)
