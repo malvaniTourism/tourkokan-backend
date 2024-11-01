@@ -17,12 +17,10 @@ function NavigationBar() {
                     <Navbar.Brand href="#home" style={{ display: "flex", alignItems: "center" }}>
                         <img
                             alt=""
-                            src="/assets/corousel/logo.png"
-                            width="70"
+                            src="/logo.png"
                             height="70"
                             className="d-inline-block align-top"
-                        />{' '}
-                        Tourkokan
+                        />
                     </Navbar.Brand>
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />
                     <Navbar.Collapse id="basic-navbar-nav" className="w-100">

@@ -324,6 +324,7 @@ class SiteController extends BaseController
             'latitude' => 'sometimes|required|required_with:longitude|between:-90,90',
             'longitude' => 'sometimes|required|required_with:latitude|between:-90,90',
             'pin_code' => 'sometimes|required|numeric',
+            'is_hot_place' => 'sometimes|required|boolean:true,false',
             'speciality' => 'sometimes|required|json',
             'rules' => 'sometimes|required|json',
             'social_media' => 'sometimes|required|json',
