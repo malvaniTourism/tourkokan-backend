@@ -165,7 +165,7 @@ class RouteController extends BaseController
             $routes->whereIn('id', $routeIds);
         }
 
-        $routes = $routes->paginate(10);
+        $routes = $routes->paginate(70);
 
         #need to test on both query for performance
 
