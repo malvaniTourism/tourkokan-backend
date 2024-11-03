@@ -47,6 +47,7 @@ class LandingPageController extends BaseController
         $categories = Category::withCount('projects')
             ->latest()
             ->limit(8)
+            ->whereStatus(1)
             ->get();
 
         #Top famouse cities
