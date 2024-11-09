@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tourkokan | Sun Sand & Serenity</title>
     <meta name="description" content="Explore the beauty of the Konkan region with Tourkokan. Dive into adventures, cultural experiences, and scenic wonders. Your gateway to unforgettable memories!">
-    <meta name="keywords" content="Tourkokan, Konkan, Sindhudurg, tourism, travel, MSRTC timetable, ACT timetable, AST timetbale, adventures, scenic spots, beaches, forts, temples, historical sites, cultural experiences, travel guide, explore Konkan, adventure tourism, Konkan attractions, local cuisine">
+    <meta name="keywords" content="Tourkokan, Konkan, Sindhudurg, tourism, travel, MSRTC timetable, ACT timetable, AST timetable, adventures, scenic spots, beaches, forts, temples, historical sites, cultural experiences, travel guide, explore Konkan, adventure tourism, Konkan attractions, local cuisine">
     <meta name="author" content="Tourkokan">
     <link rel="canonical" href="{{ url()->current() }}">
     <meta http-equiv="Content-Language" content="en">
@@ -61,22 +61,42 @@
     <link rel="stylesheet" href="{{ mix('css/app.css') }}">
 </head>
 <style>
+    /* Loading screen styling */
+    #loading-screen {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        background-color: #ffffff;
+        z-index: 9999;
+    }
+
+    #loading-screen img {
+        width: 40vw; /* 40% of the viewport width */
+        max-width: 300px; /* Limit size on small screens */
+        max-height: 40vh; /* Limit height to 40% of viewport height */
+    }
+
+    /* Adjustments for mobile */
+    @media (max-width: 600px) {
+        #loading-screen img {
+            width: 50vw;
+            height: auto;
+        }
+    }
+
+    /* WhatsApp Button styling */
     #whatsapp-button {
         position: fixed;
         bottom: 20px;
-        /* Adjust this value to position vertically */
         right: 20px;
-        /* Adjust this value to position horizontally */
         z-index: 1000;
-        /* Ensure the button is on top of other elements */
         width: 60px;
-        /* Set the width of the icon */
         height: 60px;
-        /* Set the height of the icon */
         border-radius: 50%;
-        /* Make it round */
         background-color: #25D366;
-        /* WhatsApp green color */
         display: flex;
         align-items: center;
         justify-content: center;
@@ -86,18 +106,21 @@
 
     #whatsapp-button img {
         width: 40px;
-        /* Set the width of the WhatsApp icon */
         height: 40px;
-        /* Set the height of the WhatsApp icon */
     }
 
     #whatsapp-button:hover {
         transform: scale(1.1);
-        /* Scale the button on hover */
     }
 </style>
 
 <body>
+    <!-- Loading Screen with Logo -->
+    <div id="loading-screen">
+        <img src="{{ asset('logo.png') }}" alt="Tourkokan Logo">
+    </div>
+
+    <!-- Main App Root -->
     <div id="app"></div>
 
     <!-- WhatsApp Floating Button -->
@@ -107,6 +130,13 @@
 
     <!-- Scripts -->
     <script src="{{ mix('js/app.js') }}"></script>
+    <script>
+        // Hide the loading screen once React fully loads
+        document.addEventListener("DOMContentLoaded", function() {
+            const loadingScreen = document.getElementById("loading-screen");
+            loadingScreen.style.display = "none";
+        });
+    </script>
 </body>
 
 </html>
