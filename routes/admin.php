@@ -158,6 +158,7 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 
     Route::post('routes', [RouteController::class, 'routes']);
     Route::post('routeDetails', [RouteController::class, 'routeDetails']);
+    Route::post('routesUpdate', [RouteController::class, 'routesUpdate']);
 
     Route::post('getQueries', [ContactController::class, 'getQueries']);
     Route::post('getQuery', [ContactController::class, 'getQuery']);

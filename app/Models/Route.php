@@ -22,6 +22,7 @@ class Route extends Model
         'bus_type_id',
         'name',
         'description',
+        'distance',
         'meta_data',
         'start_time',
         'end_time',
@@ -42,10 +43,7 @@ class Route extends Model
      * @var array
      */
     protected $casts = [
-        'departure_time' => 'array',
-        'arrival_time' => 'array',
-        'total_time' => 'array',
-        'delayed_time' => 'array'
+        'meta_data' => 'array'
     ];
 
     /**

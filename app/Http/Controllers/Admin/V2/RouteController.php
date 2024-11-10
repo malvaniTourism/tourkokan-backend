@@ -340,15 +340,38 @@ class RouteController extends BaseController
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified Route by ID.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Route  $route
-     * @return \Illuminate\Http\Response
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, Route $route)
+    public function routesUpdate(Request $request)
     {
-        //
+        // Validate the incoming request
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:routes,id',
+            'source_place_id' => 'sometimes|required|integer|exists:sites,id',
+            'destination_place_id' => 'sometimes|required|integer|exists:sites,id',
+            'bus_type_id' => 'sometimes|required|integer|exists:bus_types,id',
+            'name' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|nullable|string',
+            'distance' => 'sometimes|required|regex:/^\d+(\.\d{1,2})?$/',
+            'meta_data' => 'sometimes|nullable|array',
+            'start_time' => 'sometimes|required|date_format:H:i:s',
+            'end_time' => 'sometimes|required|date_format:H:i:s',
+            'delayed_time' => 'sometimes|nullable|integer',
+        ]);
+
+        // Return validation errors, if any
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        // Update the Route with validated data
+        $route = Route::where('id', $request->id)->update(array_filter($request->all()));
+
+        return $this->sendResponse(true, 'Route updated successfully...!');
     }
 
     /**
