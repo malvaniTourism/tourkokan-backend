@@ -374,6 +374,48 @@ class RouteController extends BaseController
         return $this->sendResponse(true, 'Route updated successfully...!');
     }
 
+    public function massRouteStopsUpdate(Request $request)
+    {
+        // Validate the incoming request
+        $validator = Validator::make($request->all(), [
+            'route_stops' => 'required|array|min:1',
+            'route_stops.*.id' => 'required|integer|exists:route_stops,id',
+            'route_stops.*.serial_no' => 'required|integer|min:1',
+            'route_stops.*.route_id' => 'required|integer|exists:routes,id',
+            'route_stops.*.site_id' => 'required|integer|exists:sites,id',
+            'route_stops.*.arr_time' => 'required|date_format:H:i:s',
+            'route_stops.*.dept_time' => 'required|date_format:H:i:s',
+            'route_stops.*.total_time' => 'required|date_format:H:i:s',
+            'route_stops.*.delayed_time' => 'required|date_format:H:i:s',
+            'route_stops.*.distance' => 'nullable|numeric|min:0',
+        ]);
+
+        // Return validation errors, if any
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        // Prepare the data for upsert
+        $routeStopsData = $request->route_stops;
+
+        RouteStops::upsert(
+            $routeStopsData, // Data to upsert
+            ['id'],          // Unique key to check for existing rows
+            [                // Columns to update if the row exists
+                'serial_no',
+                'route_id',
+                'site_id',
+                'arr_time',
+                'dept_time',
+                'total_time',
+                'delayed_time',
+                'distance',
+            ]
+        );
+
+        return $this->sendResponse(true, 'Route stops updated successfully...!');
+    }
+
     /**
      * Remove the specified resource from storage.
      *
