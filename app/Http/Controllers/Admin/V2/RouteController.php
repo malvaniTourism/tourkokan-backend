@@ -360,7 +360,7 @@ class RouteController extends BaseController
             'meta_data' => 'sometimes|nullable|array',
             'start_time' => 'sometimes|required|date_format:H:i:s',
             'end_time' => 'sometimes|required|date_format:H:i:s',
-            'delayed_time' => 'sometimes|nullable|integer',
+            'delayed_time' => 'sometimes|nullable|date_format:H:i:s',
         ]);
 
         // Return validation errors, if any
