@@ -44,6 +44,7 @@ class Banner extends Model
      * @var array
      */
     protected $casts = [
+        'status' => 'boolean',
         'meta_data' => 'array'
     ];
 
