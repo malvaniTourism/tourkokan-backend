@@ -53,6 +53,7 @@ class LandingPageController extends BaseController
         #Banners
         $banners = Banner::latest()
             ->limit(5)
+            ->whereStatus(1)
             ->get();
 
         $categories = Category::with([

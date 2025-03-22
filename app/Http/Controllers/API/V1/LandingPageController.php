@@ -148,7 +148,7 @@ class LandingPageController extends BaseController
 
         $records =  array(
             'version' => AppVersion::latest()->first(),
-            'banners' => Banner::whereStatus(1)->get(),
+            'banners' => Banner::get(),
             'routes' => $routes,
             'stops' => $stops,
             'categories' => $categories,
