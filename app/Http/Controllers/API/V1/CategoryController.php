@@ -220,4 +220,21 @@ class CategoryController extends BaseController
 
         return $this->sendResponse($categories, 'Categories deleted successfully...!');   
     }
+
+    public function test(Request $request, $id)
+    {
+        $categories = Category::find($id);
+
+        if (is_null($categories)) {
+            return $this->sendError('Empty', [], 404);
+        }
+
+        if(Storage::exists($categories->image_url)){
+            Storage::delete($categories->image_url);
+        }
+
+        $categories->delete($request->all());
+
+        return $this->sendResponse($categories, 'Categories deleted successfully...!');   
+    }
 }
