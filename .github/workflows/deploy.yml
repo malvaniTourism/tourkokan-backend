@@ -1,0 +1,25 @@
+name: Deploy to VPS Git
+
+on:
+  push:
+    branches:
+      - prod   # Change if your branch is different
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ORACLE_VPS }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 80.225.208.168 >> ~/.ssh/known_hosts
+
+      - name: Deploy via rsync
+        run: |
+          rsync -avz --delete ./ pranav@80.225.208.168:/var/www/html/probyte/products/probytesolution/prod
