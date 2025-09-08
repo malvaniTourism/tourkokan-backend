@@ -36,7 +36,13 @@ class AuthController extends BaseController
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail', 'isVerifiedEmail', 'deleteMyAccount', 'googleAuth']]);
+        $this->middleware('auth:api', 
+        [
+            'except' => 
+            [
+                'login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail', 'isVerifiedEmail', 'deleteMyAccount', 'googleAuth', 'guest-login'
+            ]
+        ]);
     }
 
     public function allUsers()
@@ -103,43 +109,33 @@ class AuthController extends BaseController
             // $prefix = $prefixParts[0];
 
             // there is error in validation for superadmin role return error
-            $validator = Validator::make(
-                $request->all(),
-                [
-                    // 'role_id' => [
-                    //     'required',
-                    //     'exists:roles,id',
-                    //     function ($attribute, $value, $fail) use ($prefix) {
-                    //         if ($value == Roles::where("name", "superadmin")->pluck('id')->first()) { // Change 1 to the ID of your superadmin role
-                    //             $fail('The selected :attribute is invalid. 1');
-                    //         }
+            $isGuest = $request->input('is_guest', false);
 
-                    //         if ($prefix === 'admin' && $value !== Roles::where("name", $prefix)->pluck('id')->first()) {
-                    //             $fail('The selected :attribute is invalid. 2');
-                    //         }
+            $rules = [
+                'role_id' => 'sometimes|exists:roles,id',
+                'language' => 'sometimes|required|in:mr,en',
+                'name' => 'required|string|between:2,60',
+                'email' => 'required_if:mobile,null|nullable|string|email|max:100|unique:users',
+                'mobile' => 'required_if:email,null|nullable|string|unique:users,mobile|digits:10',
+                'password' => 'sometimes|string|required_with:email|confirmed|min:6',
+                'profile_picture' => 'nullable|string',
+                'latitude' => 'sometimes|required_with:longitude',
+                'longitude' => 'sometimes|required_with:latitude',
+                'referral_code' => 'sometimes|nullable|exists:users,uid',
+            ];
 
-                    //         if ($prefix !== 'admin' && in_array($value, array_column(Roles::whereIn('name', ['superadmin', 'admin'])->get()->toArray(), 'id'))) {
-                    //             $fail('The selected :attribute is invalid. 5');
-                    //         }
-                    //     },
-                    // ],
-                    // 'project_id' => 'nullable|numeric|exists:projects,id',
-                    'role_id' => 'sometimes|exists:roles,id',
-                    'language' => 'sometimes|required|in:mr,en',
+            // Modify rules if it's a guest registration
+            if ($isGuest) {
+                // Guest only needs a name (everything else optional)
+                $rules = [
                     'name' => 'required|string|between:2,60',
-                    'email' => 'required_if:mobile,null|nullable|string|email|max:100|unique:users',
-                    'mobile' => 'required_if:email,null|nullable|string|unique:users,mobile|digits:10',
-                    'password' => 'sometimes|string|required_with:email|confirmed|min:6',
-                    // 'profile_picture' => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
-                    'profile_picture' => 'nullable|string',
-                    'latitude' => 'sometimes|required_with:longitude',
-                    'longitude' => 'sometimes|required_with:latitude',
-                    'referral_code' => 'sometimes|nullable|exists:users,uid',
-                ],
-                [
-                    'referral_code.exists' => 'Invalid Referral Code...!'
-                ]
-            );
+                ];
+            }
+
+            $validator = Validator::make($request->all(), $rules, [
+                'referral_code.exists' => 'Invalid Referral Code...!',
+            ]);
+
 
             if ($validator->fails()) {
                 $errors = $validator->errors();
@@ -263,6 +259,13 @@ class AuthController extends BaseController
                 !in_array($user->roles->id, array_column($roles->toArray(), 'id'))
             ) {
                 Mail::to($user->email)->send(new WelcomeEmail($user, $password));
+            }
+
+            if ($isGuest) {
+                $user = User::where($input)->first();
+
+                $token = JWTAuth::fromUser($user);
+                return $this->createNewToken($token, 'Logged In Successfully!');
             }
 
             return $this->sendResponse($user, 'User successfully registered');
