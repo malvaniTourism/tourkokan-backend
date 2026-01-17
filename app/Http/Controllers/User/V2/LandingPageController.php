@@ -121,15 +121,84 @@ class LandingPageController extends BaseController
         ]);
 
         foreach ($cities as $city) {
-            $city->setRelation('sites', $city->sites()->select('id', 'name', 'mr_name', 'parent_id')->with(['categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category', 'site:id,parent_id,name,mr_name'])->limit(5)->get());
-            $city->setRelation('gallery', $city->gallery()->limit(5)->get());
+            $city->setRelation('sites', $city->sites()->select('id', 'name', 'mr_name', 'parent_id')
+                    ->with(['categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category', 'site:id,parent_id,name,mr_name'])
+                    ->limit(5)
+                    ->get());
+            $city->setRelation('gallery', $city->gallery()
+                    ->limit(5)
+                    ->get());
 
-            $city->setRelation('comment', $city->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5)->get()->each(function ($comment) {
-                $comment->setRelation('comments', $comment->comments()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5)->get()->each(function ($reply) {
-                    $reply->setRelation('users', $reply->users()->select('id', 'name', 'email', 'profile_picture')->get());
-                }));
-                $comment->setRelation('users', $comment->users()->select('id', 'name', 'email', 'profile_picture')->get());
-            }));
+            $city->setRelation('comment', $city->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
+                    ->limit(5)
+                    ->get()
+                    ->each(function ($comment) {
+                        $comment->setRelation('comments', $comment->comments()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
+                                ->limit(5)
+                                ->get()
+                                ->each(function ($reply) {
+                                    $reply->setRelation('users', $reply->users()->select('id', 'name', 'email', 'profile_picture')->get());
+                                }
+                            )
+                        );
+
+                        $comment->setRelation('users', $comment->users()->select('id', 'name', 'email', 'profile_picture')->get());
+                    }
+                )
+            );
+        }
+
+        #Top 5 Hotels, Restaurants, Resorts
+        $categoryCodes = ['hotel', 'restaurant', 'resort'];
+        $categorySites = [];
+
+        foreach ($categoryCodes as $code) {
+            $sites = Site::withCount(['sites', 'photos', 'comment'])
+                ->withAvg('rating', 'rate')
+                ->whereHas('categories', function ($query) use ($code) {
+                    $query->where('code', $code);
+                })
+                ->selectSub(function ($query) {
+                    $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
+                        ->from('favourites')
+                        ->whereColumn('sites.id', 'favourites.favouritable_id')
+                        ->where('favourites.favouritable_type', Site::class)
+                        ->where('favourites.user_id', config('user_id'));
+                }, 'is_favorite')
+                ->latest()
+                ->limit(5)
+                ->get()
+                ->map(function ($site) {
+                    $site->rating_avg_rate = number_format($site->rating_avg_rate, 1);
+                    return $site;
+                });
+
+            $sites->load([
+                'categories:id,name,code,parent_id,icon,status,is_hot_category'
+            ]);
+
+            foreach ($sites as $site) {
+                $site->setRelation('gallery', $site->gallery()
+                        ->limit(5)
+                        ->get());
+
+                $site->setRelation('comment', $site->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
+                        ->limit(5)
+                        ->get()
+                        ->each(function ($comment) {
+                            $comment->setRelation('comments', $comment->comments()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
+                                    ->limit(5)
+                                    ->get()
+                                    ->each(function ($reply) {
+                                        $reply->setRelation('users', $reply->users()->select('id', 'name', 'email', 'profile_picture')->get());
+                                    }
+                                )
+                            );
+                            $comment->setRelation('users', $comment->users()->select('id', 'name', 'email', 'profile_picture')->get());
+                        })
+                );
+            }
+            $categorySites[\Illuminate\Support\Str::plural($code)] = $sites;
         }
 
         #Routes
@@ -186,7 +255,9 @@ class LandingPageController extends BaseController
             $query->whereIn('id', $ids);
         })->get();
 
-        $records = Cache::remember('landing_page_data' . config('user')->id . '_' . $request->site_id, 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs, $emergency) {
+        
+
+        $records = Cache::remember('landing_page_data' . config('user')->id . '_' . $request->site_id, 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs, $emergency, $categorySites) {
             return array(
                 'version' => AppVersion::latest()->first(),
                 'user' => config('user')->load(['addresses']),
@@ -195,6 +266,7 @@ class LandingPageController extends BaseController
                 // 'stops' => $stops,
                 'categories' => $categories,
                 'cities' => $cities,
+                'trending' => $categorySites,
                 // 'projects' => $projects,
                 // 'products'=>$products,
                 // 'place_category' => $place_category,
