@@ -4,55 +4,52 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use App\Traits\Hashidable;
 
 class Banner extends Model
 {
-    use HasFactory, Hashidable, Notifiable;
+    use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var string[]
-     */
     protected $fillable = [
-        'id',
-        'name',
-        'image',
+        'user_id',
+        'banner_package_id',
+        'banner_placement_id',
+        'title',
+        'image_url',
+        'redirect_url',
         'start_date',
-        'duration',
-        'level',
-        'image_orientation',
+        'end_date',
         'status',
-        'bannerable_type',
-        'bannerable_id',
-        'meta_data'
+        'impressions',
+        'clicks',
+        'is_active',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array
-     */
-    protected $hidden = [];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array
-     */
     protected $casts = [
-        'status' => 'boolean',
-        'meta_data' => 'array'
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'is_active' => 'boolean',
     ];
 
-    /**
-     * Get all of the models that own comments.
-     */
-    public function bannerable()
+    public function user()
     {
-        return $this->morphTo();
+        return $this->belongsTo(User::class);
+    }
+
+    public function package()
+    {
+        return $this->belongsTo(BannerPackage::class, 'banner_package_id');
+    }
+
+    public function placement()
+    {
+        return $this->belongsTo(BannerPlacement::class, 'banner_placement_id');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true)
+                     ->where('status', 'approved')
+                     ->whereDate('start_date', '<=', now())
+                     ->whereDate('end_date', '>=', now());
     }
 }

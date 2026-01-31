@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\Admin\V2;
 
-use App\Models\Banner;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Http\Controllers\BaseController as BaseController;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use App\Models\Banner;
+use App\Models\BannerPackage;
+use App\Models\BannerPlacement;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
-class BannerController extends BaseController
+class BannerController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -29,14 +29,46 @@ class BannerController extends BaseController
         return $this->sendResponse($banner, 'All Banner successfully Retrieved...!');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
+    public function store(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'banner_package_id' => 'required|exists:banner_packages,id',
+            'banner_placement_id' => 'required|exists:banner_placements,id',
+            'title' => 'required|string|max:255',
+            'image_url' => 'required|url',
+            'redirect_url' => 'nullable|url',
+            'start_date' => 'required|date|after_or_equal:today',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $package = BannerPackage::find($request->banner_package_id);
+        $placement = BannerPlacement::find($request->banner_placement_id);
+
+        // Validate if placement is allowed in package
+        if (!in_array($placement->code, $package->allowed_placements ?? [])) {
+            return response()->json(['error' => 'This placement is not allowed for the selected package.'], 422);
+        }
+
+        $startDate = Carbon::parse($request->start_date);
+        $endDate = $startDate->copy()->addDays($package->duration_days);
+
+        $banner = Banner::create([
+            'user_id' => $request->user() ? $request->user()->id : null,
+            'banner_package_id' => $package->id,
+            'banner_placement_id' => $placement->id,
+            'title' => $request->title,
+            'image_url' => $request->image_url,
+            'redirect_url' => $request->redirect_url,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'status' => 'pending',
+            'is_active' => true,
+        ]);
+
+        return response()->json(['message' => 'Banner campaign created successfully. Pending approval.', 'data' => $banner], 201);
     }
 
     /**
@@ -113,18 +145,7 @@ class BannerController extends BaseController
         return $this->sendResponse($banner, 'Banner successfully Retrieved...!');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Banner  $banner
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Banner $banner)
-    {
-        //
-    }
-
-    /**
+        /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -223,5 +244,30 @@ class BannerController extends BaseController
         $banner->delete($id);
 
         return $this->sendResponse($banner, 'Banner deleted successfully...!');
+    }
+
+    public function fetch(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'placement' => 'required|string|exists:banner_placements,code',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $banners = Banner::active()
+            ->whereHas('placement', function ($q) use ($request) {
+                $q->where('code', $request->placement);
+            })
+            ->inRandomOrder()
+            ->get();
+
+        // Increment impressions
+        foreach ($banners as $banner) {
+            $banner->increment('impressions');
+        }
+
+        return response()->json(['data' => $banners]);
     }
 }
