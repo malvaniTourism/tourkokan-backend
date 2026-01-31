@@ -23,12 +23,12 @@ class AdminBannerController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->sendError($validator->errors(), '', 200);
         }
 
         $package = BannerPackage::create($request->all());
 
-        return response()->json(['message' => 'Banner Package created successfully', 'data' => $package], 201);
+        return $this->sendResponse($package, 'Banner Package created successfully');
     }
 
     public function storePlacement(Request $request)
@@ -43,12 +43,12 @@ class AdminBannerController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->sendError($validator->errors(), '', 200);
         }
 
         $placement = BannerPlacement::create($request->all());
 
-        return response()->json(['message' => 'Banner Placement created successfully', 'data' => $placement], 201);
+        return $this->sendResponse($placement, 'Banner Placement created successfully');
     }
 
     public function changeStatus(Request $request)
@@ -59,13 +59,13 @@ class AdminBannerController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->sendError($validator->errors(), '', 200);
         }
 
         $banner = Banner::find($request->banner_id);
         $banner->status = $request->status;
         $banner->save();
 
-        return response()->json(['message' => 'Banner status updated successfully', 'data' => $banner]);
+        return $this->sendResponse($banner, 'Banner status updated successfully');
     }
 }

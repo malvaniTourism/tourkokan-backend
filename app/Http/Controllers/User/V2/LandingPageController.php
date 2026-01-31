@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\AppVersion;
 use App\Models\Banner;
+use App\Models\BannerPlacement;
 use App\Models\Category;
 use App\Models\Projects;
 use App\Models\Products;
@@ -51,10 +52,23 @@ class LandingPageController extends BaseController
         }
 
         #Banners
-        $banners = Banner::latest()
-            ->limit(5)
-            ->whereStatus(1)
-            ->get();
+        $banners = BannerPlacement::with(['banners' => function ($query) {
+            $query->where('is_active', true)
+                ->where('status', 'approved')
+                ->whereDate('start_date', '<=', now())
+                ->whereDate('end_date', '>=', now())
+                ->latest();
+        }])
+            ->whereHas('banners', function ($query) {
+                $query->where('is_active', true)
+                    ->where('status', 'approved')
+                    ->whereDate('start_date', '<=', now())
+                    ->whereDate('end_date', '>=', now());
+            })
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->code => $item->banners];
+            });
 
         $categories = Category::with([
             'subCategories' => function ($query) {

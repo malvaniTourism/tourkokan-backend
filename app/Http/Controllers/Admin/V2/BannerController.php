@@ -41,7 +41,7 @@ class BannerController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->sendError($validator->errors(), '', 200);
         }
 
         $package = BannerPackage::find($request->banner_package_id);
@@ -49,7 +49,7 @@ class BannerController extends Controller
 
         // Validate if placement is allowed in package
         if (!in_array($placement->code, $package->allowed_placements ?? [])) {
-            return response()->json(['error' => 'This placement is not allowed for the selected package.'], 422);
+            return $this->sendError('This placement is not allowed for the selected package.', [], 422);
         }
 
         $startDate = Carbon::parse($request->start_date);
@@ -68,7 +68,7 @@ class BannerController extends Controller
             'is_active' => true,
         ]);
 
-        return response()->json(['message' => 'Banner campaign created successfully. Pending approval.', 'data' => $banner], 201);
+        return $this->sendResponse($banner, 'Banner campaign created successfully. Pending approval.');
     }
 
     /**
@@ -253,7 +253,7 @@ class BannerController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->sendError($validator->errors(), '', 200);
         }
 
         $banners = Banner::active()
@@ -268,6 +268,6 @@ class BannerController extends Controller
             $banner->increment('impressions');
         }
 
-        return response()->json(['data' => $banners]);
+        return $this->sendResponse($banners, 'Banners fetched successfully');
     }
 }

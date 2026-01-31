@@ -10,7 +10,8 @@ class AddAdvertisingColumnsToBannersTable extends Migration
     {
         Schema::table('banners', function (Blueprint $table) {
             if (!Schema::hasColumn('banners', 'user_id')) {
-                $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
+                $table->unsignedInteger('user_id')->nullable();
+                $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             }
             if (!Schema::hasColumn('banners', 'banner_package_id')) {
                 $table->foreignId('banner_package_id')->nullable()->constrained('banner_packages')->onDelete('set null');
