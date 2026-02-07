@@ -18,9 +18,6 @@ class BannerSeeder extends Seeder
      */
     public function run()
     {
-        if (env('APP_ENV')  == 'prod') {
-            return;
-        }
         // 1. Seed Banner Placements
         $placements = [
             // --- Landing Page ---
@@ -127,21 +124,21 @@ class BannerSeeder extends Seeder
             [
                 'name' => 'Basic Starter',
                 'duration_days' => 7,
-                'price' => 49.99,
+                'price' => 2999.00,
                 'allowed_placements' => ['HOME_MIDDLE', 'CITY_MIDDLE', 'ROUTE_LIST_MIDDLE', 'ROUTE_DETAIL_MIDDLE'],
                 'is_active' => true,
             ],
             [
                 'name' => 'Standard Growth',
                 'duration_days' => 30,
-                'price' => 199.99,
+                'price' => 9999.99,
                 'allowed_placements' => ['HOME_HERO', 'HOME_FOOTER', 'CITY_FOOTER', 'ROUTE_LIST_FOOTER', 'ROUTE_DETAIL_FOOTER'],
                 'is_active' => true,
             ],
             [
                 'name' => 'Premium Dominance',
                 'duration_days' => 90,
-                'price' => 499.99,
+                'price' => 21999.99,
                 'allowed_placements' => $allPlacementCodes, // All allowed
                 'is_active' => true,
             ],
@@ -168,8 +165,8 @@ class BannerSeeder extends Seeder
                 $endDate = (clone $startDate)->addDays($premiumPackage->duration_days);
 
                 Banner::create([
-                    'name' => "{$prefix} Banner $i",
-                    'image' => "https://placehold.co/{$placement->width}x{$placement->height}/png?text={$prefix}+{$i}",
+                    'name' => "👉 “Click to Buy This Ad Space”",
+                    'image' => "https://placehold.co/{$placement->width}x{$placement->height}/png?text=👉 “Click to Buy This Ad Space”",
                     'user_id' => $user ? $user->id : null,
                     'banner_package_id' => $premiumPackage->id,
                     'banner_placement_id' => $placement->id,
@@ -177,7 +174,7 @@ class BannerSeeder extends Seeder
                     'end_date' => $endDate,
                     'status' => 'approved',
                     'is_active' => true,
-                    'redirect_url' => 'https://example.com/promo',
+                    'redirect_url' => 'https://tourkokan.com/#Contact',
                     'impressions' => rand(100, 10000),
                     'clicks' => rand(10, 500),
                     'duration' => $premiumPackage->duration_days,

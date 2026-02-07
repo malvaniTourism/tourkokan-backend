@@ -19,6 +19,7 @@ class AppVersionSeeder extends Seeder
         if (!$AppVersion) {
             AppVersion::create([
                 'platform' => 'android',
+                'min_supported_version' => null,
                 'version_number' => '1.0.0',
                 'release_date' => time(),
                 'release_notes' => 'Initial Testing',
@@ -26,6 +27,7 @@ class AppVersionSeeder extends Seeder
             ]);
             AppVersion::create([
                 'platform' => 'ios',
+                'min_supported_version' => null,
                 'version_number' => '1.0.0',
                 'release_date' => time(),
                 'release_notes' => 'Initial Testing',
