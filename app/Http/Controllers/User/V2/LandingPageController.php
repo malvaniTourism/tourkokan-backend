@@ -169,6 +169,7 @@ class LandingPageController extends BaseController
         foreach ($categoryCodes as $code) {
             $sites = Site::withCount(['sites', 'photos', 'comment'])
                 ->withAvg('rating', 'rate')
+                ->whereStatus(true)
                 ->whereHas('categories', function ($query) use ($code) {
                     $query->where('code', $code)
                      ->whereStatus(true);
