@@ -165,8 +165,8 @@ class BannerSeeder extends Seeder
                 $endDate = (clone $startDate)->addDays($premiumPackage->duration_days);
 
                 Banner::create([
-                    'name' => "👉 “Click to Buy This Ad Space”",
-                    'image' => "https://placehold.co/{$placement->width}x{$placement->height}/png?text=👉 “Click to Buy This Ad Space”",
+                    'name' => "Click to Buy This Ad Space",
+                    'image' => "https://placehold.co/{$placement->width}x{$placement->height}/png?text=Click to Buy This Ad Space",
                     'user_id' => $user ? $user->id : null,
                     'banner_package_id' => $premiumPackage->id,
                     'banner_placement_id' => $placement->id,

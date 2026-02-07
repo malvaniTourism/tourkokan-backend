@@ -170,7 +170,8 @@ class LandingPageController extends BaseController
             $sites = Site::withCount(['sites', 'photos', 'comment'])
                 ->withAvg('rating', 'rate')
                 ->whereHas('categories', function ($query) use ($code) {
-                    $query->where('code', $code);
+                    $query->where('code', $code)
+                     ->whereStatus(true);
                 })
                 ->selectSub(function ($query) {
                     $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
