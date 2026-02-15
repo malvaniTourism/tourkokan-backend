@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Button, Container, Modal } from 'react-bootstrap';
+import { Form, Button, Container, Modal, Row, Col, Card } from 'react-bootstrap';
 import './styles.css';
 
 const Contact = () => {
@@ -69,72 +69,77 @@ const Contact = () => {
 
     return (
         <Container>
-            <div style={{ borderRadius: 15, padding: 10, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-                <h1 style={{ color: "#fff" }}>Contact Us</h1>
-                <Form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                    <Form.Group controlId="formName">
-                        <Form.Label>Name</Form.Label>
-                        <Form.Control
-                            className='inpuField'
-                            type="text"
-                            placeholder="Enter your name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            isInvalid={!!errors.name}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                            {errors.name}
-                        </Form.Control.Feedback>
-                    </Form.Group>
+            <Row className="justify-content-center">
+                <Col md={8} lg={6}>
+                    <div className="text-center mb-4">
+                        <h1 className="text-white fw-bold">Contact Us</h1>
+                        <p className="text-white-50">Have questions? We'd love to hear from you.</p>
+                    </div>
+                    <Card className="shadow-lg border-0 rounded-4">
+                        <Card.Body className="p-3 p-md-5">
+                            <Form onSubmit={handleSubmit}>
+                                <Form.Group controlId="formName" className="mb-3">
+                                    <Form.Label>Name</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Enter your name"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        isInvalid={!!errors.name}
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        {errors.name}
+                                    </Form.Control.Feedback>
+                                </Form.Group>
 
-                    <Form.Group controlId="formEmail">
-                        <Form.Label>Email</Form.Label>
-                        <Form.Control
-                            className='inpuField'
-                            type="email"
-                            placeholder="Enter your email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            isInvalid={!!errors.contact && !phone.trim()}
-                        />
-                    </Form.Group>
+                                <Form.Group controlId="formEmail" className="mb-3">
+                                    <Form.Label>Email</Form.Label>
+                                    <Form.Control
+                                        type="email"
+                                        placeholder="Enter your email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        isInvalid={!!errors.contact && !phone.trim()}
+                                    />
+                                </Form.Group>
 
-                    <Form.Group controlId="formPhone">
-                        <Form.Label>Phone</Form.Label>
-                        <Form.Control
-                            className='inpuField'
-                            type="tel"
-                            placeholder="Enter your phone number"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            isInvalid={!!errors.contact && !email.trim()}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                            {errors.contact}
-                        </Form.Control.Feedback>
-                    </Form.Group>
+                                <Form.Group controlId="formPhone" className="mb-3">
+                                    <Form.Label>Phone</Form.Label>
+                                    <Form.Control
+                                        type="tel"
+                                        placeholder="Enter your phone number"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        isInvalid={!!errors.contact && !email.trim()}
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        {errors.contact}
+                                    </Form.Control.Feedback>
+                                </Form.Group>
 
-                    <Form.Group controlId="formMessage">
-                        <Form.Label>Message</Form.Label>
-                        <Form.Control
-                            className='inpuField'
-                            as="textarea"
-                            rows={3}
-                            placeholder="Enter your message"
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            isInvalid={!!errors.message}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                            {errors.message}
-                        </Form.Control.Feedback>
-                    </Form.Group>
+                                <Form.Group controlId="formMessage" className="mb-4">
+                                    <Form.Label>Message</Form.Label>
+                                    <Form.Control
+                                        as="textarea"
+                                        rows={4}
+                                        placeholder="Enter your message"
+                                        value={message}
+                                        onChange={(e) => setMessage(e.target.value)}
+                                        isInvalid={!!errors.message}
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        {errors.message}
+                                    </Form.Control.Feedback>
+                                </Form.Group>
 
-                    <Button variant="primary" type="submit" style={{ marginTop: 20 }}>
-                        Submit
-                    </Button>
-                </Form>
-            </div>
+                                <Button variant="primary" type="submit" className="w-100 py-2 fw-bold">
+                                    Submit Message
+                                </Button>
+                            </Form>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
 
             {/* Success Modal */}
             <Modal show={showSuccessModal} onHide={() => setShowSuccessModal(false)}>

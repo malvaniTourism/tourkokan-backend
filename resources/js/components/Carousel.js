@@ -9,8 +9,7 @@ function MyCarousel() {
             >
                 <a href="https://forms.gle/mE6xg4XByUtZV5ae7" target="_blank">
                     <img
-                        className="d-block w-100"
-                        style={{ height: "90vh" }}
+                        className="d-block w-100 custom-carousel-img"
                         src="/assets/corousel/m4.jpg"
                         alt="First slide"
                     />
@@ -30,8 +29,7 @@ function MyCarousel() {
                 <a href="https://forms.gle/mE6xg4XByUtZV5ae7" target="_blank">
 
                     <img
-                        className="d-block w-100"
-                        style={{ height: "90vh" }}
+                        className="d-block w-100 custom-carousel-img"
                         src="/assets/corousel/m3.jpg"
                         alt="Second slide"
                     />
@@ -51,8 +49,7 @@ function MyCarousel() {
                 <a href="https://forms.gle/mE6xg4XByUtZV5ae7" target="_blank">
 
                     <img
-                        className="d-block w-100"
-                        style={{ height: "90vh" }}
+                        className="d-block w-100 custom-carousel-img"
                         src="/assets/corousel/m6.jpg"
                         alt="Third slide"
                     />

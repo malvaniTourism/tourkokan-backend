@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Button, Container, Modal, Spinner } from 'react-bootstrap';
+import { Form, Button, Container, Modal, Spinner, Row, Col, Card } from 'react-bootstrap';
 
 const DeleteMyAccount = () => {
     const [email, setEmail] = useState('');
@@ -126,36 +126,42 @@ const DeleteMyAccount = () => {
     };
 
     return (
-        <Container>
-            <div style={{ borderRadius: 15, padding: 10, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-                <h1 style={{ color: "#fff" }}>Delete Account</h1>
-                <h1 style={{ color: "#333", textAlign: "center", marginBottom: 20 }}>Delete Your Account</h1>
-                <p style={{ textAlign: "center", marginBottom: 20, fontSize: '16px', color: '#666' }}>
-                    We're sorry to see you go. If you're sure you want to delete your account, please enter your email address below.
-                    An OTP (One-Time Password) will be sent to your email for verification. After verifying the OTP, your account will be permanently deleted.
-                    Please note that this action cannot be undone.
-                </p>
-                <Form onSubmit={handleDeleteRequest} style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                    <Form.Group controlId="formEmail">
-                        <Form.Label>Email</Form.Label>
-                        <Form.Control
-                            type="email"
-                            placeholder="Enter your email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            isInvalid={!!errors.email}
-                            disabled={loading} // Disable input when loading
-                        />
-                        <Form.Control.Feedback type="invalid">
-                            {errors.email}
-                        </Form.Control.Feedback>
-                    </Form.Group>
+        <Container className="py-5">
+            <Row className="justify-content-center">
+                <Col md={8} lg={6}>
+                    <Card className="shadow-sm border-0 rounded-4">
+                        <Card.Body className="p-4 p-md-5">
+                            <h1 className="text-center mb-4 fw-bold text-danger">Delete Your Account</h1>
+                            <p className="text-center mb-4 text-muted">
+                                We're sorry to see you go. If you're sure you want to delete your account, please enter your email address below.
+                                An OTP (One-Time Password) will be sent to your email for verification. After verifying the OTP, your account will be permanently deleted.
+                                <br /><strong>This action cannot be undone.</strong>
+                            </p>
+                            <Form onSubmit={handleDeleteRequest}>
+                                <Form.Group controlId="formEmail" className="mb-4">
+                                    <Form.Label>Email Address</Form.Label>
+                                    <Form.Control
+                                        type="email"
+                                        placeholder="Enter your email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        isInvalid={!!errors.email}
+                                        disabled={loading} // Disable input when loading
+                                        className="py-2"
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        {errors.email}
+                                    </Form.Control.Feedback>
+                                </Form.Group>
 
-                    <Button variant="danger" type="submit" style={{ marginTop: 20 }} disabled={loading}>
-                        {loading ? <Spinner animation="border" size="sm" /> : 'Delete Account'}
-                    </Button>
-                </Form>
-            </div>
+                                <Button variant="danger" type="submit" className="w-100 py-2 fw-bold" disabled={loading}>
+                                    {loading ? <Spinner animation="border" size="sm" /> : 'Delete Account'}
+                                </Button>
+                            </Form>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
 
             {/* OTP Modal */}
             <Modal show={showOtpModal} onHide={() => { }} backdrop="static" keyboard={false}>

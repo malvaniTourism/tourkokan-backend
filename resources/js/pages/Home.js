@@ -15,7 +15,7 @@ function Home() {
             <div id='About'>
                 <About />
             </div>
-            <div id='Contact' style={{ padding: 50, backgroundColor: "#152F4F" }}>
+            <div id='Contact' className="py-5" style={{ backgroundColor: "#152F4F" }}>
                 <Contact />
             </div>
             <div id='DeleteMyAccount'>

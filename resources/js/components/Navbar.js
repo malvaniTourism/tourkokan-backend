@@ -12,9 +12,9 @@ function NavigationBar() {
 
     return (
         <>
-            <Navbar fixed="top" bg="light" expand="lg" className="bg-body-tertiary">
+            <Navbar fixed="top" bg="white" expand="lg" className="shadow-sm py-2">
                 <Container>
-                    <Navbar.Brand href="#home" style={{ display: "flex", alignItems: "center" }}>
+                    <Navbar.Brand href="#home" className="d-flex align-items-center">
                         <img
                             alt=""
                             src="/logo.png"
@@ -24,7 +24,7 @@ function NavigationBar() {
                     </Navbar.Brand>
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />
                     <Navbar.Collapse id="basic-navbar-nav" className="w-100">
-                        <Nav className="mx-auto justify-content-center custom-nav text-center">
+                        <Nav className="mx-auto justify-content-center custom-nav text-center fw-medium">
                             <Nav.Link href="/" className="mx-3">Home</Nav.Link>
                             <Nav.Link href="/#About" className="mx-3">About Us</Nav.Link>
                             <Nav.Link href="/#Contact" className="mx-3">Contact Us</Nav.Link>

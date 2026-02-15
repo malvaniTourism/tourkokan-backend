@@ -1,6 +1,7 @@
 import React from "react";
 import "./styles.css"
 import { HiOutlineLocationMarker } from "react-icons/hi";
+import { Container, Row, Col } from 'react-bootstrap';
 import { BsEnvelopeAt } from "react-icons/bs";
 import { FiPhoneCall } from "react-icons/fi";
 import { ImFacebook2 } from "react-icons/im";
@@ -9,75 +10,61 @@ import { FaInstagramSquare } from "react-icons/fa";
 
 const Footer = () => {
     return (
-        <footer>
-            <div class="footer-top">
-                <div class="container">
-                    <div class="footer-day-time">
-                        <div class="row">
-                            <div class="col-md-8">
-                                {/* <ul>
-                                    <li>Opening Hours: Mon - Friday: 8AM - 5PM</li>
-                                    <li>Sunday: 8:00 AM - 12:00 PM</li>
-                                </ul> */}
-                            </div>
-                            <div class="col-lg-4">
-                                <div class="phone-no">
-                                    {/* <a href="tel:+8454029747"><i class="fa fa-mobile" aria-hidden="true"></i>Call +8454029747</a> */}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-lg-4">
+        <footer className="bg-light pt-5 pb-3 border-top">
+            <div className="footer-top">
+                <Container>
+                    <Row>
+                        <Col lg={4} className="mb-4">
+                            <h4 className="fw-bold mb-3">About us</h4>
+                            <p className="text-muted">Welcome to TourKokan, your ultimate guide to exploring the hidden gems of Kokan! Our app showcasing unique places and local attractions. Discover the rich culture, historical sites, and natural beauty of Kokan through our curated content.</p>
+                        </Col>
 
-                            <h4>About us</h4>
-                            <p style={{ width: "90%" }}>Welcome to TourKokan, your ultimate guide to exploring the hidden gems of Kokan! Our app showcasing unique places and local attractions. Discover the rich culture, historical sites, and natural beauty of Kokan through our curated content. Whether you're seeking adventure activities, cultural experiences, or serene getaways, TourKokan is here to help you plan the perfect trip. Join us and uncover the authentic charm of Kokan!</p>
-
-                        </div>
-
-                        <div class="col-md-4">
-                            <h4>Information</h4>
-                            <ul class="address1" style={{ marginLeft: "-17%" }}>
-                                <li><HiOutlineLocationMarker /> 402, Sai Anand CHS, Gopinath Chawk, Dombivali (w), &nbsp; 421202. </li>
-                                <li><BsEnvelopeAt /><a href="mailto:support@tourkokan.com"> support@tourkokan.com</a></li>
-                                <li><FiPhoneCall /> <a href="tel:8454029747"> 8454029747</a></li>
+                        <Col md={6} lg={4} className="mb-4">
+                            <h4 className="fw-bold mb-3">Information</h4>
+                            <ul className="list-unstyled ps-0">
+                                <li className="mb-2 d-flex">
+                                    <HiOutlineLocationMarker className="me-2 mt-1 flex-shrink-0 text-primary" />
+                                    <span>402, Sai Anand CHS, Gopinath Chawk, Dombivali (w), 421202.</span>
+                                </li>
+                                <li className="mb-2 d-flex align-items-center">
+                                    <BsEnvelopeAt className="me-2 text-primary" />
+                                    <a href="mailto:support@tourkokan.com" className="text-decoration-none text-dark">support@tourkokan.com</a>
+                                </li>
+                                <li className="mb-2 d-flex align-items-center">
+                                    <FiPhoneCall className="me-2 text-primary" />
+                                    <a href="tel:8454029747" className="text-decoration-none text-dark">8454029747</a>
+                                </li>
                             </ul>
-                        </div>
+                        </Col>
 
-                        <div class="col-md-4">
-                            <h4>Follow us</h4>
-                            <ul class="social-icon">
-                                <a href="https://www.facebook.com/people/Tourkokan/61560289596939/?mibextid=LQQJ4d" style={{ color: 'black' }}>
-                                    <li>
-                                        <ImFacebook2 size={20} />
-                                    </li>
+                        <Col md={6} lg={4} className="mb-4">
+                            <h4 className="fw-bold mb-3">Follow us</h4>
+                            <div className="d-flex gap-3">
+                                <a href="https://www.facebook.com/people/Tourkokan/61560289596939/?mibextid=LQQJ4d" className="text-dark">
+                                    <ImFacebook2 size={24} />
                                 </a>
-                                <a href="https://www.instagram.com/tour_kokan/" style={{ color: 'black' }}>
-                                    <li>
-                                        <FaInstagramSquare size={22} />
-                                    </li>
+                                <a href="https://www.instagram.com/tour_kokan/" className="text-dark">
+                                    <FaInstagramSquare size={26} />
                                 </a>
-                                {/* <a href=""> <li><BsLinkedin size={20} /></li></a> */}
-                            </ul>
-                        </div>
-
-                    </div>
-                </div>
+                            </div>
+                        </Col>
+                    </Row>
+                </Container>
             </div>
-            <div class="footer-bottom">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-sm-5">
-                            {/* <p class="copyright">Designed & Developed By Probyte Solution LLP.</p> */}
-                        </div>
-                        <div class="col-sm-7">
-                            <ul>
+            <div className="footer-bottom border-top pt-3">
+                <Container>
+                    <Row>
+                        <Col sm={6}>
+                            <p className="text-muted small">&copy; {new Date().getFullYear()} TourKokan. All rights reserved.</p>
+                        </Col>
+                        <Col sm={6}>
+                            <ul className="list-inline text-sm-end">
                                 <li><a href="Terms">Terms & Conditions</a></li>
                                 <li><a href="PrivacyPolicy">Privacy Policy</a></li>
                             </ul>
-                        </div>
-                    </div>
-                </div>
+                        </Col>
+                    </Row>
+                </Container>
             </div>
         </footer>
     )

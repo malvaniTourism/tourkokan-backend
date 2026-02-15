@@ -61,6 +61,10 @@
     <link rel="stylesheet" href="{{ mix('css/app.css') }}">
 </head>
 <style>
+    html {
+        scroll-behavior: smooth;
+    }
+
     /* Loading screen styling */
     #loading-screen {
         display: flex;
@@ -77,6 +81,13 @@
         width: 40vw; /* 40% of the viewport width */
         max-width: 300px; /* Limit size on small screens */
         max-height: 40vh; /* Limit height to 40% of viewport height */
+    }
+
+    /* Fade out animation for loading screen */
+    .fade-out {
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+        pointer-events: none;
     }
 
     /* Adjustments for mobile */
@@ -102,6 +113,7 @@
         justify-content: center;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         transition: transform 0.2s;
+        animation: pulse 2s infinite;
     }
 
     #whatsapp-button img {
@@ -111,6 +123,26 @@
 
     #whatsapp-button:hover {
         transform: scale(1.1);
+        animation: none;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(37, 211, 102, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+    }
+
+    /* Carousel Responsive Styles */
+    .custom-carousel-img {
+        height: 50vh; /* Default for mobile */
+        object-fit: cover;
+        width: 100%;
+    }
+
+    @media (min-width: 768px) {
+        .custom-carousel-img {
+            height: 90vh; /* Desktop height */
+        }
     }
 </style>
 
@@ -134,7 +166,10 @@
         // Hide the loading screen once React fully loads
         document.addEventListener("DOMContentLoaded", function() {
             const loadingScreen = document.getElementById("loading-screen");
-            loadingScreen.style.display = "none";
+            loadingScreen.classList.add('fade-out');
+            setTimeout(() => {
+                loadingScreen.style.display = "none";
+            }, 500);
         });
     </script>
 </body>
