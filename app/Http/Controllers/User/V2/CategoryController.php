@@ -37,7 +37,7 @@ class CategoryController extends BaseController
             if ($request->has('category')) {
                 $categories->getCollection()->transform(function ($category) {
                     $category->subCategories->transform(function ($subCategory) {
-                        $subCategory->setRelation('sites', $subCategory->sites->take(5));
+                        $subCategory->setRelation('sites', $subCategory->sites->take(15));
                         return $subCategory;
                     });
                     return $category;
