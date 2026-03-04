@@ -15,22 +15,37 @@ class CategoryController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function listcategories()
+    public function listcategories(Request $request)
     {
-        if (!Cache::has('categories')) {
-            $categories = Cache::remember('categories', 60, function () {
-                $categories = Category::with(['subCategories:id,name,mr_name,code,parent_id,icon,is_hot_category'])
-                    ->select('*')
-                    ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
-                    ->whereNull('parent_id')
-                    ->whereStatus(true)
-                    ->paginate(10);
+        $cacheKey = 'categories_' . ($request->category ?? 'all') . '_page_' . $request->get('page', 1);
 
-                return $categories;
-            });
-        }
+        $categories = Cache::remember($cacheKey, 86400, function () use ($request) {
+            $with = ['subCategories:id,name,mr_name,code,parent_id,icon,is_hot_category'];
 
-        $categories = Cache::get('categories');
+            if ($request->has('category')) {
+                $with['subCategories.sites'] = fn($q) => $q->select('id', 'name', 'meta_data');
+            }
+
+            $categories = Category::with($with)
+                ->select('*')
+                ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
+                ->whereStatus(true)
+                ->when($request->has('category'), fn($q) => $q->where('code', $request->category))
+                ->when(!$request->has('category'), fn($q) => $q->whereNull('parent_id'))
+                ->paginate(10);
+
+            if ($request->has('category')) {
+                $categories->getCollection()->transform(function ($category) {
+                    $category->subCategories->transform(function ($subCategory) {
+                        $subCategory->setRelation('sites', $subCategory->sites->take(5));
+                        return $subCategory;
+                    });
+                    return $category;
+                });
+            }
+
+            return $categories;
+        });
 
         if (!$categories) {
             return $this->sendError('Empty', [], 404);
@@ -55,20 +70,10 @@ class CategoryController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        // if (!Cache::has('subCategories')) {
-        //     $subCategories = Cache::remember('subCategories', 60, function () use ($request) {
-        $subCategories = Category::with(['subCategories:id,name,mr_name,code,parent_id,icon,is_hot_category'])
-            ->find($request->id);
-
-        //         return $subCategories;
-        //     });
-        // }
-
-        // $subCategories = Cache::get('subCategories');
-
-        // if (!$subCategories) {
-        //     return $this->sendError('Empty', [], 404);
-        // }
+        $subCategories = Cache::remember('subCategories_' . $request->id, 86400, function () use ($request) {
+            return Category::with(['subCategories:id,name,mr_name,code,parent_id,icon,is_hot_category'])
+                ->find($request->id);
+        });
 
         return $this->sendResponse($subCategories, 'Sub Categories successfully Retrieved...!');
     }

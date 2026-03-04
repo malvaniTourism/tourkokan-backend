@@ -42,18 +42,19 @@ class CategoryImport implements ToCollection, WithHeadingRow
                 $obj->parent_id         = $parent_id;
                 $obj->description       = isValidReturn($value, 'description');
                 $obj->icon              = isValidReturn($value, 'icon', false);
-                $obj->status            = isValidReturn($value, 'status', false);
+                $obj->status            = true;
                 $obj->is_hot_category   = isValidReturn($value, 'is_hot_category', false);
                 $obj->meta_data         = isValidReturn($value, 'meta_data', false);
                 $obj->save();
             } else {
+                logger(isValidReturn($value, 'status', true));
                 $exists->name              = $value['name'];
                 $exists->mr_name           = $value['mr_name'];
                 $exists->code              = strtolower($value['code']);
                 $exists->parent_id         = $parent_id;
                 $exists->description       = isValidReturn($value, 'description');
                 $exists->icon              = isValidReturn($value, 'icon', false);
-                $exists->status            = isValidReturn($value, 'status', false);
+                $exists->status            = true;
                 $exists->is_hot_category   = isValidReturn($value, 'is_hot_category', false);
                 $exists->meta_data         = isValidReturn($value, 'meta_data', false);
                 $exists->save();
