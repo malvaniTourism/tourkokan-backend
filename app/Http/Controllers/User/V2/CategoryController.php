@@ -7,9 +7,12 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
+use App\Services\CategoryService;
 
 class CategoryController extends BaseController
 {
+    public function __construct(protected CategoryService $categoryService) {}
+
     /**
      * Display a listing of the resource.
      *
@@ -17,35 +20,10 @@ class CategoryController extends BaseController
      */
     public function listcategories(Request $request)
     {
-        $cacheKey = 'categories_' . ($request->category ?? 'all') . '_page_' . $request->get('page', 1);
-
-        $categories = Cache::remember($cacheKey, 86400, function () use ($request) {
-            $with = ['subCategories:id,name,mr_name,code,parent_id,icon,is_hot_category'];
-
-            if ($request->has('category')) {
-                $with['subCategories.sites'] = fn($q) => $q->select('id', 'name', 'meta_data');
-            }
-
-            $categories = Category::with($with)
-                ->select('*')
-                ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
-                ->whereStatus(true)
-                ->when($request->has('category'), fn($q) => $q->where('code', $request->category))
-                ->when(!$request->has('category'), fn($q) => $q->whereNull('parent_id'))
-                ->paginate(10);
-
-            if ($request->has('category')) {
-                $categories->getCollection()->transform(function ($category) {
-                    $category->subCategories->transform(function ($subCategory) {
-                        $subCategory->setRelation('sites', $subCategory->sites->take(15));
-                        return $subCategory;
-                    });
-                    return $category;
-                });
-            }
-
-            return $categories;
-        });
+        $categories = $this->categoryService->getPaginated(
+            $request->category,
+            $request->get('page', 1)
+        );
 
         if (!$categories) {
             return $this->sendError('Empty', [], 404);

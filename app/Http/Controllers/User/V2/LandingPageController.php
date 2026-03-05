@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Gallery;
 use App\Models\Contact;
+use App\Services\CategoryService;
 
 class LandingPageController extends BaseController
 {
@@ -31,7 +32,7 @@ class LandingPageController extends BaseController
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(protected CategoryService $categoryService)
     {
         $this->middleware('auth:api');
     }
@@ -263,14 +264,18 @@ class LandingPageController extends BaseController
         $queries = Contact::where('user_id', config('user_id'))
             ->limit(isValidReturn($request, 'per_page', 10))
             ->get();
-        $category = Category::with('subCategories')->where('code', 'emergency')->first();
+        // $category = Category::with('subCategories')->where('code', 'emergency')->first();
 
-        $ids = $category->subCategories->pluck('id');
+        // $ids = $category->subCategories->pluck('id');
 
-        $emergency = Site::whereHas('categories', function ($query) use ($ids) {
-            $query->whereIn('id', $ids);
-        })->get();
+        // $emergency = Site::whereHas('categories', function ($query) use ($ids) {
+        //     $query->whereIn('id', $ids);
+        // })->get();
 
+        $emergency = $this->categoryService->getPaginated(
+            'emergency',
+            1
+        );
         
 
         $records = Cache::remember('landing_page_data' . config('user')->id . '_' . $request->site_id, 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs, $emergency, $categorySites) {
