@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Button, Container, Modal } from 'react-bootstrap';
+import { Form, Button, Container, Modal, Row, Col } from 'react-bootstrap';
 import './styles.css';
 
 const Contact = () => {
@@ -10,58 +10,38 @@ const Contact = () => {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showFailureModal, setShowFailureModal] = useState(false);
     const [errors, setErrors] = useState({});
-    const appUrl = process.env.MIX_APP_URL; // Accessing the base URL from environment variables
+    const appUrl = process.env.MIX_APP_URL;
 
     const validateForm = () => {
         const newErrors = {};
-
-        if (!name.trim()) {
-            newErrors.name = 'Name is required';
-        }
-
-        if (!message.trim()) {
-            newErrors.message = 'Message is required';
-        }
-
-        if (!email.trim() && !phone.trim()) {
-            newErrors.contact = 'Either email or phone is required';
-        }
-
+        if (!name.trim()) newErrors.name = 'Name is required';
+        if (!message.trim()) newErrors.message = 'Message is required';
+        if (!email.trim() && !phone.trim()) newErrors.contact = 'Either email or phone is required';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (!validateForm()) {
-            return; // If validation fails, don't proceed with submission
-        }
+        if (!validateForm()) return;
 
         try {
             const response = await fetch(`${appUrl}/api/v2/addGuestQuery`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ name, email, phone, message })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, phone, message }),
             });
 
             if (response.ok) {
-                // Handle success
-                // Reset form fields
                 setName('');
                 setEmail('');
                 setPhone('');
                 setMessage('');
-
                 setShowSuccessModal(true);
             } else {
-                // Handle failure
                 setShowFailureModal(true);
             }
         } catch (error) {
-            // Handle error
             console.error('Error:', error);
             setShowFailureModal(true);
         }
@@ -69,96 +49,82 @@ const Contact = () => {
 
     return (
         <Container>
-            <div style={{ borderRadius: 15, padding: 10, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-                <h1 style={{ color: "#fff" }}>Contact Us</h1>
-                <Form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                    <Form.Group controlId="formName">
-                        <Form.Label>Name</Form.Label>
-                        <Form.Control
-                            className='inpuField'
-                            type="text"
-                            placeholder="Enter your name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            isInvalid={!!errors.name}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                            {errors.name}
-                        </Form.Control.Feedback>
-                    </Form.Group>
+            <h2 className="text-center text-white mb-4">Contact Us</h2>
+            <Row className="justify-content-center">
+                <Col xs={12} sm={10} md={8} lg={6}>
+                    <Form onSubmit={handleSubmit}>
+                        <Form.Group controlId="formName" className="mb-3">
+                            <Form.Label>Name</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="Enter your name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                isInvalid={!!errors.name}
+                            />
+                            <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
+                        </Form.Group>
 
-                    <Form.Group controlId="formEmail">
-                        <Form.Label>Email</Form.Label>
-                        <Form.Control
-                            className='inpuField'
-                            type="email"
-                            placeholder="Enter your email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            isInvalid={!!errors.contact && !phone.trim()}
-                        />
-                    </Form.Group>
+                        <Form.Group controlId="formEmail" className="mb-3">
+                            <Form.Label>Email</Form.Label>
+                            <Form.Control
+                                type="email"
+                                placeholder="Enter your email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                isInvalid={!!errors.contact && !phone.trim()}
+                            />
+                        </Form.Group>
 
-                    <Form.Group controlId="formPhone">
-                        <Form.Label>Phone</Form.Label>
-                        <Form.Control
-                            className='inpuField'
-                            type="tel"
-                            placeholder="Enter your phone number"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            isInvalid={!!errors.contact && !email.trim()}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                            {errors.contact}
-                        </Form.Control.Feedback>
-                    </Form.Group>
+                        <Form.Group controlId="formPhone" className="mb-3">
+                            <Form.Label>Phone</Form.Label>
+                            <Form.Control
+                                type="tel"
+                                placeholder="Enter your phone number"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                isInvalid={!!errors.contact && !email.trim()}
+                            />
+                            <Form.Control.Feedback type="invalid">{errors.contact}</Form.Control.Feedback>
+                        </Form.Group>
 
-                    <Form.Group controlId="formMessage">
-                        <Form.Label>Message</Form.Label>
-                        <Form.Control
-                            className='inpuField'
-                            as="textarea"
-                            rows={3}
-                            placeholder="Enter your message"
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            isInvalid={!!errors.message}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                            {errors.message}
-                        </Form.Control.Feedback>
-                    </Form.Group>
+                        <Form.Group controlId="formMessage" className="mb-3">
+                            <Form.Label>Message</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                rows={4}
+                                placeholder="Enter your message"
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                                isInvalid={!!errors.message}
+                            />
+                            <Form.Control.Feedback type="invalid">{errors.message}</Form.Control.Feedback>
+                        </Form.Group>
 
-                    <Button variant="primary" type="submit" style={{ marginTop: 20 }}>
-                        Submit
-                    </Button>
-                </Form>
-            </div>
+                        <div className="d-grid">
+                            <Button variant="primary" type="submit">Submit</Button>
+                        </div>
+                    </Form>
+                </Col>
+            </Row>
 
-            {/* Success Modal */}
             <Modal show={showSuccessModal} onHide={() => setShowSuccessModal(false)}>
                 <Modal.Header closeButton>
                     <Modal.Title>Success</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>Your message has been successfully sent.</Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowSuccessModal(false)}>
-                        Close
-                    </Button>
+                    <Button variant="secondary" onClick={() => setShowSuccessModal(false)}>Close</Button>
                 </Modal.Footer>
             </Modal>
 
-            {/* Failure Modal */}
             <Modal show={showFailureModal} onHide={() => setShowFailureModal(false)}>
                 <Modal.Header closeButton>
                     <Modal.Title>Error</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>Failed to send your message. Please try again later.</Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowFailureModal(false)}>
-                        Close
-                    </Button>
+                    <Button variant="secondary" onClick={() => setShowFailureModal(false)}>Close</Button>
                 </Modal.Footer>
             </Modal>
         </Container>
