@@ -9,7 +9,6 @@ const DeleteMyAccount = () => {
     const [errors, setErrors] = useState({});
     const [responseMessage, setResponseMessage] = useState('');
     const [loading, setLoading] = useState(false);
-    const appUrl = process.env.MIX_APP_URL;
 
     const validateEmailForm = () => {
         const newErrors = {};
@@ -28,7 +27,7 @@ const DeleteMyAccount = () => {
         setLoading(true);
 
         try {
-            const response = await fetch(`${appUrl}/api/v2/deleteMyAccount`, {
+            const response = await fetch('/api/v2/deleteMyAccount', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email }),
@@ -74,7 +73,7 @@ const DeleteMyAccount = () => {
         setLoading(true);
 
         try {
-            const response = await fetch(`${appUrl}/api/v2/auth/verifyOtp`, {
+            const response = await fetch('/api/v2/auth/verifyOtp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ delete: 1, email, otp }),

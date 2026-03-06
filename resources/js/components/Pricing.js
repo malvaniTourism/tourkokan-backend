@@ -7,10 +7,9 @@ const Pricing = () => {
     const [packages, setPackages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const appUrl = process.env.MIX_APP_URL;
 
     useEffect(() => {
-        fetch(`${appUrl}/api/v2/advertisingPackages`)
+        fetch('/api/v2/advertisingPackages')
             .then((res) => res.json())
             .then((json) => {
                 if (json.success) setPackages(json.data);

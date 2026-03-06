@@ -10,7 +10,6 @@ const Contact = () => {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showFailureModal, setShowFailureModal] = useState(false);
     const [errors, setErrors] = useState({});
-    const appUrl = process.env.MIX_APP_URL;
 
     const validateForm = () => {
         const newErrors = {};
@@ -26,7 +25,7 @@ const Contact = () => {
         if (!validateForm()) return;
 
         try {
-            const response = await fetch(`${appUrl}/api/v2/addGuestQuery`, {
+            const response = await fetch('/api/v2/addGuestQuery', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, email, phone, message }),

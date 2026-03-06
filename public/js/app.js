@@ -7311,7 +7311,6 @@ var Contact = function Contact() {
     _useState14 = _slicedToArray(_useState13, 2),
     errors = _useState14[0],
     setErrors = _useState14[1];
-  var appUrl = "http://localhost:8000";
   var validateForm = function validateForm() {
     var newErrors = {};
     if (!name.trim()) newErrors.name = 'Name is required';
@@ -7335,7 +7334,7 @@ var Contact = function Contact() {
           case 3:
             _context.prev = 3;
             _context.next = 6;
-            return fetch("".concat(appUrl, "/api/v2/addGuestQuery"), {
+            return fetch('/api/v2/addGuestQuery', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -7576,7 +7575,6 @@ var DeleteMyAccount = function DeleteMyAccount() {
     _useState14 = _slicedToArray(_useState13, 2),
     loading = _useState14[0],
     setLoading = _useState14[1];
-  var appUrl = "http://localhost:8000";
   var validateEmailForm = function validateEmailForm() {
     var newErrors = {};
     if (!email.trim()) {
@@ -7603,7 +7601,7 @@ var DeleteMyAccount = function DeleteMyAccount() {
             setLoading(true);
             _context.prev = 4;
             _context.next = 7;
-            return fetch("".concat(appUrl, "/api/v2/deleteMyAccount"), {
+            return fetch('/api/v2/deleteMyAccount', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -7680,7 +7678,7 @@ var DeleteMyAccount = function DeleteMyAccount() {
             setLoading(true);
             _context2.prev = 4;
             _context2.next = 7;
-            return fetch("".concat(appUrl, "/api/v2/auth/verifyOtp"), {
+            return fetch('/api/v2/auth/verifyOtp', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -8143,9 +8141,8 @@ var Pricing = function Pricing() {
     _useState6 = _slicedToArray(_useState5, 2),
     error = _useState6[0],
     setError = _useState6[1];
-  var appUrl = "http://localhost:8000";
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(function () {
-    fetch("".concat(appUrl, "/api/v2/advertisingPackages")).then(function (res) {
+    fetch('/api/v2/advertisingPackages').then(function (res) {
       return res.json();
     }).then(function (json) {
       if (json.success) setPackages(json.data);else setError('Failed to load packages.');
