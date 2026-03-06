@@ -5,6 +5,7 @@ import About from '../components/About';
 import Contact from '../components/Contact';
 import Footer from '../components/Footer';
 import DeleteMyAccount from '../components/DeleteMyAccount ';
+import Pricing from '../components/Pricing';
 
 function Home() {
     return (
@@ -13,6 +14,9 @@ function Home() {
             <Carousel />
             <div id="About">
                 <About />
+            </div>
+            <div id="Pricing">
+                <Pricing />
             </div>
             <div id="Contact" style={{ padding: "50px 0", backgroundColor: "#152F4F" }}>
                 <Contact />

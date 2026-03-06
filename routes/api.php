@@ -182,6 +182,10 @@ Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2'], function ($rou
     Route::get('roleDD', [RolesController::class, 'roleDD']);
     Route::post('addGuestQuery', [ContactController::class, 'addQuery']);
     Route::post('deleteMyAccount', [AuthController::class, 'deleteMyAccount']);
+    Route::get('advertisingPackages', function () {
+        $packages = \App\Models\BannerPackage::where('is_active', true)->orderBy('price')->get();
+        return response()->json(['success' => true, 'data' => $packages]);
+    });
 });
 
 Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2/auth'], function ($router) {

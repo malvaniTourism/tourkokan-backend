@@ -8099,6 +8099,144 @@ function NavigationBar() {
 
 /***/ }),
 
+/***/ "./resources/js/components/Pricing.js":
+/*!********************************************!*\
+  !*** ./resources/js/components/Pricing.js ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react_bootstrap__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! react-bootstrap */ "./node_modules/react-bootstrap/esm/Container.js");
+/* harmony import */ var react_bootstrap__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! react-bootstrap */ "./node_modules/react-bootstrap/esm/Spinner.js");
+/* harmony import */ var react_bootstrap__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react-bootstrap */ "./node_modules/react-bootstrap/esm/Row.js");
+/* harmony import */ var react_bootstrap__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react-bootstrap */ "./node_modules/react-bootstrap/esm/Col.js");
+/* harmony import */ var react_icons_fa__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react-icons/fa */ "./node_modules/react-icons/fa/index.mjs");
+/* harmony import */ var _styles_css__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./styles.css */ "./resources/js/components/styles.css");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+
+
+
+
+
+var Pricing = function Pricing() {
+  var _useState = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([]),
+    _useState2 = _slicedToArray(_useState, 2),
+    packages = _useState2[0],
+    setPackages = _useState2[1];
+  var _useState3 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true),
+    _useState4 = _slicedToArray(_useState3, 2),
+    loading = _useState4[0],
+    setLoading = _useState4[1];
+  var _useState5 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null),
+    _useState6 = _slicedToArray(_useState5, 2),
+    error = _useState6[0],
+    setError = _useState6[1];
+  var appUrl = "http://localhost:8000";
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(function () {
+    fetch("".concat(appUrl, "/api/v2/advertisingPackages")).then(function (res) {
+      return res.json();
+    }).then(function (json) {
+      if (json.success) setPackages(json.data);else setError('Failed to load packages.');
+    })["catch"](function () {
+      return setError('Failed to load packages.');
+    })["finally"](function () {
+      return setLoading(false);
+    });
+  }, []);
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("div", {
+    className: "pricing-section",
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)(react_bootstrap__WEBPACK_IMPORTED_MODULE_3__["default"], {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("h2", {
+        className: "text-center mb-2",
+        children: "Advertise with TourKokan"
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("p", {
+        className: "text-center text-muted mb-5",
+        children: "Reach thousands of Konkan travelers. Choose a plan that suits your business."
+      }), loading && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("div", {
+        className: "text-center py-5",
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(react_bootstrap__WEBPACK_IMPORTED_MODULE_4__["default"], {
+          animation: "border",
+          variant: "primary"
+        })
+      }), error && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("p", {
+        className: "text-center text-danger",
+        children: error
+      }), !loading && !error && packages.length === 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("p", {
+        className: "text-center text-muted",
+        children: "No packages available at the moment."
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(react_bootstrap__WEBPACK_IMPORTED_MODULE_5__["default"], {
+        className: "g-4 justify-content-center",
+        children: packages.map(function (pkg, index) {
+          var isPopular = index === Math.floor(packages.length / 2);
+          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(react_bootstrap__WEBPACK_IMPORTED_MODULE_6__["default"], {
+            xs: 12,
+            sm: 6,
+            lg: 4,
+            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
+              className: "pricing-card ".concat(isPopular ? 'pricing-card--popular' : ''),
+              children: [isPopular && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("div", {
+                className: "pricing-badge",
+                children: "Most Popular"
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("h4", {
+                className: "pricing-name",
+                children: pkg.name
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
+                className: "pricing-price",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("span", {
+                  className: "pricing-currency",
+                  children: "\u20B9"
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("span", {
+                  className: "pricing-amount",
+                  children: Number(pkg.price).toLocaleString('en-IN')
+                })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("p", {
+                className: "pricing-duration",
+                children: ["for ", pkg.duration_days, " days"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("ul", {
+                className: "pricing-features",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("li", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCheckCircle, {
+                    className: "pricing-check"
+                  }), pkg.duration_days, "-day banner campaign"]
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("li", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCheckCircle, {
+                    className: "pricing-check"
+                  }), "Impressions & click tracking"]
+                }), pkg.allowed_placements && pkg.allowed_placements.map(function (placement, i) {
+                  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("li", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(react_icons_fa__WEBPACK_IMPORTED_MODULE_7__.FaCheckCircle, {
+                      className: "pricing-check"
+                    }), placement.replace(/_/g, ' '), " placement"]
+                  }, i);
+                })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("a", {
+                href: "/#Contact",
+                className: "pricing-btn ".concat(isPopular ? 'pricing-btn--popular' : ''),
+                children: "Get Started"
+              })]
+            })
+          }, pkg.id);
+        })
+      })]
+    })
+  });
+};
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Pricing);
+
+/***/ }),
+
 /***/ "./resources/js/pages/AboutUs.js":
 /*!***************************************!*\
   !*** ./resources/js/pages/AboutUs.js ***!
@@ -8149,7 +8287,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _components_Contact__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../components/Contact */ "./resources/js/components/Contact.js");
 /* harmony import */ var _components_Footer__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../components/Footer */ "./resources/js/components/Footer.js");
 /* harmony import */ var _components_DeleteMyAccount___WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../components/DeleteMyAccount  */ "./resources/js/components/DeleteMyAccount .js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+/* harmony import */ var _components_Pricing__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../components/Pricing */ "./resources/js/components/Pricing.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+
 
 
 
@@ -8160,24 +8300,27 @@ __webpack_require__.r(__webpack_exports__);
 
 
 function Home() {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsxs)("div", {
     style: {
       paddingTop: "80px"
     },
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_components_Navbar__WEBPACK_IMPORTED_MODULE_1__["default"], {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_components_Carousel__WEBPACK_IMPORTED_MODULE_2__["default"], {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_components_Navbar__WEBPACK_IMPORTED_MODULE_1__["default"], {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_components_Carousel__WEBPACK_IMPORTED_MODULE_2__["default"], {}), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("div", {
       id: "About",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_components_About__WEBPACK_IMPORTED_MODULE_3__["default"], {})
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_components_About__WEBPACK_IMPORTED_MODULE_3__["default"], {})
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("div", {
+      id: "Pricing",
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_components_Pricing__WEBPACK_IMPORTED_MODULE_7__["default"], {})
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("div", {
       id: "Contact",
       style: {
         padding: "50px 0",
         backgroundColor: "#152F4F"
       },
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_components_Contact__WEBPACK_IMPORTED_MODULE_4__["default"], {})
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_components_Contact__WEBPACK_IMPORTED_MODULE_4__["default"], {})
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)("div", {
       id: "DeleteMyAccount",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_components_DeleteMyAccount___WEBPACK_IMPORTED_MODULE_6__["default"], {})
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_components_Footer__WEBPACK_IMPORTED_MODULE_5__["default"], {})]
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_components_DeleteMyAccount___WEBPACK_IMPORTED_MODULE_6__["default"], {})
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_8__.jsx)(_components_Footer__WEBPACK_IMPORTED_MODULE_5__["default"], {})]
   });
 }
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Home);
@@ -8455,7 +8598,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "/* ===================== GENERAL ===================== */\nul {\n    padding: 0;\n}\nol, ul {\n    margin-bottom: 0;\n}\nfooter p {\n    margin-bottom: 0;\n}\n.copyright {\n    font-size: 18px;\n    color: #fff;\n}\n\n/* ===================== NAVBAR ===================== */\n.custom-nav .nav-link {\n    font-size: 1.1rem;\n}\n\n/* ===================== CAROUSEL ===================== */\n.carousel-img {\n    width: 100%;\n    height: 90vh;\n    -o-object-fit: cover;\n       object-fit: cover;\n}\n\n@media (max-width: 991px) {\n    .carousel-img {\n        height: 60vh;\n    }\n}\n\n@media (max-width: 576px) {\n    .carousel-img {\n        height: 45vh;\n    }\n}\n\n/* ===================== ABOUT ===================== */\n.about-feature-card {\n    background: #f8f9fa;\n    border-radius: 10px;\n    padding: 20px;\n    height: 100%;\n    border-left: 4px solid #152F4F;\n}\n\n.about-feature-card h5 {\n    color: #152F4F;\n    font-weight: 600;\n    margin-bottom: 10px;\n}\n\n/* ===================== CONTACT FORM ===================== */\n.form-label {\n    color: white;\n}\n\n/* ===================== FOOTER ===================== */\nfooter {\n    color: #000;\n}\n\n.footer-top {\n    background: #c9c9c9;\n    padding: 50px 0;\n}\n\n.footer-top h4 {\n    font-size: 19px;\n    text-transform: uppercase;\n    margin-bottom: 20px;\n    font-weight: 700;\n}\n\n.footer-top p {\n    font-size: 13px;\n    line-height: 2;\n}\n\n.footer-bottom {\n    background: #152F4F;\n    padding: 15px 0;\n}\n\n.footer-bottom-inner {\n    display: flex;\n    justify-content: flex-end;\n    align-items: center;\n    flex-wrap: wrap;\n    gap: 10px;\n}\n\n@media (max-width: 576px) {\n    .footer-bottom-inner {\n        justify-content: center;\n    }\n}\n\n.footer-bottom ul {\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    display: flex;\n    gap: 20px;\n    flex-wrap: wrap;\n    justify-content: center;\n}\n\n.footer-bottom ul li a {\n    color: #fff;\n    text-decoration: none;\n    font-size: 16px;\n}\n\n.footer-bottom ul li a:hover {\n    text-decoration: underline;\n}\n\n.address1 {\n    list-style: none;\n    padding: 0;\n    margin: 0;\n}\n\n.address1 li {\n    display: flex;\n    align-items: flex-start;\n    gap: 10px;\n    padding-bottom: 14px;\n    line-height: 1.6;\n}\n\n.address1 li a {\n    color: #000;\n    text-decoration: none;\n}\n\n.address1 li a:hover {\n    text-decoration: underline;\n}\n\n.address1 li svg {\n    flex-shrink: 0;\n    margin-top: 3px;\n}\n\n/* Social Icons */\n.social-icon {\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    display: flex;\n    gap: 14px;\n    flex-wrap: wrap;\n}\n\n.social-icon li a {\n    color: #333;\n    transition: color 0.3s;\n    display: flex;\n    align-items: center;\n}\n\n.social-icon li a:hover {\n    color: #152F4F;\n}\n\n/* ===================== POLICY PAGES ===================== */\n.policy-content {\n    padding: 40px 0 60px;\n    text-align: justify;\n}\n\n.policy-content h1 {\n    margin-bottom: 20px;\n}\n\n.policy-content h2 {\n    margin-top: 28px;\n    margin-bottom: 12px;\n    font-size: 1.4rem;\n}\n\n@media (max-width: 576px) {\n    .policy-content h1 {\n        font-size: 1.6rem;\n    }\n    .policy-content h2 {\n        font-size: 1.2rem;\n    }\n}\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "/* ===================== PRICING ===================== */\n.pricing-section {\n    background: #f4f7fb;\n    padding: 70px 0;\n}\n\n.pricing-card {\n    background: #fff;\n    border-radius: 14px;\n    padding: 36px 28px;\n    border: 2px solid #e5e9f0;\n    position: relative;\n    text-align: center;\n    transition: box-shadow 0.3s, transform 0.3s;\n    height: 100%;\n    display: flex;\n    flex-direction: column;\n}\n\n.pricing-card:hover {\n    box-shadow: 0 8px 32px rgba(21, 47, 79, 0.12);\n    transform: translateY(-4px);\n}\n\n.pricing-card--popular {\n    border-color: #152F4F;\n    box-shadow: 0 8px 32px rgba(21, 47, 79, 0.15);\n}\n\n.pricing-badge {\n    position: absolute;\n    top: -14px;\n    left: 50%;\n    transform: translateX(-50%);\n    background: #152F4F;\n    color: #fff;\n    font-size: 12px;\n    font-weight: 600;\n    padding: 4px 16px;\n    border-radius: 20px;\n    white-space: nowrap;\n}\n\n.pricing-name {\n    font-size: 1.2rem;\n    font-weight: 700;\n    color: #152F4F;\n    margin-bottom: 16px;\n}\n\n.pricing-price {\n    margin-bottom: 4px;\n}\n\n.pricing-currency {\n    font-size: 1.4rem;\n    font-weight: 600;\n    color: #333;\n    vertical-align: top;\n    margin-top: 8px;\n    display: inline-block;\n}\n\n.pricing-amount {\n    font-size: 3rem;\n    font-weight: 800;\n    color: #152F4F;\n    line-height: 1;\n}\n\n.pricing-duration {\n    color: #888;\n    font-size: 0.9rem;\n    margin-bottom: 24px;\n}\n\n.pricing-features {\n    list-style: none;\n    padding: 0;\n    margin: 0 0 28px;\n    text-align: left;\n    flex: 1;\n}\n\n.pricing-features li {\n    display: flex;\n    align-items: flex-start;\n    gap: 10px;\n    padding: 6px 0;\n    font-size: 14px;\n    color: #444;\n    text-transform: capitalize;\n}\n\n.pricing-check {\n    color: #152F4F;\n    flex-shrink: 0;\n    margin-top: 2px;\n}\n\n.pricing-btn {\n    display: block;\n    width: 100%;\n    padding: 12px;\n    border-radius: 8px;\n    text-align: center;\n    font-weight: 600;\n    font-size: 15px;\n    text-decoration: none;\n    background: transparent;\n    border: 2px solid #152F4F;\n    color: #152F4F;\n    transition: background 0.2s, color 0.2s;\n}\n\n.pricing-btn:hover {\n    background: #152F4F;\n    color: #fff;\n}\n\n.pricing-btn--popular {\n    background: #152F4F;\n    color: #fff;\n}\n\n.pricing-btn--popular:hover {\n    background: #0e1f35;\n    color: #fff;\n}\n\n/* ===================== GENERAL ===================== */\nul {\n    padding: 0;\n}\nol, ul {\n    margin-bottom: 0;\n}\nfooter p {\n    margin-bottom: 0;\n}\n.copyright {\n    font-size: 18px;\n    color: #fff;\n}\n\n/* ===================== NAVBAR ===================== */\n.custom-nav .nav-link {\n    font-size: 1.1rem;\n}\n\n/* ===================== CAROUSEL ===================== */\n.carousel-img {\n    width: 100%;\n    height: 90vh;\n    -o-object-fit: cover;\n       object-fit: cover;\n}\n\n@media (max-width: 991px) {\n    .carousel-img {\n        height: 60vh;\n    }\n}\n\n@media (max-width: 576px) {\n    .carousel-img {\n        height: 45vh;\n    }\n}\n\n/* ===================== ABOUT ===================== */\n.about-feature-card {\n    background: #f8f9fa;\n    border-radius: 10px;\n    padding: 20px;\n    height: 100%;\n    border-left: 4px solid #152F4F;\n}\n\n.about-feature-card h5 {\n    color: #152F4F;\n    font-weight: 600;\n    margin-bottom: 10px;\n}\n\n/* ===================== CONTACT FORM ===================== */\n.form-label {\n    color: white;\n}\n\n/* ===================== FOOTER ===================== */\nfooter {\n    color: #000;\n}\n\n.footer-top {\n    background: #c9c9c9;\n    padding: 50px 0;\n}\n\n.footer-top h4 {\n    font-size: 19px;\n    text-transform: uppercase;\n    margin-bottom: 20px;\n    font-weight: 700;\n}\n\n.footer-top p {\n    font-size: 13px;\n    line-height: 2;\n}\n\n.footer-bottom {\n    background: #152F4F;\n    padding: 15px 0;\n}\n\n.footer-bottom-inner {\n    display: flex;\n    justify-content: flex-end;\n    align-items: center;\n    flex-wrap: wrap;\n    gap: 10px;\n}\n\n@media (max-width: 576px) {\n    .footer-bottom-inner {\n        justify-content: center;\n    }\n}\n\n.footer-bottom ul {\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    display: flex;\n    gap: 20px;\n    flex-wrap: wrap;\n    justify-content: center;\n}\n\n.footer-bottom ul li a {\n    color: #fff;\n    text-decoration: none;\n    font-size: 16px;\n}\n\n.footer-bottom ul li a:hover {\n    text-decoration: underline;\n}\n\n.address1 {\n    list-style: none;\n    padding: 0;\n    margin: 0;\n}\n\n.address1 li {\n    display: flex;\n    align-items: flex-start;\n    gap: 10px;\n    padding-bottom: 14px;\n    line-height: 1.6;\n}\n\n.address1 li a {\n    color: #000;\n    text-decoration: none;\n}\n\n.address1 li a:hover {\n    text-decoration: underline;\n}\n\n.address1 li svg {\n    flex-shrink: 0;\n    margin-top: 3px;\n}\n\n/* Social Icons */\n.social-icon {\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    display: flex;\n    gap: 14px;\n    flex-wrap: wrap;\n}\n\n.social-icon li a {\n    color: #333;\n    transition: color 0.3s;\n    display: flex;\n    align-items: center;\n}\n\n.social-icon li a:hover {\n    color: #152F4F;\n}\n\n/* ===================== POLICY PAGES ===================== */\n.policy-content {\n    padding: 40px 0 60px;\n    text-align: justify;\n}\n\n.policy-content h1 {\n    margin-bottom: 20px;\n}\n\n.policy-content h2 {\n    margin-top: 28px;\n    margin-bottom: 12px;\n    font-size: 1.4rem;\n}\n\n@media (max-width: 576px) {\n    .policy-content h1 {\n        font-size: 1.6rem;\n    }\n    .policy-content h2 {\n        font-size: 1.2rem;\n    }\n}\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 

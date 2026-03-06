@@ -1,3 +1,133 @@
+/* ===================== PRICING ===================== */
+.pricing-section {
+    background: #f4f7fb;
+    padding: 70px 0;
+}
+
+.pricing-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 36px 28px;
+    border: 2px solid #e5e9f0;
+    position: relative;
+    text-align: center;
+    transition: box-shadow 0.3s, transform 0.3s;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-card:hover {
+    box-shadow: 0 8px 32px rgba(21, 47, 79, 0.12);
+    transform: translateY(-4px);
+}
+
+.pricing-card--popular {
+    border-color: #152F4F;
+    box-shadow: 0 8px 32px rgba(21, 47, 79, 0.15);
+}
+
+.pricing-badge {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #152F4F;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 16px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.pricing-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #152F4F;
+    margin-bottom: 16px;
+}
+
+.pricing-price {
+    margin-bottom: 4px;
+}
+
+.pricing-currency {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #333;
+    vertical-align: top;
+    margin-top: 8px;
+    display: inline-block;
+}
+
+.pricing-amount {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #152F4F;
+    line-height: 1;
+}
+
+.pricing-duration {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+}
+
+.pricing-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 28px;
+    text-align: left;
+    flex: 1;
+}
+
+.pricing-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 14px;
+    color: #444;
+    text-transform: capitalize;
+}
+
+.pricing-check {
+    color: #152F4F;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.pricing-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 15px;
+    text-decoration: none;
+    background: transparent;
+    border: 2px solid #152F4F;
+    color: #152F4F;
+    transition: background 0.2s, color 0.2s;
+}
+
+.pricing-btn:hover {
+    background: #152F4F;
+    color: #fff;
+}
+
+.pricing-btn--popular {
+    background: #152F4F;
+    color: #fff;
+}
+
+.pricing-btn--popular:hover {
+    background: #0e1f35;
+    color: #fff;
+}
+
 /* ===================== GENERAL ===================== */
 ul {
     padding: 0;
