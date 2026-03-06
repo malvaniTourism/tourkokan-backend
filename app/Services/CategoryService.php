@@ -14,10 +14,12 @@ class CategoryService
      */
     public function getPaginated($category = null, $page = 1, $perPage = 15)
     {
-        $cacheKey = 'categories_' . ($category ?? 'all') . '_page_' . $page;
+        // $cacheKey = 'categories_' . ($category ?? 'all') . '_page_' . $page;
 
-        return Cache::remember($cacheKey, 86400, function () use ($category, $perPage) {
-            $with = ['subCategories:id,name,mr_name,code,parent_id,icon,is_hot_category'];
+        // return Cache::remember($cacheKey, 86400, function () use ($category, $perPage) {
+            $with = [
+                'subCategories' => fn($q) => $q->select('id', 'name', 'mr_name', 'code', 'parent_id', 'icon', 'is_hot_category')->withCount('sites')->has('sites'),
+            ];
 
             if ($category) {
                 $with['subCategories.sites'] = fn($q) => $q->select('id', 'name', 'meta_data');
@@ -25,10 +27,11 @@ class CategoryService
 
             $categories = Category::with($with)
                 ->select('*')
+                ->withCount(['sites'])
                 ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
                 ->whereStatus(true)
                 ->when($category, fn($q) => $q->where('code', $category))
-                ->when(!$category, fn($q) => $q->whereNull('parent_id'))
+                ->when(!$category, fn($q) => $q->whereNull('parent_id')->has('subCategories'))
                 ->paginate($perPage);
 
             if ($category) {
@@ -42,6 +45,6 @@ class CategoryService
             }
 
             return $categories;
-        });
+        // });
     }
 }
