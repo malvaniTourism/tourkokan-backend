@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User\V2;
 
 use App\Models\Contact;
+use App\Services\ContactService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -10,6 +11,9 @@ use App\Http\Controllers\BaseController as BaseController;
 
 class ContactController extends BaseController
 {
+    public function __construct(protected ContactService $contactService)
+    {
+    }
     /**
      * Display a listing of the resource.
      *
@@ -17,11 +21,13 @@ class ContactController extends BaseController
      */
     public function getQueries()
     {
-        $contacts = Contact::where('user_id', config('user_id'))
-            ->orderBy('created_at', 'DESC')
-            ->paginate(10);
+        $response = $this->contactService->getPaginatedForUser([
+            'user_id'  => config('user_id'),
+            'per_page' => request()->per_page ?? 15,
+            'status'   => request()->status,
+        ]);
 
-        return $this->sendResponse($contacts, 'Contacts successfully Retrieved...!');
+        return $this->sendResponse($response, 'Contacts successfully Retrieved...!');
     }
 
     /**
@@ -119,9 +125,6 @@ class ContactController extends BaseController
     public function updateQuery(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'string|between:2,100',
-            'email' => 'sometimes|string|email|between:2,200',
-            'phone' => 'sometimes|numeric',
             'message' => 'required',
         ]);
 
@@ -135,7 +138,11 @@ class ContactController extends BaseController
             return $this->sendError('Empty', [], 404);
         }
 
-        $contact->update($request->all());
+        if (in_array($contact->status, ['read', 'replied'])) {
+            return $this->sendError('Query cannot be updated after it has been read or replied.', '', 400);
+        }
+
+        $contact->update(['message' => $request->message]);
 
         return $this->sendResponse($contact, 'contacts updated successfully...!');
     }

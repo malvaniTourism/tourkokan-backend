@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Gallery;
 use App\Models\Contact;
 use App\Services\CategoryService;
+use App\Services\ContactService;
 
 class LandingPageController extends BaseController
 {
@@ -32,8 +33,10 @@ class LandingPageController extends BaseController
      *
      * @return void
      */
-    public function __construct(protected CategoryService $categoryService)
-    {
+    public function __construct(
+        protected CategoryService $categoryService,
+        protected ContactService $contactService,
+    ) {
         $this->middleware('auth:api');
     }
 
@@ -252,9 +255,11 @@ class LandingPageController extends BaseController
             ->limit(isValidReturn($request, 'per_page', 10))
             ->get();
 
-        $queries = Contact::where('user_id', config('user_id'))
-            ->limit(isValidReturn($request, 'per_page', 10))
-            ->get();
+        $queries = $this->contactService->getForUser([
+            'user_id' => config('user_id'),
+            'limit'   => isValidReturn($request, 'per_page', 10),
+            'counts'  => true,
+        ]);
         // $category = Category::with('subCategories')->where('code', 'emergency')->first();
 
         // $ids = $category->subCategories->pluck('id');

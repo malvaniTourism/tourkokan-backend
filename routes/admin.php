@@ -164,6 +164,7 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
     Route::post('getQueries', [ContactController::class, 'getQueries']);
     Route::post('getQuery', [ContactController::class, 'getQuery']);
     Route::post('updateQuery', [ContactController::class, 'updateQuery']);
+    Route::post('replyQuery', [ContactController::class, 'replyQuery']);
 
     Route::post('allUsers', [AuthController::class, 'allUsers']);
 
