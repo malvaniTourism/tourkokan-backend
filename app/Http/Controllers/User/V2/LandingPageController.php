@@ -71,19 +71,10 @@ class LandingPageController extends BaseController
                 return [$item->code => $item->banners];
             });
 
-        $categories = Category::with([
-            'subCategories' => function ($query) {
-                $query->whereHas('sites') // Optional: Only get subcategories that have associated sites
-                    ->select('id', 'name', 'mr_name', 'code', 'parent_id', 'icon', 'is_hot_category'); // Select specific fields
-            }
-        ])
-            ->select('id', 'name', 'code', 'icon', 'is_hot_category') // Specify fields at the main category level
-            ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
-            ->whereNull('parent_id')
-            ->whereStatus(true)
-            ->whereHas('subCategories.sites') // Ensures only categories with subcategories are fetched
-            ->latest()
-            ->get();
+        $categories = $this->categoryService->getPaginated(null, 1, 15, [
+            'paginate' => false,
+            'fields'   => ['id', 'name', 'code', 'icon', 'is_hot_category'],
+        ]);
 
         #Top famouse cities
         // $cities = Site::select(
@@ -245,9 +236,9 @@ class LandingPageController extends BaseController
             'delayed_time',
             DB::raw('ROUND((SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id), 2) AS distance')
         )
-            ->latest()
-            ->limit(5)
-            ->get();
+        ->latest()
+        ->limit(5)
+        ->get();
 
         $blogs = Blog::latest()
             ->limit(5)
