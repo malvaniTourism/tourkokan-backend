@@ -298,6 +298,10 @@ class AuthController extends BaseController
                     'digits:10',
                     Rule::unique('users', 'mobile')->ignore($user->id)
                 ],
+                'dob' => 'sometimes|nullable|date_format:Y-m-d',
+                'gender' => 'sometimes|nullable|string',
+                'latitude' => 'sometimes|nullable|numeric|required_with:longitude',
+                'longitude' => 'sometimes|nullable|numeric|required_with:latitude',
             ]);
 
             if ($validator->fails()) {
@@ -333,7 +337,23 @@ class AuthController extends BaseController
                 Log::info("FILE STORED" . $input['profile_picture']);
             }
 
-            $user->update(array_filter($input));
+            $updateData = array_filter($input, fn($v) => $v !== null && $v !== '');
+            if ($request->has('dob')) $updateData['dob'] = $input['dob'];
+            if ($request->has('gender')) $updateData['gender'] = $input['gender'];
+
+            unset($updateData['latitude'], $updateData['longitude']);
+            $user->update($updateData);
+
+            if ($request->has('latitude') && $request->has('longitude')) {
+                $locationDetails = getLocationDetails($request->latitude, $request->longitude);
+
+                if ($locationDetails && $locationDetails != 400) {
+                    $user->address()->updateOrCreate(
+                        ['addressable_id' => $user->id, 'addressable_type' => get_class($user)],
+                        $locationDetails
+                    );
+                }
+            }
 
             return $this->sendResponse($user, 'User successfully updated');
         } catch (\Throwable $th) {
