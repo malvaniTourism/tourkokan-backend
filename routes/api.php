@@ -39,7 +39,10 @@ use App\Http\Controllers\User\V2\{
     RatingController,
     RolesController,
     RouteController,
+    EventController,
+    EventInteractionController,
 };
+use App\Http\Controllers\Admin\V2\EventController as AdminEventController;
 
 /*
 |--------------------------------------------------------------------------
@@ -238,6 +241,32 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('deleteComment', [CommentController::class, 'deleteComment']);
 
     Route::post('getGallery', [GalleryController::class, 'getGallery']);
+
+    // ── Events (User) ──────────────────────────────────────────────
+    Route::post('listEvents', [EventController::class, 'index']);
+    Route::post('myEvents', [EventController::class, 'myEvents']);
+    Route::get('events/{slug}', [EventController::class, 'show']);   // GET kept for SEO
+    Route::post('createEvent', [EventController::class, 'store']);
+    Route::post('updateEvent', [EventController::class, 'update']);
+    Route::post('deleteEvent', [EventController::class, 'destroy']);
+    Route::post('cancelEvent', [EventController::class, 'cancel']);
+
+    // Event Interactions
+    Route::post('likeEvent', [EventInteractionController::class, 'like']);
+    Route::post('goingEvent', [EventInteractionController::class, 'going']);
+    Route::post('interestedEvent', [EventInteractionController::class, 'interested']);
+    Route::post('favouriteEvent', [EventInteractionController::class, 'favourite']);
+    Route::post('shareEvent', [EventInteractionController::class, 'share']);
+});
+
+// ── Admin Events ───────────────────────────────────────────────────────────
+Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2/admin'], function () {
+    Route::post('listEvents', [AdminEventController::class, 'index']);
+    Route::post('pendingEvents', [AdminEventController::class, 'pending']);
+    Route::post('approveEvent', [AdminEventController::class, 'approve']);
+    Route::post('rejectEvent', [AdminEventController::class, 'reject']);
+    Route::post('featureEvent', [AdminEventController::class, 'feature']);
+    Route::post('eventAnalytics', [AdminEventController::class, 'analytics']);
 });
 use Illuminate\Support\Facades\Mail;
 

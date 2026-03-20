@@ -43,4 +43,9 @@ class EventType extends Model
         'meta_data' => 'array'
     ];
 
+    public function events()
+    {
+        return $this->hasMany(Event::class);
+    }
+
 }

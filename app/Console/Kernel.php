@@ -24,7 +24,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Send 24-hour reminders for upcoming events
+        $schedule->command('events:send-reminders')->hourly();
+
+        // Mark events as completed after end date passes
+        $schedule->command('events:mark-completed')->dailyAt('00:30');
     }
 
     /**
