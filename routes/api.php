@@ -41,6 +41,7 @@ use App\Http\Controllers\User\V2\{
     RouteController,
     EventController,
     EventInteractionController,
+    NotificationController,
 };
 use App\Http\Controllers\Admin\V2\EventController as AdminEventController;
 
@@ -257,6 +258,12 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('interestedEvent', [EventInteractionController::class, 'interested']);
     Route::post('favouriteEvent', [EventInteractionController::class, 'favourite']);
     Route::post('shareEvent', [EventInteractionController::class, 'share']);
+
+    // ── Push Notifications ─────────────────────────────────────────
+    Route::post('registerPushToken', [NotificationController::class, 'registerToken']);
+    Route::post('unregisterPushToken', [NotificationController::class, 'unregisterToken']);
+    Route::post('getDevices', [NotificationController::class, 'getDevices']);
+    Route::post('testNotification', [NotificationController::class, 'testNotification']);
 });
 
 // ── Admin Events ───────────────────────────────────────────────────────────

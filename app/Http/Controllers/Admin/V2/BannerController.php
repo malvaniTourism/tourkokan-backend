@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers\Admin\V2;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use App\Models\Banner;
 use App\Models\BannerPackage;
 use App\Models\BannerPlacement;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
-class BannerController extends Controller
+class BannerController extends BaseController
 {
     /**
      * Display a listing of the resource.
@@ -218,11 +220,10 @@ class BannerController extends Controller
             return $this->sendResponse([645], 'Banner updated successfully...!');
         }
 
-        $input =  $request->all();
+        $input = $request->all();
         $input['image'] = $image;
 
-        //issue to update status because array_filer
-        $banner = Banner::where('id', $input['id'])->update(array_filter($input));
+        $banner = Banner::where('id', $input['id'])->update(array_filter($input, fn($v) => !is_null($v)));
 
         return $this->sendResponse($input, 'Banner updated successfully...!');
     }
@@ -233,15 +234,19 @@ class BannerController extends Controller
      * @param  \App\Models\Banner  $banner
      * @return \Illuminate\Http\Response
      */
-    public function deleteBanner($id)
+    public function deleteBanner(Request $request)
     {
-        $banner = Banner::find($id);
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:banners,id'
+        ]);
 
-        if (is_null($banner)) {
-            return $this->sendError('Empty', [], 404);
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
         }
 
-        $banner->delete($id);
+        $banner = Banner::find($request->id);
+
+        $banner->delete();
 
         return $this->sendResponse($banner, 'Banner deleted successfully...!');
     }

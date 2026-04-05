@@ -22,6 +22,14 @@ class Banner extends Model
         'impressions',
         'clicks',
         'is_active',
+        'name',
+        'image',
+        'duration',
+        'level',
+        'image_orientation',
+        'meta_data',
+        'bannerable_type',
+        'bannerable_id',
     ];
 
     protected $casts = [
@@ -43,6 +51,11 @@ class Banner extends Model
     public function placement()
     {
         return $this->belongsTo(BannerPlacement::class, 'banner_placement_id');
+    }
+
+    public function bannerable()
+    {
+        return $this->morphTo();
     }
 
     public function scopeActive($query)
