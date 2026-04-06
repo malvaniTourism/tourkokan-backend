@@ -62,7 +62,7 @@ class Category extends Model
 
     public function getNameAttribute($value)
     {
-        $language = config('language');
+        $language = auth()->user()?->language ?? 'en';
 
         // return $language === 'en' ? $value :  ($this->mr_name == "" ? $value :  $this->mr_name);
         return empty($language) || $language === 'en' ? $value : ($this->mr_name == "" ? $value : $this->mr_name);

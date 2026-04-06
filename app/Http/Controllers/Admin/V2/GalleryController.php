@@ -19,7 +19,7 @@ class GalleryController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'site_id' => 'sometimes|required|exists:sites,id',
-            'search' => 'sometimes|required|string|alpha|max:255',
+            'search' => 'sometimes|nullable|string|max:255',
             'category' => 'sometimes|required|exists:categories,code',
         ]);
 
@@ -54,6 +54,13 @@ class GalleryController extends BaseController
         // Apply search filter if only search is provided
         $galleryQuery->when($request->has('search') && empty($request->input('category')), function ($query) use ($search) {
             $query->where('title', 'like', '%' . $search . '%');
+        });
+
+        // Apply category-only filter (no search term)
+        $galleryQuery->when($request->has('category') && !$request->has('search') && !empty($category), function ($query) use ($category) {
+            $query->whereHas('galleryable.categories', function ($query) use ($category) {
+                $query->where('code', $category);
+            });
         });
 
         // Paginate the results

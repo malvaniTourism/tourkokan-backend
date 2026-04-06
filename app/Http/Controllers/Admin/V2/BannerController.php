@@ -87,7 +87,7 @@ class BannerController extends BaseController
             'start_date' => 'required|date_format:Y-m-d H:i:s',
             'duration' => 'required|in:' . implode(',', array_column(config('constants.banner_days'), 'code')),
             'level' =>  'required|in:' . implode(',', array_column(config('constants.banner_levels'), 'code')),
-            'image_orientation' =>  'required|in:' . implode(',', array_column(config('constants.image_orientation', 'code'), 'code')),
+            'image_orientation' =>  'required|in:' . implode(',', array_column(config('constants.image_orientation'), 'code')),
             'status' => 'boolean',
             'bannerable_type' => 'required|string',
             'bannerable_id' => 'required|numeric',
@@ -162,7 +162,7 @@ class BannerController extends BaseController
             'start_date' => 'nullable|date_format:Y-m-d H:i:s',
             'duration' => 'nullable|in:' . implode(',', array_column(config('constants.banner_days'), 'code')),
             'level' =>  'nullable|in:' . implode(',', array_column(config('constants.banner_levels'), 'code')),
-            'image_orientation' =>  'nullable|in:' . implode(',', array_column(config('constants.image_orientation', 'code'), 'code')),
+            'image_orientation' =>  'nullable|in:' . implode(',', array_column(config('constants.image_orientation'), 'code')),
             'status' => 'boolean',
             'bannerable_type' => 'nullable|required_with:bannerable_id|string',
             'bannerable_id' => 'nullable|required_with:bannerable_type|numeric',
@@ -195,29 +195,23 @@ class BannerController extends BaseController
                 return $this->sendError($request->bannerable_type . ' Not Exist..!', '', 400);
             }
 
-            $banner = new Banner;
+            $banner = Banner::findOrFail($request->id);
 
-            $banner->name = $request->name;
-
-            $banner->image = $image;
-
-            $banner->start_date = $request->start_date;
-
-            $banner->duration = $request->duration;
-
-            $banner->level = $request->level;
-
-            $banner->image_orientation = $request->image_orientation;
-
-            $banner->status = $request->status;
-
-            $banner->meta_data = $request->meta_data;
+            $banner->fill(array_filter([
+                'name'              => $request->name,
+                'image'             => $image,
+                'start_date'        => $request->start_date,
+                'duration'          => $request->duration,
+                'level'             => $request->level,
+                'image_orientation' => $request->image_orientation,
+                'status'            => $request->status,
+                'meta_data'         => $request->meta_data,
+            ], fn($v) => !is_null($v)));
 
             $banner->bannerable()->associate($data);
+            $banner->save();
 
-            $banner = Banner::create(array_filter(json_decode($banner, true)));
-
-            return $this->sendResponse([645], 'Banner updated successfully...!');
+            return $this->sendResponse($banner, 'Banner updated successfully...!');
         }
 
         $input = $request->all();

@@ -112,7 +112,7 @@ class SiteImport implements ToCollection, WithHeadingRow
             }
         } catch (\Throwable $th) {
             logger($th->getMessage());
-            throw $th();
+            throw $th;
         }
     }
 }

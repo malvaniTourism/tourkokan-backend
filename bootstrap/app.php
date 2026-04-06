@@ -1,55 +1,47 @@
 <?php
 
-/*
-|--------------------------------------------------------------------------
-| Create The Application
-|--------------------------------------------------------------------------
-|
-| The first thing we will do is create a new Laravel application instance
-| which serves as the "glue" for all the components of Laravel, and is
-| the IoC container for the system binding all of the various parts.
-|
-*/
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Tymon\JWTAuth\Exceptions\TokenExpiredException;
+use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 
-$app = new Illuminate\Foundation\Application(
-    $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
-);
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
+        commands: __DIR__.'/../routes/console.php',
+        health: '/up',
+        then: function () {
+            Route::middleware('api')
+                ->prefix('admin')
+                ->group(base_path('routes/admin.php'));
+        },
+    )
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->api(prepend: [
+            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+        ]);
 
-/*
-|--------------------------------------------------------------------------
-| Bind Important Interfaces
-|--------------------------------------------------------------------------
-|
-| Next, we need to bind some important interfaces into the container so
-| we will be able to resolve them when needed. The kernels serve the
-| incoming requests to this application from both the web and CLI.
-|
-*/
-
-$app->singleton(
-    Illuminate\Contracts\Http\Kernel::class,
-    App\Http\Kernel::class
-);
-
-$app->singleton(
-    Illuminate\Contracts\Console\Kernel::class,
-    App\Console\Kernel::class
-);
-
-$app->singleton(
-    Illuminate\Contracts\Debug\ExceptionHandler::class,
-    App\Exceptions\Handler::class
-);
-
-/*
-|--------------------------------------------------------------------------
-| Return The Application
-|--------------------------------------------------------------------------
-|
-| This script returns the application instance. The instance is given to
-| the calling script so we can separate the building of the instances
-| from the actual running of the application and sending responses.
-|
-*/
-
-return $app;
+        $middleware->alias([
+            'auth'          => \App\Http\Middleware\Authenticate::class,
+            'guest'         => \App\Http\Middleware\RedirectIfAuthenticated::class,
+            'admin'         => \App\Http\Middleware\AdminAccessMiddleware::class,
+            'premiddleware' => \App\Http\Middleware\PreMiddleware::class,
+            'throttle'      => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        ]);
+    })
+    ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->render(function (TokenExpiredException $e, Request $request) {
+            return response()->json(['success' => false, 'message' => 'Token has expired'], 401);
+        });
+        $exceptions->render(function (TokenInvalidException $e, Request $request) {
+            return response()->json(['success' => false, 'message' => 'Token is invalid'], 401);
+        });
+        $exceptions->render(function (JWTException $e, Request $request) {
+            return response()->json(['success' => false, 'message' => 'Token is absent'], 401);
+        });
+    })
+    ->create();

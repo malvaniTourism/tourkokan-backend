@@ -47,7 +47,7 @@ class AuthController extends BaseController
 
     public function allUsers()
     {
-        if (in_array(config('user')->roles->code, ['superadmin', 'admin'])) {
+        if (in_array(auth()->user()->roles->code, ['superadmin', 'admin'])) {
             $user = User::with('roles')
                 ->paginate(request()->per_page);
             return $this->sendResponse($user, 'User successfully registered');
@@ -63,7 +63,7 @@ class AuthController extends BaseController
      */
     public function login(Request $request)
     {
-        config(['app_version' => Cache::has('app_version') ?  Cache::get('app_version')->version_number : AppVersion::latest()->first()->version_number]);
+        $request->attributes->set('app_version', Cache::has('app_version') ? Cache::get('app_version')->version_number : optional(AppVersion::latest()->first())->version_number);
 
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
@@ -270,8 +270,8 @@ class AuthController extends BaseController
 
             return $this->sendResponse($user, 'User successfully registered');
         } catch (\Throwable $th) {
-            throw $th;
             Log::error($th->getMessage());
+            throw $th;
         }
     }
 
@@ -357,8 +357,8 @@ class AuthController extends BaseController
 
             return $this->sendResponse($user, 'User successfully updated');
         } catch (\Throwable $th) {
-            throw $th;
             Log::error($th->getMessage());
+            throw $th;
         }
     }
 
@@ -386,8 +386,8 @@ class AuthController extends BaseController
 
             return $this->sendResponse(true, 'Please register for login', false);
         } catch (\Throwable $th) {
-            throw $th;
             Log::error($th->getMessage());
+            throw $th;
         }
     }
 
@@ -424,26 +424,26 @@ class AuthController extends BaseController
                 'email' => $request->email
             );
 
-            $user = User::where($whereIdEmail)->update(['email' => $request->new_email]);
+            $updated = User::where($whereIdEmail)->update(['email' => $request->new_email]);
 
-            if (!$user) {
+            if (!$updated) {
                 return $this->sendError('Unable to change email', '', 200);
             }
 
-            $otp =  random_int(100000, 999999);
+            $user = User::where('id', $request->id)->first();
+
+            $otp         = random_int(100000, 999999);
             $otpCreatedAt = Carbon::parse($user->otp_created_at);
-            $now = Carbon::now();
+            $now          = Carbon::now();
 
             if ($user->otp_created_at != null && $now->diffInMinutes($otpCreatedAt) < 5) {
                 return $this->sendError('OTP has already been sent. Please wait 5 minutes before requesting a new one.', '', 200);
             }
 
-            $updateStatus =  array(
-                'otp' => $otp,
-                'otp_created_at' =>  Carbon::now(),
-            );
-
-            $user->update($updateStatus);
+            $user->update([
+                'otp'            => $otp,
+                'otp_created_at' => Carbon::now(),
+            ]);
 
             $destination = array_key_first($request->all()) == 'email' ? 'email' : 'mobile';
 
@@ -451,8 +451,8 @@ class AuthController extends BaseController
 
             return $this->sendResponse($otpSent, 'Email successfully changed & OTP has been sent to your new email ..!');
         } catch (\Throwable $th) {
-            throw $th;
             Log::error($th->getMessage());
+            throw $th;
         }
     }
     /**
@@ -610,21 +610,15 @@ class AuthController extends BaseController
 
     public function getAllFavourites($id)
     {
-        $favourites  = User::
-            // select(\DB::raw('favouritable_id, favouritable_id'))
-            withCount('favourites')
-            ->with('favourites')
-            ->groupBy('favourites.favouritable_id')
-            // ->groupBy('favouritable_type')
-            // ->orderBy('created_at', 'desc')
-            ->latest()
-            ->whereId($id);
+        $user = User::with('favourites')->find($id);
 
+        if (is_null($user)) {
+            return $this->sendError('User not found', [], 404);
+        }
 
-        logger($favourites->toSql());
-        // ->get();
+        $favourites = $user->favourites;
 
-        if (is_null($favourites)) {
+        if ($favourites->isEmpty()) {
             return $this->sendError('Empty', [], 404);
         }
 
@@ -657,7 +651,7 @@ class AuthController extends BaseController
                 $filter = ['email' => $request->email];
             } else {
                 logger("not yet develpped");
-                $filter = ['email' => config('user')->email];
+                $filter = ['email' => auth()->user()->email];
             }
 
             $otp =  random_int(100000, 999999);
@@ -685,9 +679,10 @@ class AuthController extends BaseController
             return $this->sendResponse($data, 'OTP successfully sent!');
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
+            return $this->sendError('Something went wrong', [], 500);
         }
     }
-    
+
     public function googleAuth(Request $request)
     {
         $token = $request->input('token');
@@ -722,20 +717,16 @@ class AuthController extends BaseController
 
                 $where_condition = array_filter($data);
                 
-                $user = User::with('addresses')->where($where_condition)->first();
-                    
+                $user = User::where($where_condition)->first();
+
                 if ($user) {
-                    if($user->addresses->isEmpty()){
-                        return $this->sendError('Something went wrong please contact us', [], 200);
-                    }else{
-                        User::where($where_condition)->update([
-                            'email_verified_at' => Carbon::now(),
-                            'isVerified' => true,
-                        ]);
-        
-                        $token = JWTAuth::fromUser($user);
-                        return $this->createNewToken($token, 'Logged In Successfully!');
-                    }
+                    User::where($where_condition)->update([
+                        'email_verified_at' => Carbon::now(),
+                        'isVerified'        => true,
+                    ]);
+
+                    $token = JWTAuth::fromUser($user);
+                    return $this->createNewToken($token, 'Logged In Successfully!');
                 } else {
                     $validator = Validator::make(
                         $request->all(),

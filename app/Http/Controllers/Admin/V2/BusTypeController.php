@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\V2;
 
 use App\Models\BusType;
 use Illuminate\Http\Request;

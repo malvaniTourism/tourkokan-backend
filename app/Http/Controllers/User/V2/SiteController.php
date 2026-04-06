@@ -45,7 +45,7 @@ class SiteController extends BaseController
      */
     public function getSite(Request $request)    //city
     {
-        $user_id = config('user_id');
+        $user_id = auth()->id();
         // there is bug in this api need to fix if this api is hit and id passed of any other category type site data will be returned.
         // need to restrict this by adding validation or condition
         $validator = Validator::make($request->all(), [

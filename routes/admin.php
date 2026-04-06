@@ -13,7 +13,7 @@ use App\Http\Controllers\Admin\TourPackageController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\AccomodationCategoryController;
 use App\Http\Controllers\Admin\V2\BannerController;
-use App\Http\Controllers\Admin\BusTypeController;
+use App\Http\Controllers\Admin\V2\BusTypeController;
 use App\Http\Controllers\Admin\DropDownController;
 use App\Http\Controllers\Admin\V2\AppVersionController;
 use App\Http\Controllers\Admin\V2\BonusTypesController;

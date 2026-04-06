@@ -66,7 +66,7 @@ class Site extends Model
 
     public function getNameAttribute($value)
     {
-        $language = config('language');
+        $language = auth()->user()?->language ?? 'en';
 
         // return $language === 'en' ? $value :  ($this->mr_name == "" ? $value :  $this->mr_name);
         return empty($language) || $language === 'en' ? $value : ($this->mr_name == "" ? $value : $this->mr_name);
@@ -80,7 +80,7 @@ class Site extends Model
      */
     public function getTagLineAttribute($value)
     {
-        $language = config('language');
+        $language = auth()->user()?->language ?? 'en';
         return empty($language) || $language === 'en' ? $value : ($this->mr_tag_line == "" ? $value : $this->mr_tag_line);
     }
 
@@ -92,7 +92,7 @@ class Site extends Model
      */
     public function getDescriptionAttribute($value)
     {
-        $language = config('language');
+        $language = auth()->user()?->language ?? 'en';
         return empty($language) || $language === 'en' ? $value : ($this->mr_description == "" ? $value : $this->mr_description);
     }
 
@@ -197,7 +197,7 @@ class Site extends Model
      */
     public function rate()
     {
-        return $this->morphOne(Rating::class, 'rateable')->where('user_id', config('user_id'));
+        return $this->morphOne(Rating::class, 'rateable')->where('user_id', auth()->id());
     }
 
     /**

@@ -17,7 +17,7 @@ class FavouriteController extends BaseController
      */
     public function index()
     {
-        $favourite =  Favourite::where('user_id', config('user_id'))
+        $favourite =  Favourite::where('user_id', auth()->id())
             ->paginate(10);
 
         return $this->sendResponse($favourite, 'Favourites successfully Retrieved...!');
@@ -60,7 +60,7 @@ class FavouriteController extends BaseController
 
         $favourite = $data->favourites()
             ->where([
-                'user_id' => config('user_id')
+                'user_id' => auth()->id()
             ])
             ->whereHasMorph('favouritable', $favouritableType, function ($subquery) use ($request) {
                 $subquery->where('id', $request->favouritable_id);
@@ -71,7 +71,7 @@ class FavouriteController extends BaseController
             return $this->sendResponse(null, 'Favourite deleted successfully...!');
         } else {
             $favourite = [
-                'user_id' => config('user_id')
+                'user_id' => auth()->id()
             ];
 
             $favourite = $data->favourites()->create(array_filter($favourite));

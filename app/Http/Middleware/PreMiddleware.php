@@ -19,22 +19,24 @@ class PreMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        $request_path = $request->path();
-        $parts = explode('/', $request_path);
+        $parts    = explode('/', $request->path());
         $endpoint = end($parts);
 
         if (!in_array($endpoint, config('urls')['non_session_url'])) {
             $user = Auth::user();
 
-            config([
-                'user' => $user->load(['roles']),
-                'user_id' => $user->id,
-                'language' => $user->language
-            ]);
+            // Store on the request object — safe under Octane (no shared singleton mutation)
+            $request->attributes->set('auth_user',    $user->load(['roles']));
+            $request->attributes->set('auth_user_id', $user->id);
+            $request->attributes->set('language',     $user->language ?? 'en');
         }
 
-        config(['app_version' => Cache::has('app_version') ?  Cache::get('app_version')->version_number : AppVersion::latest()->first()->version_number]);
-        
+        $appVersion = Cache::has('app_version')
+            ? Cache::get('app_version')->version_number
+            : optional(AppVersion::latest()->first())->version_number;
+
+        $request->attributes->set('app_version', $appVersion);
+
         return $next($request);
     }
 }

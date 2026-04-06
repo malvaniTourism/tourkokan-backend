@@ -107,7 +107,7 @@ class ContactController extends BaseController
 
         $contact->update([
             'reply' => $request->reply,
-            'admin_user_id' => config('user_id'),
+            'admin_user_id' => auth()->id(),
             'status' => 'replied',
         ]);
 

@@ -89,7 +89,7 @@ class CommentController extends BaseController
 
         $existingComment = $data->comment()
             ->where([
-                'user_id' => config('user_id'),
+                'user_id' => auth()->id(),
                 'comment' => $request->comment
             ])
             ->whereHasMorph('commentable', $commentableType, function ($subquery) use ($request) {
@@ -100,7 +100,7 @@ class CommentController extends BaseController
             return $this->sendResponse(null, 'Same comment is not allowed');
         } else {
             $comment = [
-                'user_id' => config('user_id'),
+                'user_id' => auth()->id(),
                 'comment' => $request->comment,
                 'parent_id' => $request->parent_id
             ];
@@ -128,7 +128,7 @@ class CommentController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $comment = Comment::where('user_id', config('user_id'))
+        $comment = Comment::where('user_id', auth()->id())
             ->find($request->id);
 
         return $this->sendResponse($comment, 'Comment successfully Retrieved...!');
@@ -152,7 +152,7 @@ class CommentController extends BaseController
         }
 
         $comment = Comment::where([
-            'id' => $request->id, 'user_id' => config('user_id')
+            'id' => $request->id, 'user_id' => auth()->id()
         ])->update($request->all());
 
         return $this->sendResponse($comment, 'Comment updated successfully...!');
@@ -175,7 +175,7 @@ class CommentController extends BaseController
 
         $comment = Comment::where([
             'id' => $request->id,
-            'user_id' => config('user_id')
+            'user_id' => auth()->id()
         ])->delete();
 
         return $this->sendResponse($comment, 'Comment deleted successfully...!');

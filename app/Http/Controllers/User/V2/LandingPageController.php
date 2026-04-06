@@ -101,7 +101,7 @@ class LandingPageController extends BaseController
         //             ->from('favourites')
         //             ->whereColumn('sites.id', 'favourites.favouritable_id')
         //             ->where('favourites.favouritable_type', Site::class)
-        //             ->where('favourites.user_id', config('user_id'));
+        //             ->where('favourites.user_id', auth()->id());
         //     }, 'is_favorite')
         //     ->latest()
         //     // ->limit(8)
@@ -116,7 +116,7 @@ class LandingPageController extends BaseController
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
                     ->where('favourites.favouritable_type', Site::class)
-                    ->where('favourites.user_id', config('user_id'));
+                    ->where('favourites.user_id', auth()->id());
             }, 'is_favorite')
             ->latest()
             ->get()
@@ -174,7 +174,7 @@ class LandingPageController extends BaseController
                         ->from('favourites')
                         ->whereColumn('sites.id', 'favourites.favouritable_id')
                         ->where('favourites.favouritable_type', Site::class)
-                        ->where('favourites.user_id', config('user_id'));
+                        ->where('favourites.user_id', auth()->id());
                 }, 'is_favorite')
                 ->latest()
                 ->limit(5)
@@ -256,7 +256,7 @@ class LandingPageController extends BaseController
             ->get();
 
         $queries = $this->contactService->getForUser([
-            'user_id' => config('user_id'),
+            'user_id' => auth()->id(),
             'limit'   => isValidReturn($request, 'per_page', 10),
             'counts'  => true,
         ]);
@@ -274,10 +274,10 @@ class LandingPageController extends BaseController
         );
         
 
-        $records = Cache::remember('landing_page_data' . config('user')->id . '_' . $request->site_id, 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs, $emergency, $categorySites) {
+        $records = Cache::remember('landing_page_data' . auth()->user()->id . '_' . $request->site_id, 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs, $emergency, $categorySites) {
             return array(
                 'version' => AppVersion::latest()->first(),
-                'user' => config('user')->load(['addresses']),
+                'user' => auth()->user()->load(['addresses']),
                 'banners' => $banners,
                 'routes' => $routes,
                 // 'stops' => $stops,
@@ -295,7 +295,7 @@ class LandingPageController extends BaseController
             );
         });
 
-        $cachedData = Cache::get('landing_page_data' . config('user')->id . '_' . $request->site_id);
+        $cachedData = Cache::get('landing_page_data' . auth()->user()->id . '_' . $request->site_id);
 
         if ($cachedData) {
             $cachedData['cities'] = $cities;

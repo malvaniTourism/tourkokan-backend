@@ -9,8 +9,14 @@ class EventObserver
 {
     public function creating(Event $event)
     {
-        // Slug generated directly from title — uniqueness validated in CreateEventRequest
-        $event->slug = Str::slug($event->title);
+        // Generate a unique slug from the title
+        $baseSlug = Str::slug($event->title);
+        $slug     = $baseSlug;
+        $counter  = 1;
+        while (Event::where('slug', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter++;
+        }
+        $event->slug = $slug;
 
         // Calculate is_multi_day
         $event->is_multi_day = $event->start_date !== $event->end_date;

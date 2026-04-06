@@ -22,7 +22,7 @@ class ContactController extends BaseController
     public function getQueries()
     {
         $response = $this->contactService->getPaginatedForUser([
-            'user_id'  => config('user_id'),
+            'user_id'  => auth()->id(),
             'per_page' => request()->per_page ?? 15,
             'status'   => request()->status,
         ]);
@@ -62,7 +62,7 @@ class ContactController extends BaseController
         }
 
         $contact = array(
-            'user_id' => config('user_id'),
+            'user_id' => auth()->id(),
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
