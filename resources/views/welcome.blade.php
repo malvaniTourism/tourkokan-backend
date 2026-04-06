@@ -38,8 +38,8 @@
     <!-- Structured Data -->
     <script type="application/ld+json">
         {
-            "@context": "https://schema.org",
-            "@type": "Organization",
+            "@@context": "https://schema.org",
+            "@@type": "Organization",
             "name": "Tourkokan",
             "url": "{{ url()->current() }}",
             "logo": "{{ asset('logo.png') }}",
@@ -48,7 +48,7 @@
                 "https://www.instagram.com/tour_kokan/"
             ],
             "address": {
-                "@type": "PostalAddress",
+                "@@type": "PostalAddress",
                 "addressLocality": "Sindhudurg",
                 "addressRegion": "Maharashtra",
                 "addressCountry": "India"
@@ -80,7 +80,7 @@
     }
 
     /* Adjustments for mobile */
-    @media (max-width: 600px) {
+    @@media (max-width: 600px) {
         #loading-screen img {
             width: 50vw;
             height: auto;
