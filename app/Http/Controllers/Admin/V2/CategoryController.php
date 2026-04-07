@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\V2;
 
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use App\Http\Controllers\BaseController as BaseController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -40,9 +41,6 @@ class CategoryController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $page = $request->get('page', 1); // Get the current page from the request
-        $cacheKey = 'categories_page_' . $page; // Create a unique cache key for each page
-
         $categories = Category::select(isValidReturn(config('grid.categories.' . $request->apitype), 'columns', '*'))
             ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area', 'destination']);
 
@@ -77,7 +75,7 @@ class CategoryController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $subCategories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category'])
+        $subCategories = Category::with(['allSubCategories:id,name,parent_id,icon,status,is_hot_category'])
             ->find($request->id);
 
         if (!$subCategories) {
@@ -96,11 +94,11 @@ class CategoryController extends BaseController
     public function addCategory(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|unique:categories,name|string|between:2,100',
-            'parent_id' => 'sometimes|string|exists:categories,id',
+            'name' => ['required', 'string', 'between:2,100', Rule::unique('categories', 'name')->whereNull('deleted_at')],
+            'parent_id' => 'sometimes|integer|exists:categories,id',
             'description' => 'required|string',
             'icon' => 'nullable|mimes:jpeg,jpg,png|max:512',
-            'status' => 'boolean:true,false',
+            'status' => 'boolean',
             'meta_data' => 'nullable|json'
         ]);
 
@@ -137,11 +135,11 @@ class CategoryController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:categories,id',
-            'name' => 'sometimes|string|between:2,100',
-            'parent_id' => 'sometimes|string|exists:categories,id',
+            'name' => ['sometimes', 'string', 'between:2,100', Rule::unique('categories', 'name')->ignore($request->id)->whereNull('deleted_at')],
+            'parent_id' => 'sometimes|integer|exists:categories,id',
             'description' => 'sometimes|string',
             'icon' => 'sometimes|nullable|mimes:jpeg,jpg,png|max:512',
-            'status' => 'sometimes|boolean:true,false',
+            'status' => 'sometimes|boolean',
             'meta_data' => 'sometimes|nullable|json'
         ]);
 
@@ -175,7 +173,9 @@ class CategoryController extends BaseController
 
         $category->update($input);
 
-        return $this->sendResponse($category, 'Category updated successfully...!');
+        Cache::forget('subCategories_' . $request->id);
+
+        return $this->sendResponse($category->refresh(), 'Category updated successfully...!');
     }
 
 
@@ -205,7 +205,9 @@ class CategoryController extends BaseController
             Storage::delete($category->icon);
         }
 
-        $category->delete($request->id);
+        Cache::forget('subCategories_' . $request->id);
+
+        $category->delete();
 
         return $this->sendResponse($category, 'Category deleted successfully...!');
     }

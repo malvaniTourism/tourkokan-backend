@@ -25,10 +25,6 @@ class CategoryController extends BaseController
             $request->get('page', 1)
         );
 
-        if (!$categories) {
-            return $this->sendError('Empty', [], 404);
-        }
-
         return $this->sendResponse($categories, 'Categories successfully Retrieved...!');
     }
 
