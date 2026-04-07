@@ -255,6 +255,7 @@ class AuthController extends BaseController
 
             if (
                 $user &&
+                !empty($user->email) &&
                 !Str::startsWith($request->route()->getPrefix(), 'admin') &&
                 !in_array($user->roles->id, array_column($roles->toArray(), 'id'))
             ) {
