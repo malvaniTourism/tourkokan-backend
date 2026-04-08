@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\V2\GalleryController;
 use App\Http\Controllers\Admin\V2\RolesController;
 use App\Http\Controllers\Admin\V2\RouteController;
 use App\Http\Controllers\Admin\V2\SiteController;
+use App\Http\Controllers\Admin\V2\AdminBannerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -178,4 +179,21 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 
     Route::post('getGallery', [GalleryController::class, 'getGallery']);
     Route::post('updateGallery', [GalleryController::class, 'updateGallery']);
+
+    // Banner Packages (Pricing)
+    Route::post('listBannerPackages', [AdminBannerController::class, 'listPackages']);
+    Route::post('getBannerPackage', [AdminBannerController::class, 'getPackage']);
+    Route::post('addBannerPackage', [AdminBannerController::class, 'storePackage']);
+    Route::post('updateBannerPackage', [AdminBannerController::class, 'updatePackage']);
+    Route::post('deleteBannerPackage', [AdminBannerController::class, 'deletePackage']);
+
+    // Banner Placements
+    Route::post('listBannerPlacements', [AdminBannerController::class, 'listPlacements']);
+    Route::post('getBannerPlacement', [AdminBannerController::class, 'getPlacement']);
+    Route::post('addBannerPlacement', [AdminBannerController::class, 'storePlacement']);
+    Route::post('updateBannerPlacement', [AdminBannerController::class, 'updatePlacement']);
+    Route::post('deleteBannerPlacement', [AdminBannerController::class, 'deletePlacement']);
+
+    // Banner Status
+    Route::post('changeBannerStatus', [AdminBannerController::class, 'changeStatus']);
 });
