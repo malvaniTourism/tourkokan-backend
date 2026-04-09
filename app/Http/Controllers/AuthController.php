@@ -266,7 +266,7 @@ class AuthController extends BaseController
                 $user = User::where($input)->first();
 
                 $token = JWTAuth::fromUser($user);
-                return $this->createNewToken($token, 'Logged In Successfully!');
+                return $this->createNewToken($token, 'Logged In Successfully!', $isGuest);
             }
 
             return $this->sendResponse($user, 'User successfully registered');
@@ -507,12 +507,13 @@ class AuthController extends BaseController
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function createNewToken($token, $message)
+    protected function createNewToken($token, $message, $isGuest = false)
     {
         $response = [
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => null,
+            'isGuest' => $isGuest,
             'user' => JWTAuth::setToken($token)->authenticate()
         ];
 
