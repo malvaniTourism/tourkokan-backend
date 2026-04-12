@@ -159,8 +159,6 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 
     Route::post('routes', [RouteController::class, 'routes']);
     Route::post('routeDetails', [RouteController::class, 'routeDetails']);
-    Route::post('routesUpdate', [RouteController::class, 'routesUpdate']);
-    Route::post('massRouteStopsUpdate', [RouteController::class, 'massRouteStopsUpdate']);
 
     Route::post('getQueries', [ContactController::class, 'getQueries']);
     Route::post('getQuery', [ContactController::class, 'getQuery']);
@@ -196,4 +194,12 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 
     // Banner Status
     Route::post('changeBannerStatus', [AdminBannerController::class, 'changeStatus']);
+});
+
+// Admin-only route management (requires admin role)
+Route::group(['middleware' => ['auth:api', 'premiddleware', 'admin'], 'prefix' => 'v2'], function () {
+    Route::post('addRoute', [RouteController::class, 'addRoute']);
+    Route::post('routesUpdate', [RouteController::class, 'routesUpdate']);
+    Route::post('deleteRoute', [RouteController::class, 'deleteRoute']);
+    Route::post('massRouteStopsUpdate', [RouteController::class, 'massRouteStopsUpdate']);
 });

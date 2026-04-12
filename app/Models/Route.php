@@ -17,6 +17,7 @@ class Route extends Model
      * @var string[]
      */
     protected $fillable = [
+        'route_no',
         'source_place_id',
         'destination_place_id',
         'bus_type_id',
@@ -27,7 +28,9 @@ class Route extends Model
         'start_time',
         'end_time',
         'total_time',
-        'delayed_time'
+        'delayed_time',
+        'working_days',
+        'status',
     ];
 
     /**
@@ -43,7 +46,8 @@ class Route extends Model
      * @var array
      */
     protected $casts = [
-        'meta_data' => 'array'
+        'meta_data' => 'array',
+        'status'    => 'boolean',
     ];
 
     /**

@@ -281,20 +281,61 @@ class RouteController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function addRoute(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'route_no'               => 'nullable|integer|min:1|unique:routes,route_no',
+            'name'                   => 'required|string|max:255',
+            'source_place_id'        => 'required|integer|exists:sites,id',
+            'destination_place_id'   => 'required|integer|exists:sites,id|different:source_place_id',
+            'bus_type_id'            => 'required|integer|exists:bus_types,id',
+            'start_time'             => 'required|date_format:H:i:s',
+            'end_time'               => 'required|date_format:H:i:s',
+            'total_time'             => 'nullable|date_format:H:i:s',
+            'delayed_time'           => 'nullable|date_format:H:i:s',
+            'distance'               => 'nullable|numeric|min:0',
+            'working_days'           => 'nullable|string|max:255',
+            'description'            => 'nullable|string',
+            'meta_data'              => 'nullable|array',
+            'status'                 => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        $routeNo = $request->filled('route_no')
+            ? $request->route_no
+            : (Route::max('route_no') ?? 0) + 1;
+
+        $route = Route::create(array_merge(
+            $request->only([
+                'name', 'source_place_id', 'destination_place_id',
+                'bus_type_id', 'start_time', 'end_time', 'total_time',
+                'delayed_time', 'distance', 'working_days', 'description', 'meta_data',
+            ]),
+            [
+                'route_no' => $routeNo,
+                'status'   => $request->boolean('status', false),
+            ]
+        ));
+
+        return $this->sendResponse($route, 'Route added successfully');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
+    public function deleteRoute(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:routes,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        Route::findOrFail($request->id)->delete();
+
+        return $this->sendResponse([], 'Route deleted successfully');
     }
 
     /**
