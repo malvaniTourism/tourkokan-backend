@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Traits\Hashidable;
+use App\Traits\HasStorageFiles;
 
 class Site extends Model
 {
-    use HasFactory, Hashidable, Notifiable;
+    use HasFactory, Hashidable, Notifiable, HasStorageFiles;
+
+    protected array $fileFields = ['logo', 'icon', 'image'];
 
     /**
      * The attributes that are mass assignable.

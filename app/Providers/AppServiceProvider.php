@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Auth;
+use App\Auth\EncryptedUserProvider;
 use App\Models\Event;
 use App\Observers\EventObserver;
 
@@ -19,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Custom auth provider using blind-index hashes for encrypted email/mobile lookups
+        Auth::provider('encrypted', fn($app, $config) => new EncryptedUserProvider($app['hash']));
+
         // Rate limiters (moved from RouteServiceProvider)
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());

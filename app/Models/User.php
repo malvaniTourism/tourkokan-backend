@@ -8,12 +8,19 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Traits\Hashidable;
+use App\Traits\HasStorageFiles;
+use App\Traits\EncryptsPersonalData;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasApiTokens, Hashidable, HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, Hashidable, HasFactory, Notifiable, SoftDeletes, HasStorageFiles, EncryptsPersonalData;
+
+    protected array $fileFields = ['profile_picture'];
+
+    /** Fields that get a blind-index hash column auto-populated on save */
+    protected array $blindIndexFields = ['email', 'mobile'];
 
     /**
      * The attributes that are mass assignable.
@@ -26,8 +33,10 @@ class User extends Authenticatable implements JWTSubject
         'project_id',
         'name',
         'email',
+        'email_hash',
         'password',
         'mobile',
+        'mobile_hash',
         'code',
         'gender',
         'dob',
@@ -36,7 +45,7 @@ class User extends Authenticatable implements JWTSubject
         'isVerified',
         'uid',
         'otp',
-        'otp_created_at'
+        'otp_created_at',
     ];
 
     /**
@@ -47,6 +56,9 @@ class User extends Authenticatable implements JWTSubject
     protected $hidden = [
         'password',
         'remember_token',
+        'otp',
+        'email_hash',
+        'mobile_hash',
     ];
 
     /**
@@ -56,7 +68,13 @@ class User extends Authenticatable implements JWTSubject
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'otp_created_at' => 'datetime',
+        'otp_created_at'    => 'datetime',
+        // PII — encrypted at rest using APP_KEY (AES-256-CBC)
+        'name'              => 'encrypted',
+        'email'             => 'encrypted',
+        'mobile'            => 'encrypted',
+        'dob'               => 'encrypted',
+        'gender'            => 'encrypted',
     ];
 
     /**

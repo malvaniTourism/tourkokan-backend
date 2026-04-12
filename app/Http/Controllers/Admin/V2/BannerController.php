@@ -181,7 +181,7 @@ class BannerController extends BaseController
 
             $image = date('YmdHis') . "." . $image->getClientOriginalExtension();
 
-            $path = $request->file('image')->store(config('constants.upload_path.banners') . $request->bannerable_type . '/' . $request->name);
+            $path = $request->file('image')->store(config('constants.upload_path.banner') . $request->bannerable_type . '/' . $request->name);
 
             $image = Storage::url($path);
 

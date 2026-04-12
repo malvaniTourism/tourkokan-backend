@@ -66,7 +66,7 @@ return [
 
     'providers' => [
         'users' => [
-            'driver' => 'eloquent',
+            'driver' => 'encrypted', // Custom provider — uses blind-index hash for email/mobile lookups
             'model' => App\Models\User::class,
         ],
 

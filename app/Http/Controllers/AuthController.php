@@ -115,8 +115,8 @@ class AuthController extends BaseController
                 'role_id' => 'sometimes|exists:roles,id',
                 'language' => 'sometimes|required|in:mr,en',
                 'name' => 'required|string|between:2,60',
-                'email' => 'required_if:mobile,null|nullable|string|email|max:100|unique:users',
-                'mobile' => 'required_if:email,null|nullable|string|unique:users,mobile|digits:10',
+                'email' => 'required_if:mobile,null|nullable|string|email|max:100',
+                'mobile' => 'required_if:email,null|nullable|digits:10',
                 'password' => 'sometimes|string|required_with:email|confirmed|min:6',
                 'profile_picture' => 'nullable|string',
                 'latitude' => 'sometimes|required_with:longitude',
@@ -129,6 +129,11 @@ class AuthController extends BaseController
                 // Guest only needs a name (everything else optional)
                 $rules = [
                     'name' => 'required|string|between:2,60',
+                    'email' => 'nullable|string|email|max:100',
+                    'mobile' => 'nullable|digits:10',
+                    'password' => 'sometimes|nullable|string|min:6',
+                    'latitude' => 'sometimes|required_with:longitude',
+                    'longitude' => 'sometimes|required_with:latitude',
                 ];
             }
 
@@ -138,13 +143,25 @@ class AuthController extends BaseController
 
 
             if ($validator->fails()) {
-                $errors = $validator->errors();
+                return $this->sendError($validator->errors(), [], 200);
+            }
 
-                $data = [];
-                if ($errors->has('email') && $errors->get('email')[0] === 'The email has already been taken.')
-                    $data = ['isVerified' => User::where('email', $request->email)->first()->isVerified];
-
-                return $this->sendError($validator->errors(), $data, 200);
+            // Uniqueness check via blind index (email/mobile are encrypted in DB)
+            if ($request->filled('email')) {
+                $existing = User::findByEmail($request->email);
+                if ($existing) {
+                    return $this->sendError(
+                        ['email' => ['The email has already been taken.']],
+                        ['isVerified' => $existing->isVerified],
+                        200
+                    );
+                }
+            }
+            if ($request->filled('mobile')) {
+                $existing = User::findByMobile($request->mobile);
+                if ($existing) {
+                    return $this->sendError(['mobile' => ['The mobile has already been taken.']], [], 200);
+                }
             }
 
             if ($request->password == "") {
@@ -176,7 +193,7 @@ class AuthController extends BaseController
 
                 Storage::put($directory . '/' . $imageName, base64_decode($image));
 
-                $input['profile_picture'] = Storage::url($directory . '/' . $imageName);
+                $input['profile_picture'] = $directory . '/' . $imageName;
 
                 Log::info("FILE STORED" . $input['profile_picture']);
             }
@@ -263,7 +280,7 @@ class AuthController extends BaseController
             }
 
             if ($isGuest) {
-                $user = User::where($input)->first();
+                $user = User::find($user->id);
 
                 $token = JWTAuth::fromUser($user);
                 return $this->createNewToken($token, 'Logged In Successfully!', $isGuest);
@@ -289,16 +306,11 @@ class AuthController extends BaseController
 
             // Validate the incoming request data
             $validator = Validator::make($request->all(), [
-                'email' => 'sometimes|nullable|email|unique:users,email,' . $user->id,
+                'email' => 'sometimes|nullable|email',
                 'password' => 'sometimes|nullable|string|confirmed|min:6',
                 'profile_picture' => 'sometimes|nullable|string',
                 'language' => 'sometimes|required|in:mr,en',
-                'mobile' => [
-                    'sometimes',
-                    'required',
-                    'digits:10',
-                    Rule::unique('users', 'mobile')->ignore($user->id)
-                ],
+                'mobile' => 'sometimes|required|digits:10',
                 'dob' => 'sometimes|nullable|date_format:Y-m-d',
                 'gender' => 'sometimes|nullable|string',
                 'latitude' => 'sometimes|nullable|numeric|required_with:longitude',
@@ -307,6 +319,20 @@ class AuthController extends BaseController
 
             if ($validator->fails()) {
                 return $this->sendError($validator->errors(), '', 200);
+            }
+
+            // Uniqueness check via blind index (email/mobile are encrypted in DB)
+            if ($request->filled('email')) {
+                $existing = User::findByEmail($request->email);
+                if ($existing && $existing->id !== $user->id) {
+                    return $this->sendError(['email' => ['The email has already been taken.']], '', 200);
+                }
+            }
+            if ($request->filled('mobile')) {
+                $existing = User::findByMobile($request->mobile);
+                if ($existing && $existing->id !== $user->id) {
+                    return $this->sendError(['mobile' => ['The mobile has already been taken.']], '', 200);
+                }
             }
 
             $input = $validator->validated();
@@ -333,7 +359,7 @@ class AuthController extends BaseController
 
                 Storage::put($directory . '/' . $imageName, base64_decode($image));
 
-                $input['profile_picture'] = Storage::url($directory . '/' . $imageName);
+                $input['profile_picture'] = $directory . '/' . $imageName;
 
                 Log::info("FILE STORED" . $input['profile_picture']);
             }
@@ -380,7 +406,7 @@ class AuthController extends BaseController
                 $errors = $validator->errors();
                 $data = [];
                 if ($errors->has('email') && $errors->get('email')[0] === 'The email has already been taken.')
-                    $data = ['isVerified' => User::where('email', $request->email)->first()->isVerified];
+                    $data = ['isVerified' => User::findByEmail($request->email)?->isVerified];
 
                 return $this->sendResponse($data, $validator->errors());
             }
@@ -420,12 +446,17 @@ class AuthController extends BaseController
                 return $this->sendError($validator->errors(), '', 200);
             }
 
-            $whereIdEmail = array(
-                'id' => $request->id,
-                'email' => $request->email
-            );
+            $user = User::where('id', $request->id)->first();
 
-            $updated = User::where($whereIdEmail)->update(['email' => $request->new_email]);
+            // Verify current email matches using blind index
+            if (!$user || $user->email_hash !== User::makeBlindIndex($request->email)) {
+                return $this->sendError('Unable to change email', '', 200);
+            }
+
+            $updated = $user->update([
+                'email'      => $request->new_email,
+                'email_hash' => User::makeBlindIndex($request->new_email),
+            ]);
 
             if (!$updated) {
                 return $this->sendError('Unable to change email', '', 200);
@@ -523,17 +554,23 @@ class AuthController extends BaseController
     public function sendOtp(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'sometimes|nullable|required_without:mobile|email|exists:users,email',
-            'mobile' => 'sometimes|nullable|required_without:email|exists:users,mobile',
+            'email'  => 'sometimes|nullable|required_without:mobile|email|exists:users,email_hash,' . User::makeBlindIndex($request->email ?? ''),
+            'mobile' => 'sometimes|nullable|required_without:email',
         ]);
 
         if ($validator->fails()) {
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $otp =  random_int(100000, 999999);
+        $otp = random_int(100000, 999999);
 
-        $user = User::where(array_filter($request->all()))->first();
+        $user = $request->filled('email')
+            ? User::findByEmail($request->email)
+            : User::findByMobile($request->mobile);
+
+        if (!$user) {
+            return $this->sendError('User not found', '', 200);
+        }
 
         $otpCreatedAt = Carbon::parse($user->otp_created_at);
         $now = Carbon::now();
@@ -542,12 +579,10 @@ class AuthController extends BaseController
             return $this->sendError('OTP has already been sent. Please wait 5 minutes before requesting a new one.', '', 200);
         }
 
-        $updateStatus =  array(
-            'otp' => $otp,
-            'otp_created_at' =>  Carbon::now(),
-        );
-
-        $user->update($updateStatus);
+        $user->update([
+            'otp'            => User::hashOtp((string) $otp), // store hashed OTP
+            'otp_created_at' => Carbon::now(),
+        ]);
 
         $destination = array_key_first($request->all()) == 'email' ? 'email' : 'mobile';
 
@@ -560,18 +595,10 @@ class AuthController extends BaseController
     {
         try {
             $validator = Validator::make($request->all(), [
-                'email' => [
-                    'sometimes',
-                    'nullable',
-                    'required_without:mobile',
-                    'email',
-                    Rule::exists('users', 'email')->where(function ($query) {
-                        $query->whereNull('deleted_at');
-                    }),
-                ],
-                'mobile' => 'sometimes|nullable|required_without:email|exists:users,mobile',
-                'otp' => 'required',
-                'delete' => 'nullable|boolean'
+                'email'  => 'sometimes|nullable|required_without:mobile|email',
+                'mobile' => 'sometimes|nullable|required_without:email',
+                'otp'    => 'required',
+                'delete' => 'nullable|boolean',
             ]);
 
             if ($validator->fails()) {
@@ -579,30 +606,36 @@ class AuthController extends BaseController
             }
 
             $delete = isValidReturn($request->all(), 'delete');
-            unset($request['delete']);
 
-            $where_condition = array_filter($request->all());
-            $user = User::where($where_condition)->first();
+            // Find user by blind index
+            $user = $request->filled('email')
+                ? User::findByEmail($request->email)
+                : User::findByMobile($request->mobile);
 
-            if ($user) {
-                if ($delete) {
-                    Wallet::where('user_id', $user->id)->delete();
-
-                    $user->delete();
-                    return $this->sendResponse(null, 'Your account has been removed from our database.');
-                }
-
-                User::where($where_condition)->update([
-                    'otp' => null,
-                    'email_verified_at' => Carbon::now(),
-                    'isVerified' => true
-                ]);
-
-                $token = JWTAuth::fromUser($user);
-                return $this->createNewToken($token, 'Logged In Successfully!');
-            } else {
+            if (!$user) {
                 return $this->sendError('Invalid OTP', [], 200);
             }
+
+            // Verify hashed OTP
+            if (!User::verifyOtp((string) $request->otp, (string) $user->getRawOriginal('otp'))) {
+                return $this->sendError('Invalid OTP', [], 200);
+            }
+
+            if ($delete) {
+                Wallet::where('user_id', $user->id)->delete();
+                $user->delete();
+                return $this->sendResponse(null, 'Your account has been removed from our database.');
+            }
+
+            $user->update([
+                'otp'               => null,
+                'email_verified_at' => Carbon::now(),
+                'isVerified'        => true,
+            ]);
+
+            $token = JWTAuth::fromUser($user);
+            return $this->createNewToken($token, 'Logged In Successfully!');
+
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
             return $this->sendError('An error occurred.', [], 500);
@@ -711,18 +744,12 @@ class AuthController extends BaseController
         ])->json();
     
         if (isset($googleUser['sub'])) {
-    
-            try {
-                $data = [
-                    'email' => $googleUser['email'],
-                ];
 
-                $where_condition = array_filter($data);
-                
-                $user = User::where($where_condition)->first();
+            try {
+                $user = User::findByEmail($googleUser['email']);
 
                 if ($user) {
-                    User::where($where_condition)->update([
+                    $user->update([
                         'email_verified_at' => Carbon::now(),
                         'isVerified'        => true,
                     ]);

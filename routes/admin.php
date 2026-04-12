@@ -40,14 +40,14 @@ Route::get('/', function () {
     print('I am an admin');
 });
 
-Route::group(['middleware' => 'api'], function ($router) {
+Route::group(['middleware' => ['api', 'premiddleware']], function ($router) {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/refresh', [AuthController::class, 'refresh']);
 });
 
-Route::group(['middleware' => ['admin', 'auth:api'], 'prefix' => 'api'], function ($router) {
+Route::group(['middleware' => ['admin', 'auth:api', 'premiddleware'], 'prefix' => 'api'], function ($router) {
 
     Route::get('/user-profile', [AuthController::class, 'userProfile']);
     Route::post('/users', [AuthController::class, 'index']);
@@ -118,13 +118,13 @@ Route::group(['middleware' => ['admin', 'auth:api'], 'prefix' => 'api'], functio
 });
 
 
-Route::group(['middleware' => 'api', 'prefix' => 'v2/auth'], function ($router) {
+Route::group(['middleware' => ['api', 'premiddleware'], 'prefix' => 'v2/auth'], function ($router) {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::post('sendOtp', [AuthController::class, 'sendOtp']);
     Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
-}); 
+});
 
 Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'], function ($router) {
     Route::post('listcategories', [CategoryController::class, 'listcategories']);

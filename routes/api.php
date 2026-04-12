@@ -42,6 +42,7 @@ use App\Http\Controllers\User\V2\{
     EventController,
     EventInteractionController,
     NotificationController,
+    HealthCheckController,
 };
 use App\Http\Controllers\Admin\V2\EventController as AdminEventController;
 
@@ -264,6 +265,9 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('unregisterPushToken', [NotificationController::class, 'unregisterToken']);
     Route::post('getDevices', [NotificationController::class, 'getDevices']);
     Route::post('testNotification', [NotificationController::class, 'testNotification']);
+
+    // ── Health Check (auth required — not in admin panel) ──────────
+    Route::get('healthcheck', [HealthCheckController::class, 'check']);
 });
 
 // ── Admin Events ───────────────────────────────────────────────────────────

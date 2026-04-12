@@ -5,12 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Hashidable;
+use App\Traits\HasStorageFiles;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 
 class Category extends Model
 {
-    use HasFactory, Hashidable, SoftDeletes;
+    use HasFactory, Hashidable, SoftDeletes, HasStorageFiles;
+
+    protected array $fileFields = ['icon'];
 
     /**
      * The attributes that are mass assignable.

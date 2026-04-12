@@ -65,7 +65,7 @@ class UploadSiteAssets extends Command
 
             // // Get the downloadable URL for the file
 
-            $updateData = array('image' => Storage::url($destinationFilePath));
+            $updateData = array('image' => $destinationFilePath);
 
             Site::find($value['id'])->update($updateData);
             

@@ -117,12 +117,26 @@ function isValidReturn($value, $key = null, $ret = null)
 function uploadFile($file, $destination)
 {
     $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+    $path     = $destination . '/' . $filename;
 
-    Storage::put($destination . '/' . $filename, file_get_contents($file));
+    Storage::put($path, file_get_contents($file));
 
-    $url = Storage::url($destination . '/' . $filename);
+    return ['path' => $path]; // Store storage path only — use storageUrl() to get full URL
+}
 
-    return ['path' => $url];
+/**
+ * Convert a stored file path to a full URL.
+ * Handles both legacy full URLs (http/https) and new storage paths gracefully.
+ */
+function storageUrl(?string $path): ?string
+{
+    if (empty($path)) {
+        return null;
+    }
+    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        return $path; // Legacy full URL — return as-is
+    }
+    return Storage::url($path);
 }
 
 function callExternalAPI($method, $url, $payload)
