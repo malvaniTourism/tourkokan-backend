@@ -21,6 +21,7 @@ class Comment extends Model
         'parent_id',
         'user_id',
         'comment',
+        'status',
         'commentable_type',
         'commentable_id',
     ];
@@ -37,7 +38,9 @@ class Comment extends Model
      *
      * @var array
      */
-    protected $casts = [];
+    protected $casts = [
+        'status' => 'boolean',
+    ];
 
     /**
      * Get the Comments that owns the Comment

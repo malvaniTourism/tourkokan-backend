@@ -33,12 +33,14 @@ class CommentController extends BaseController
         }
 
         $comments = $data->comment()
+            ->where('status', true)
             ->with([
                 'users:id,name,email,profile_picture',
                 'comments' => function ($query) {
-                    $query->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
+                    $query->where('status', true)
+                        ->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
                         ->limit(5);
-                }, 
+                },
                 'comments.users' => function ($query) {
                     $query->select('id', 'name', 'email', 'profile_picture');
                 },
@@ -102,13 +104,14 @@ class CommentController extends BaseController
             $comment = [
                 'user_id' => auth()->id(),
                 'comment' => $request->comment,
-                'parent_id' => $request->parent_id
+                'parent_id' => $request->parent_id,
+                'status' => false,
             ];
 
-            $data->comment()->create(array_filter($comment));
+            $data->comment()->create(array_filter($comment, fn($v) => $v !== null));
         }
 
-        return $this->sendResponse($comment, 'comment created successfully...!');
+        return $this->sendResponse(['pending' => true], 'Comment submitted and awaiting approval.');
     }
 
     /**

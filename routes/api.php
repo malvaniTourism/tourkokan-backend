@@ -43,8 +43,11 @@ use App\Http\Controllers\User\V2\{
     EventInteractionController,
     NotificationController,
     HealthCheckController,
+    MessageController,
 };
 use App\Http\Controllers\Admin\V2\EventController as AdminEventController;
+use App\Http\Controllers\Admin\V2\CommentController as AdminCommentController;
+use App\Http\Controllers\Admin\V2\MessageController as AdminMessageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -268,16 +271,33 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
 
     // ── Health Check (auth required — not in admin panel) ──────────
     Route::get('healthcheck', [HealthCheckController::class, 'check']);
+
+    // ── User Inbox (admin → user messages) ─────────────────────────
+    Route::post('myMessages', [MessageController::class, 'inbox']);
+    Route::post('readMessage', [MessageController::class, 'markRead']);
+    Route::post('unreadMessageCount', [MessageController::class, 'unreadCount']);
 });
 
-// ── Admin Events ───────────────────────────────────────────────────────────
+// ── Admin Routes ───────────────────────────────────────────────────────────
 Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2/admin'], function () {
+    // Events
     Route::post('listEvents', [AdminEventController::class, 'index']);
     Route::post('pendingEvents', [AdminEventController::class, 'pending']);
     Route::post('approveEvent', [AdminEventController::class, 'approve']);
     Route::post('rejectEvent', [AdminEventController::class, 'reject']);
     Route::post('featureEvent', [AdminEventController::class, 'feature']);
     Route::post('eventAnalytics', [AdminEventController::class, 'analytics']);
+
+    // Comment moderation
+    Route::post('pendingComments', [AdminCommentController::class, 'pending']);
+    Route::post('listComments', [AdminCommentController::class, 'index']);
+    Route::post('approveComment', [AdminCommentController::class, 'approve']);
+    Route::post('rejectComment', [AdminCommentController::class, 'reject']);
+
+    // Direct messaging
+    Route::post('sendMessage', [AdminMessageController::class, 'send']);
+    Route::post('listMessages', [AdminMessageController::class, 'index']);
+    Route::post('deleteMessage', [AdminMessageController::class, 'destroy']);
 });
 use Illuminate\Support\Facades\Mail;
 
