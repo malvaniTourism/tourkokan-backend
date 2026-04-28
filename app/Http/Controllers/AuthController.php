@@ -80,12 +80,10 @@ class AuthController extends BaseController
 
         if ($request->filled('search')) {
             $search = $request->search;
-            // name is plaintext — LIKE works directly
-            // email/mobile are encrypted — use blind-index hash for exact match
+            // name/email/mobile are all encrypted — use blind-index hash for exact match only
             $hash = User::makeBlindIndex($search);
-            $query->where(function ($q) use ($search, $hash) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email_hash', $hash)
+            $query->where(function ($q) use ($hash) {
+                $q->where('email_hash', $hash)
                   ->orWhere('mobile_hash', $hash);
             });
         }

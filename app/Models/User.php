@@ -70,6 +70,7 @@ class User extends Authenticatable implements JWTSubject
         'email_verified_at' => 'datetime',
         'otp_created_at'    => 'datetime',
         // PII — encrypted at rest using APP_KEY (AES-256-CBC)
+        'name'              => 'encrypted',
         'email'             => 'encrypted',
         'mobile'            => 'encrypted',
         'dob'               => 'encrypted',
