@@ -24,6 +24,9 @@ use App\Http\Controllers\Admin\V2\RolesController;
 use App\Http\Controllers\Admin\V2\RouteController;
 use App\Http\Controllers\Admin\V2\SiteController;
 use App\Http\Controllers\Admin\V2\AdminBannerController;
+use App\Http\Controllers\Admin\V2\EventController as AdminEventController;
+use App\Http\Controllers\Admin\V2\CommentController as AdminCommentController;
+use App\Http\Controllers\Admin\V2\MessageController as AdminMessageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -166,6 +169,7 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
     Route::post('replyQuery', [ContactController::class, 'replyQuery']);
 
     Route::post('allUsers', [AuthController::class, 'allUsers']);
+    Route::post('listUsers', [AuthController::class, 'listUsers']);
 
     Route::post('roleDD', [RolesController::class, 'roleDD']);
 
@@ -194,6 +198,31 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 
     // Banner Status
     Route::post('changeBannerStatus', [AdminBannerController::class, 'changeStatus']);
+
+    // ── Events ────────────────────────────────────────────────────────────────
+    Route::post('listEvents', [AdminEventController::class, 'index']);
+    Route::post('pendingEvents', [AdminEventController::class, 'pending']);
+    Route::post('approveEvent', [AdminEventController::class, 'approve']);
+    Route::post('rejectEvent', [AdminEventController::class, 'reject']);
+    Route::post('featureEvent', [AdminEventController::class, 'feature']);
+    Route::post('eventAnalytics', [AdminEventController::class, 'analytics']);
+
+    // ── Comment Moderation ────────────────────────────────────────────────────
+    Route::post('pendingComments', [AdminCommentController::class, 'pending']);
+    Route::post('listComments', [AdminCommentController::class, 'index']);
+    Route::post('approveComment', [AdminCommentController::class, 'approve']);
+    Route::post('rejectComment', [AdminCommentController::class, 'reject']);
+
+    // ── Site Submission Review ────────────────────────────────────────────────
+    Route::post('pendingSites', [SiteController::class, 'pendingSubmissions']);
+    Route::post('allSubmissions', [SiteController::class, 'allSubmissions']);
+    Route::post('approveSite', [SiteController::class, 'approveSite']);
+    Route::post('rejectSite', [SiteController::class, 'rejectSite']);
+
+    // ── Direct Messaging ──────────────────────────────────────────────────────
+    Route::post('sendMessage', [AdminMessageController::class, 'send']);
+    Route::post('listMessages', [AdminMessageController::class, 'index']);
+    Route::post('deleteMessage', [AdminMessageController::class, 'destroy']);
 });
 
 // Admin-only route management (requires admin role)

@@ -70,12 +70,26 @@ class User extends Authenticatable implements JWTSubject
         'email_verified_at' => 'datetime',
         'otp_created_at'    => 'datetime',
         // PII — encrypted at rest using APP_KEY (AES-256-CBC)
-        'name'              => 'encrypted',
         'email'             => 'encrypted',
         'mobile'            => 'encrypted',
         'dob'               => 'encrypted',
         'gender'            => 'encrypted',
     ];
+
+    /**
+     * Override castAttribute to gracefully handle records encrypted with a
+     * different APP_KEY (e.g. data migrated from another environment).
+     * Returns null instead of throwing DecryptException so the rest of the
+     * response is still usable.
+     */
+    protected function castAttribute($key, $value)
+    {
+        try {
+            return parent::castAttribute($key, $value);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException) {
+            return null;
+        }
+    }
 
     /**
      * Get the identifier that will be stored in the subject claim of the JWT.

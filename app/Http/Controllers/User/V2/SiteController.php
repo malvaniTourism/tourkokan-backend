@@ -6,17 +6,11 @@ use App\Models\Site;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\Category;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 class SiteController extends BaseController
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function listCities() //cities
+    public function listCities()
     {
         $user = auth()->user();
 
@@ -36,18 +30,10 @@ class SiteController extends BaseController
         return $this->sendResponse($city, 'Cities successfully Retrieved...!');
     }
 
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Site  $Site
-     * @return \Illuminate\Http\Response
-     */
-    public function getSite(Request $request)    //city
+    public function getSite(Request $request)
     {
         $user_id = auth()->id();
-        // there is bug in this api need to fix if this api is hit and id passed of any other category type site data will be returned.
-        // need to restrict this by adding validation or condition
+
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:sites,id'
         ]);
@@ -56,7 +42,7 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $city   =   Site::withCount(['sites', 'gallery', 'comment'])
+        $city = Site::withCount(['sites', 'gallery', 'comment'])
             ->withAvg('rating', 'rate')
             ->with([
                 'categories:id,name,code,parent_id,icon,status,is_hot_category',
@@ -94,11 +80,6 @@ class SiteController extends BaseController
         return $this->sendResponse($city, 'Cities successfully Retrieved...!');
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function stops()
     {
         $places = Site::with([
@@ -112,20 +93,15 @@ class SiteController extends BaseController
         return $this->sendResponse($places, 'Stops successfully Retrieved...!');
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function sites(Request $request)
     {
         $user = auth()->user();
 
         $validator = Validator::make($request->all(), [
-            'search' => 'sometimes|nullable|string|alpha|max:255',
-            'type' => 'sometimes|required|string|max:255|in:bus',
-            'apitype' => 'required|string|max:255|in:list,dropdown',
-            'category' => ($request->has('type') || $request->has('global')) ? 'nullable|exists:categories,code' : 'nullable|required_without:parent_id|exists:categories,code',
+            'search'    => 'sometimes|nullable|string|alpha|max:255',
+            'type'      => 'sometimes|required|string|max:255|in:bus',
+            'apitype'   => 'required|string|max:255|in:list,dropdown',
+            'category'  => ($request->has('type') || $request->has('global')) ? 'nullable|exists:categories,code' : 'nullable|required_without:parent_id|exists:categories,code',
             'parent_id' => 'nullable|required_with:parent_id|exists:sites,parent_id',
             'global'    => 'sometimes|boolean'
         ]);
@@ -138,17 +114,9 @@ class SiteController extends BaseController
             'site:id,parent_id,name',
             'sites' => function ($query) use ($user) {
                 $query->select(
-                    'id',
-                    'name',
-                    'mr_name',
-                    'parent_id',
-                    'image',
-                    'domain_name',
-                    'description',
-                    'tag_line',
-                    'bus_stop_type',
-                    'icon',
-                    'status',
+                    'id', 'name', 'mr_name', 'parent_id', 'image',
+                    'domain_name', 'description', 'tag_line',
+                    'bus_stop_type', 'icon', 'status',
                 )
                     ->with(['rate:id,user_id,rate,rateable_type,rateable_id,status', 'gallery'])
                     ->where('is_hot_place', true)
@@ -171,32 +139,23 @@ class SiteController extends BaseController
         ];
 
         if ($request->apitype == 'dropdown') {
-            $withArr = [
-                'categories:id,name,code,parent_id,icon,status,is_hot_category'
-            ];
+            $withArr = ['categories:id,name,code,parent_id,icon,status,is_hot_category'];
         }
 
         $sites = Site::with($withArr);
 
         if (isValidReturn($request, 'category') == "emergency") {
-            // Retrieve the 'emergency' category with its sub-categories
             $category = Category::with('subCategories')->where('code', 'emergency')->first();
-
             if ($category) {
-                // Extract the IDs of all sub-categories
                 $ids = $category->subCategories->pluck('id');
-
-                // Filter sites where the categories match the extracted sub-category IDs
                 $sites = $sites->whereHas('categories', function ($query) use ($ids) {
                     $query->whereIn('id', $ids);
                 });
             } else {
-                // If no 'emergency' category is found, return an empty result
-                $sites = $sites->whereNull('id'); // Ensures no sites are returned
+                $sites = $sites->whereNull('id');
             }
         } else {
             if ($request->has('category')) {
-                // Filter sites based on the specific category code provided in the request
                 $sites = $sites->whereHas('categories', function ($query) use ($request) {
                     $query->where('code', $request->category);
                 });
@@ -204,7 +163,7 @@ class SiteController extends BaseController
         }
 
         if ($request->has('parent_id')) {
-            $sites = $sites->where('parent_id', "=", $request->parent_id);
+            $sites = $sites->where('parent_id', '=', $request->parent_id);
         }
 
         if ($request->has('global')) {
@@ -212,12 +171,11 @@ class SiteController extends BaseController
         }
 
         if ($request->has('search')) {
-            $search = $request->input('search');
-            $sites = $sites->where('name', 'like', $search . '%');
+            $sites = $sites->where('name', 'like', $request->input('search') . '%');
         }
 
         if ($request->has('type') && $request->input('type') == 'bus') {
-            $sites =  $sites->whereIn('bus_stop_type', ['Depo', 'Stop']);
+            $sites = $sites->whereIn('bus_stop_type', ['Depo', 'Stop']);
         }
 
         $sites = $sites->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'));
@@ -231,80 +189,11 @@ class SiteController extends BaseController
                     ->where('favourites.user_id', $user->id);
             }, 'is_favorite')
                 ->withAvg("rating", 'rate')
-                ->withCount([
-                    'gallery',
-                    'comment'
-                ]);
+                ->withCount(['gallery', 'comment']);
         }
 
         $sites = $sites->paginate($request->get('per_page', 15));
 
         return $this->sendResponse($sites, 'Sites successfully Retrieved...!');
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Site  $site
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Site $site)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Site  $site
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Site $site)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Site  $site
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Site $site)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Site  $site
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Site $site)
-    {
-        //
     }
 }

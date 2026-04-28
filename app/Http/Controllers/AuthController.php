@@ -56,6 +56,45 @@ class AuthController extends BaseController
         }
     }
 
+    public function listUsers(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'apitype' => 'required|string|in:list,dropdown',
+            'search'  => 'nullable|string|max:100',
+            'per_page'=> 'nullable|integer|min:1|max:200',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        $columns = $request->apitype === 'dropdown'
+            ? ['id', 'name', 'mobile', 'email', 'profile_picture']
+            : ['id', 'name', 'mobile', 'email', 'gender', 'dob', 'profile_picture', 'isVerified', 'created_at'];
+
+        $query = User::select($columns);
+
+        if ($request->apitype === 'list') {
+            $query->with('roles:id,name,code');
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            // name is plaintext — LIKE works directly
+            // email/mobile are encrypted — use blind-index hash for exact match
+            $hash = User::makeBlindIndex($search);
+            $query->where(function ($q) use ($search, $hash) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email_hash', $hash)
+                  ->orWhere('mobile_hash', $hash);
+            });
+        }
+
+        $users = $query->latest()->paginate($request->input('per_page', 20));
+
+        return $this->sendResponse($users, 'Users retrieved successfully.');
+    }
+
     /**
      * Get a JWT via given credentials.
      *

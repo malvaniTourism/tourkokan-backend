@@ -42,6 +42,8 @@ class Site extends Model
         'rules',
         'social_media',
         'meta_data',
+        'submission_status',
+        'rejection_reason',
     ];
 
     /**
@@ -137,6 +139,11 @@ class Site extends Model
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'user_id');
+    }
+
     public function site()
     {
         return $this->belongsTo(Site::class, 'parent_id');
