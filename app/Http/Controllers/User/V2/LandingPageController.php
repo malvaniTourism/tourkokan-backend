@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Gallery;
+use App\Models\AdminMessage;
 use App\Models\Contact;
 use App\Services\CategoryService;
 use App\Services\ContactService;
@@ -299,6 +300,9 @@ class LandingPageController extends BaseController
 
         if ($cachedData) {
             $cachedData['cities'] = $cities;
+            $cachedData['unread_message_count'] = AdminMessage::where('user_id', auth()->id())
+                ->where('is_read', false)
+                ->count();
         }
 
         return $this->sendResponse($cachedData, 'Landing page data successfully Retrieved...!');
