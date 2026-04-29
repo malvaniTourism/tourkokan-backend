@@ -7,6 +7,7 @@ use App\Http\Requests\Event\CreateEventRequest;
 use App\Http\Requests\Event\UpdateEventRequest;
 use App\Models\Event;
 use App\Models\EventNotification;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -73,7 +74,7 @@ class EventController extends BaseController
                 'eventType:id,name,code',
                 'site:id,name',
                 'approvedBy:id,name',
-            ])->findOrFail($id);
+            ])->findOrFail($request->id);
 
             return $this->sendResponse($event, 'Event fetched successfully');
         } catch (\Throwable $th) {
@@ -86,20 +87,35 @@ class EventController extends BaseController
      * Admin creates an event (auto-approved, no pending).
      * POST /api/v2/admin/createEvent
      */
-    public function store(CreateEventRequest $request)
+    public function store(Request $request)
     {
-        try {
-            $input = $request->validated();
+        $validator = Validator::make($request->all(), array_merge(
+            (new CreateEventRequest())->rules(),
+            ['user_id' => 'nullable|exists:users,id']
+        ));
 
-            $input['user_id']      = auth()->id();
-            $input['status']       = 'approved';
-            $input['approved_by']  = auth()->id();
-            $input['approved_at']  = now();
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        try {
+            $input = $validator->validated();
+
+            $input['status']      = 'approved';
+            $input['approved_by'] = auth()->id();
+            $input['approved_at'] = now();
+
+            if (!empty($input['user_id'])) {
+                $user = User::find($input['user_id']);
+                $input['organizer_name']  = $user->name;
+                $input['organizer_phone'] = $input['organizer_phone'] ?? $user->mobile;
+                $input['organizer_email'] = $input['organizer_email'] ?? $user->email;
+            }
 
             $event = Event::create($input);
 
             return $this->sendResponse(
-                $event->load(['eventType:id,name', 'site:id,name']),
+                $event->load(['eventType:id,name', 'site:id,name', 'user:id,name,email']),
                 'Event created and published successfully'
             );
         } catch (\Throwable $th) {
