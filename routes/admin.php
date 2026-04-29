@@ -201,6 +201,10 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 
     // ── Events ────────────────────────────────────────────────────────────────
     Route::post('listEvents', [AdminEventController::class, 'index']);
+    Route::post('getEvent', [AdminEventController::class, 'show']);
+    Route::post('createEvent', [AdminEventController::class, 'store']);
+    Route::post('updateEvent', [AdminEventController::class, 'update']);
+    Route::post('deleteEvent', [AdminEventController::class, 'destroy']);
     Route::post('pendingEvents', [AdminEventController::class, 'pending']);
     Route::post('approveEvent', [AdminEventController::class, 'approve']);
     Route::post('rejectEvent', [AdminEventController::class, 'reject']);

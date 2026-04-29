@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin\V2;
 
 use App\Http\Controllers\BaseController;
+use App\Http\Requests\Event\CreateEventRequest;
+use App\Http\Requests\Event\UpdateEventRequest;
 use App\Models\Event;
 use App\Models\EventNotification;
 use Illuminate\Http\Request;
@@ -45,6 +47,106 @@ class EventController extends BaseController
             $events  = $query->orderByDesc('created_at')->paginate($perPage);
 
             return $this->sendResponse($events, 'Events fetched successfully');
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            throw $th;
+        }
+    }
+
+    /**
+     * Get single event detail (admin view).
+     * POST /api/v2/admin/getEvent  — id in body
+     */
+    public function show(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:events,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        try {
+            $event = Event::with([
+                'user:id,name,email,mobile',
+                'eventType:id,name,code',
+                'site:id,name',
+                'approvedBy:id,name',
+            ])->findOrFail($id);
+
+            return $this->sendResponse($event, 'Event fetched successfully');
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            throw $th;
+        }
+    }
+
+    /**
+     * Admin creates an event (auto-approved, no pending).
+     * POST /api/v2/admin/createEvent
+     */
+    public function store(CreateEventRequest $request)
+    {
+        try {
+            $input = $request->validated();
+
+            $input['user_id']      = auth()->id();
+            $input['status']       = 'approved';
+            $input['approved_by']  = auth()->id();
+            $input['approved_at']  = now();
+
+            $event = Event::create($input);
+
+            return $this->sendResponse(
+                $event->load(['eventType:id,name', 'site:id,name']),
+                'Event created and published successfully'
+            );
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            throw $th;
+        }
+    }
+
+    /**
+     * Admin updates any event.
+     * POST /api/v2/admin/updateEvent  — id in body
+     */
+    public function update(UpdateEventRequest $request)
+    {
+        try {
+            $event = Event::findOrFail($request->id);
+            $event->update($request->validated());
+
+            return $this->sendResponse([
+                'id'     => $event->id,
+                'status' => $event->fresh()->status,
+            ], 'Event updated successfully');
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            throw $th;
+        }
+    }
+
+    /**
+     * Admin deletes any event (any status).
+     * POST /api/v2/admin/deleteEvent  — id in body
+     */
+    public function destroy(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:events,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        try {
+            $event = Event::findOrFail($request->id);
+            $event->delete();
+
+            return $this->sendResponse(null, 'Event deleted successfully');
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
             throw $th;
@@ -214,10 +316,16 @@ class EventController extends BaseController
      */
     public function analytics(Request $request)
     {
-        $id = $request->input('id');
-        if (!$id) return $this->sendError('Event id is required', '', 200);
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:events,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
         try {
-            $event = Event::with('interactions')->findOrFail($id);
+            $event = Event::with('interactions')->findOrFail($request->id);
 
             $breakdown = $event->interactions()
                 ->selectRaw('interaction_type, COUNT(*) as count')

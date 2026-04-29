@@ -8,6 +8,7 @@ use App\Models\EventInteraction;
 use App\Models\Favourite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class EventInteractionController extends BaseController
 {
@@ -17,7 +18,7 @@ class EventInteractionController extends BaseController
      */
     public function like(Request $request)
     {
-        return $this->toggle($request, $request->input('id'), 'like', 'like_count', 'liked');
+        return $this->toggle($request, 'like', 'like_count', 'liked');
     }
 
     /**
@@ -26,7 +27,7 @@ class EventInteractionController extends BaseController
      */
     public function going(Request $request)
     {
-        return $this->toggle($request, $request->input('id'), 'going', 'going_count', 'is_going');
+        return $this->toggle($request, 'going', 'going_count', 'is_going');
     }
 
     /**
@@ -35,7 +36,7 @@ class EventInteractionController extends BaseController
      */
     public function interested(Request $request)
     {
-        return $this->toggle($request, $request->input('id'), 'interested', 'interested_count', 'is_interested');
+        return $this->toggle($request, 'interested', 'interested_count', 'is_interested');
     }
 
     /**
@@ -44,13 +45,20 @@ class EventInteractionController extends BaseController
      */
     public function favourite(Request $request)
     {
-        $id = $request->input('id');
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:events,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
         try {
-            $event = Event::where('id', $id)->where('status', 'approved')->firstOrFail();
+            $event = Event::where('id', $request->id)->where('status', 'approved')->firstOrFail();
             $user  = auth()->user();
 
             $existing = Favourite::where('favouritable_type', Event::class)
-                ->where('favouritable_id', $id)
+                ->where('favouritable_id', $request->id)
                 ->where('user_id', $user->id)
                 ->first();
 
@@ -60,9 +68,9 @@ class EventInteractionController extends BaseController
                 $favourited = false;
             } else {
                 Favourite::create([
-                    'user_id'          => $user->id,
+                    'user_id'           => $user->id,
                     'favouritable_type' => Event::class,
-                    'favouritable_id'   => $id,
+                    'favouritable_id'   => $request->id,
                 ]);
                 $event->increment('favourite_count');
                 $favourited = true;
@@ -84,18 +92,27 @@ class EventInteractionController extends BaseController
      */
     public function share(Request $request)
     {
-        $id = $request->input('id');
+        $validator = Validator::make($request->all(), [
+            'id'          => 'required|exists:events,id',
+            'device_type' => 'nullable|string',
+            'platform'    => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
         try {
-            $event = Event::where('id', $id)->where('status', 'approved')->firstOrFail();
+            $event = Event::where('id', $request->id)->where('status', 'approved')->firstOrFail();
             $user  = auth()->user();
 
             // Shares can be recorded multiple times (no unique constraint needed)
             EventInteraction::create([
-                'event_id'         => $id,
+                'event_id'         => $request->id,
                 'user_id'          => $user->id,
                 'interaction_type' => 'share',
-                'device_type'      => $request->input('device_type'),
-                'platform'         => $request->input('platform'),
+                'device_type'      => $request->device_type,
+                'platform'         => $request->platform,
                 'ip_address'       => $request->ip(),
             ]);
 
@@ -113,15 +130,22 @@ class EventInteractionController extends BaseController
     /**
      * Generic toggle handler for like / going / interested.
      */
-    private function toggle(Request $request, $id, string $type, string $countColumn, string $responseKey)
+    private function toggle(Request $request, string $type, string $countColumn, string $responseKey)
     {
-        if (!$id) return $this->sendError('Event id is required', '', 200);
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:events,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
         try {
-            $event = Event::where('id', $id)->where('status', 'approved')->firstOrFail();
+            $event = Event::where('id', $request->id)->where('status', 'approved')->firstOrFail();
             $user  = auth()->user();
 
             $interaction = EventInteraction::where([
-                'event_id'         => $id,
+                'event_id'         => $request->id,
                 'user_id'          => $user->id,
                 'interaction_type' => $type,
             ])->first();
@@ -132,7 +156,7 @@ class EventInteractionController extends BaseController
                 $active = false;
             } else {
                 EventInteraction::create([
-                    'event_id'         => $id,
+                    'event_id'         => $request->id,
                     'user_id'          => $user->id,
                     'interaction_type' => $type,
                     'device_type'      => $request->input('device_type'),
@@ -144,8 +168,8 @@ class EventInteractionController extends BaseController
             }
 
             return $this->sendResponse([
-                $responseKey  => $active,
-                $countColumn  => $event->fresh()->{$countColumn},
+                $responseKey => $active,
+                $countColumn => $event->fresh()->{$countColumn},
             ], ucfirst($type) . ' updated');
         } catch (\Throwable $th) {
             Log::error($th->getMessage());

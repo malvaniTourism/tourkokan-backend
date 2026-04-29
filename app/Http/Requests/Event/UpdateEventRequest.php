@@ -16,6 +16,7 @@ class UpdateEventRequest extends FormRequest
     public function rules()
     {
         return [
+            'id'                    => 'required|exists:events,id',
             'site_id'               => 'sometimes|nullable|exists:sites,id',
             'event_type_id'         => 'sometimes|nullable|exists:event_types,id',
             'title'                 => 'sometimes|string|max:255',

@@ -10,6 +10,7 @@ use App\Models\EventInteraction;
 use App\Models\Favourite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class EventController extends BaseController
 {
@@ -184,10 +185,7 @@ class EventController extends BaseController
     public function update(UpdateEventRequest $request)
     {
         try {
-            $id = $request->input('id');
-            if (!$id) return $this->sendError('Event id is required', '', 200);
-
-            $event = Event::where('id', $id)
+            $event = Event::where('id', $request->id)
                 ->where('user_id', auth()->id())
                 ->firstOrFail();
 
@@ -213,11 +211,16 @@ class EventController extends BaseController
      */
     public function cancel(Request $request)
     {
-        try {
-            $id = $request->input('id');
-            if (!$id) return $this->sendError('Event id is required', '', 200);
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:events,id',
+        ]);
 
-            $event = Event::where('id', $id)
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        try {
+            $event = Event::where('id', $request->id)
                 ->where('user_id', auth()->id())
                 ->firstOrFail();
 
@@ -264,11 +267,16 @@ class EventController extends BaseController
      */
     public function destroy(Request $request)
     {
-        try {
-            $id = $request->input('id');
-            if (!$id) return $this->sendError('Event id is required', '', 200);
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:events,id',
+        ]);
 
-            $event = Event::where('id', $id)
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        try {
+            $event = Event::where('id', $request->id)
                 ->where('user_id', auth()->id())
                 ->firstOrFail();
 
