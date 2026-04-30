@@ -91,7 +91,10 @@ class EventController extends BaseController
     {
         $validator = Validator::make($request->all(), array_merge(
             (new CreateEventRequest())->rules(),
-            ['user_id' => 'nullable|exists:users,id']
+            [
+                'user_id'          => 'nullable|exists:users,id',
+                'organizer_phone'  => 'required|string|max:20',
+            ]
         ));
 
         if ($validator->fails()) {
