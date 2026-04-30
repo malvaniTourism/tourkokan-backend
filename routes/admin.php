@@ -29,6 +29,7 @@ use App\Http\Controllers\Admin\V2\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\V2\MessageController as AdminMessageController;
 use App\Http\Controllers\Admin\V2\EventTypeController as AdminEventTypeController;
 use App\Http\Controllers\Admin\V2\EventGalleryController as AdminEventGalleryController;
+use App\Http\Controllers\Admin\V2\SiteGalleryController as AdminSiteGalleryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -224,6 +225,11 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
     Route::post('listComments', [AdminCommentController::class, 'index']);
     Route::post('approveComment', [AdminCommentController::class, 'approve']);
     Route::post('rejectComment', [AdminCommentController::class, 'reject']);
+
+    // ── Site Gallery ──────────────────────────────────────────────────────────
+    Route::post('getSiteGallery', [AdminSiteGalleryController::class, 'index']);
+    Route::post('uploadSiteGallery', [AdminSiteGalleryController::class, 'upload']);
+    Route::post('deleteSiteGallery', [AdminSiteGalleryController::class, 'destroy']);
 
     // ── Site Submission Review ────────────────────────────────────────────────
     Route::post('pendingSites', [SiteController::class, 'pendingSubmissions']);

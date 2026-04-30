@@ -24,6 +24,7 @@ return [
         'banner'            => env('APP_ENV', 'other').'/banners',
         'event_banner'      => env('APP_ENV', 'other').'/events/banners',
         'event_gallery'     => env('APP_ENV', 'other').'/events/gallery',
+        'site_gallery'      => env('APP_ENV', 'other').'/sites/gallery',
     ],
     'models' => [
         'City' => 'App\Models\City',

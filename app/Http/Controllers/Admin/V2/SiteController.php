@@ -38,7 +38,7 @@ class SiteController extends BaseController
                     ->withAvg('rating', 'rate');
             },
             'sites.comment',
-            'photos',
+            'gallery',
             'comment',
             'categories:id,name,code,parent_id,icon,status,is_hot_category',
             'rate:id,user_id,rate,rateable_type,rateable_id,status',
@@ -93,7 +93,7 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $city = Site::withCount(['sites', 'photos', 'comment'])
+        $city = Site::withCount(['sites', 'gallery', 'comment'])
             ->with([
                 'categories:id,name,code,parent_id,icon,status,is_hot_category',
                 'sites' => fn($q) => $q->with('categories:id,name,code,parent_id,icon,status,is_hot_category')->limit(5),
@@ -101,7 +101,7 @@ class SiteController extends BaseController
                 'comment.comment' => fn($q) => $q->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5),
                 'comment.users' => fn($q) => $q->select('id', 'name', 'email', 'profile_picture'),
                 'comment.comment.users' => fn($q) => $q->select('id', 'name', 'email', 'profile_picture'),
-                'photos',
+                'gallery',
             ])
             ->withAvg('rating', 'rate')
             ->latest()
@@ -133,8 +133,8 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $places = Site::withCount(['sites', 'photos', 'comments'])
-            ->with(['photos', 'categories:id,name,icon,status']);
+        $places = Site::withCount(['sites', 'gallery', 'comments'])
+            ->with(['gallery', 'categories:id,name,icon,status']);
 
         if ($request->has('search')) {
             $places = $places->where('name', 'like', '%' . $request->input('search') . '%');
@@ -182,9 +182,9 @@ class SiteController extends BaseController
             'tag_line'      => 'required|string|between:2,100',
             'description'   => 'required|string',
             'domain_name'   => 'nullable|string',
-            'logo'          => 'nullable|mimes:jpeg,jpg,png|max:1024',
-            'icon'          => 'nullable|mimes:jpeg,jpg,png|max:512',
-            'image'         => 'nullable|mimes:jpeg,jpg,png|max:1024',
+            'logo'          => 'nullable|mimes:jpeg,jpg,png,webp|max:1024',
+            'icon'          => 'nullable|mimes:jpeg,jpg,png,webp|max:512',
+            'image'         => 'nullable|mimes:jpeg,jpg,png,webp|max:1024',
             'status'        => 'boolean:true,false',
             'latitude'      => 'nullable|required_with:longitude|between:-90,90',
             'longitude'     => 'nullable|required_with:latitude|between:-90,90',
@@ -232,9 +232,9 @@ class SiteController extends BaseController
             'tag_line'     => 'sometimes|required|string|between:2,100',
             'description'  => 'sometimes|required|string',
             'domain_name'  => 'sometimes|required|string',
-            'logo'         => 'sometimes|required|mimes:jpeg,jpg,png|max:1024',
-            'icon'         => 'sometimes|required|mimes:jpeg,jpg,png|max:512',
-            'image'        => 'sometimes|required|mimes:jpeg,jpg,png|max:1024',
+            'logo'         => 'sometimes|nullable|mimes:jpeg,jpg,png,webp|max:1024',
+            'icon'         => 'sometimes|nullable|mimes:jpeg,jpg,png,webp|max:512',
+            'image'        => 'sometimes|nullable|mimes:jpeg,jpg,png,webp|max:1024',
             'status'       => 'sometimes|required|boolean:true,false',
             'latitude'     => 'sometimes|required|required_with:longitude|between:-90,90',
             'longitude'    => 'sometimes|required|required_with:latitude|between:-90,90',
@@ -256,8 +256,9 @@ class SiteController extends BaseController
 
         foreach (['logo', 'icon', 'image'] as $field) {
             if ($image = $request->file($field)) {
-                if (Storage::exists($site->$field)) {
-                    Storage::delete($site->$field);
+                $rawPath = $site->getRawOriginal($field);
+                if ($rawPath && Storage::exists($rawPath)) {
+                    Storage::delete($rawPath);
                 }
                 $input[$field] = uploadFile($image, $uploadPath)['path'];
             }
@@ -289,8 +290,9 @@ class SiteController extends BaseController
         }
 
         foreach (['logo', 'icon', 'image'] as $field) {
-            if (Storage::exists($site->$field)) {
-                Storage::delete($site->$field);
+            $rawPath = $site->getRawOriginal($field);
+            if ($rawPath && Storage::exists($rawPath)) {
+                Storage::delete($rawPath);
             }
         }
 
@@ -320,16 +322,27 @@ class SiteController extends BaseController
         if (str_contains($url, 'goo.gl') || str_contains($url, 'maps.app.goo')) {
             try {
                 $response = Http::withOptions(['allow_redirects' => true])->get($url);
-                $url = $response->effectiveUri() ?? $url;
+                // effectiveUri() returns a UriInterface object — must cast to string
+                $resolved = (string) $response->effectiveUri();
+                if (!empty($resolved)) {
+                    $url = $resolved;
+                }
             } catch (\Throwable $e) {
                 // fall through to regex on original URL
             }
         }
 
         $patterns = [
+            // https://maps.app.goo.gl short URLs resolve to /maps/search/LAT,+LNG
+            '/\/maps\/search\/(-?\d+\.?\d*),\+?\s*(-?\d+\.?\d*)/',
+            // Standard place URLs: /@LAT,LNG,ZOOMz
             '/@(-?\d+\.\d+),(-?\d+\.\d+)/',
-            '/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/',
-            '/[?&]ll=(-?\d+\.\d+),(-?\d+\.\d+)/',
+            // ?q=LAT,LNG
+            '/[?&]q=(-?\d+\.\d+),\+?(-?\d+\.\d+)/',
+            // ?ll=LAT,LNG
+            '/[?&]ll=(-?\d+\.\d+),\+?(-?\d+\.\d+)/',
+            // /place/ URLs with coordinates in path
+            '/\/place\/[^\/]+\/@(-?\d+\.\d+),(-?\d+\.\d+)/',
         ];
 
         foreach ($patterns as $pattern) {
@@ -375,8 +388,8 @@ class SiteController extends BaseController
             'description'  => 'required|string|min:20',
             'tag_line'     => 'nullable|string|max:100',
             'domain_name'  => 'nullable|url|max:255',
-            'image'        => 'nullable|mimes:jpeg,jpg,png|max:2048',
-            'logo'         => 'nullable|mimes:jpeg,jpg,png|max:1024',
+            'image'        => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
+            'logo'         => 'nullable|mimes:jpeg,jpg,png,webp|max:1024',
             'latitude'     => 'required|numeric|between:-90,90',
             'longitude'    => 'required|numeric|between:-180,180',
             'pin_code'     => 'nullable|digits:6',
@@ -456,8 +469,8 @@ class SiteController extends BaseController
             'description'  => 'sometimes|string|min:20',
             'tag_line'     => 'nullable|string|max:100',
             'domain_name'  => 'nullable|url|max:255',
-            'image'        => 'nullable|mimes:jpeg,jpg,png|max:2048',
-            'logo'         => 'nullable|mimes:jpeg,jpg,png|max:1024',
+            'image'        => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
+            'logo'         => 'nullable|mimes:jpeg,jpg,png,webp|max:1024',
             'latitude'     => 'nullable|numeric|between:-90,90',
             'longitude'    => 'nullable|numeric|between:-180,180',
             'pin_code'     => 'nullable|digits:6',
@@ -488,6 +501,10 @@ class SiteController extends BaseController
 
         foreach (['logo', 'image'] as $field) {
             if ($file = $request->file($field)) {
+                $rawPath = $site->getRawOriginal($field);
+                if ($rawPath && Storage::exists($rawPath)) {
+                    Storage::delete($rawPath);
+                }
                 $input[$field] = uploadFile($file, config('constants.upload_path.site'))['path'];
             }
         }
@@ -526,6 +543,13 @@ class SiteController extends BaseController
 
         if (!$site) {
             return $this->sendError('Submission not found or cannot be deleted.', '', 404);
+        }
+
+        foreach (['logo', 'image'] as $field) {
+            $rawPath = $site->getRawOriginal($field);
+            if ($rawPath && Storage::exists($rawPath)) {
+                Storage::delete($rawPath);
+            }
         }
 
         $site->delete();

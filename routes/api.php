@@ -42,6 +42,7 @@ use App\Http\Controllers\User\V2\{
     EventController,
     EventTypeController,
     EventGalleryController,
+    SiteGalleryController,
     EventInteractionController,
     NotificationController,
     HealthCheckController,
@@ -282,6 +283,11 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('myMessages', [MessageController::class, 'inbox']);
     Route::post('readMessage', [MessageController::class, 'markRead']);
     Route::post('unreadMessageCount', [MessageController::class, 'unreadCount']);
+
+    // ── Site Gallery (approved sites only) ────────────────────────────
+    Route::post('getSiteGallery', [SiteGalleryController::class, 'index']);
+    Route::post('uploadSiteGallery', [SiteGalleryController::class, 'upload']);
+    Route::post('deleteSiteGallery', [SiteGalleryController::class, 'destroy']);
 
     // ── Site Onboarding (user-submitted places) ─────────────────────
     Route::post('parseMapUrl', [AdminSiteController::class, 'parseMapUrl']);
