@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\V2\AdminBannerController;
 use App\Http\Controllers\Admin\V2\EventController as AdminEventController;
 use App\Http\Controllers\Admin\V2\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\V2\MessageController as AdminMessageController;
+use App\Http\Controllers\Admin\V2\EventTypeController as AdminEventTypeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -143,6 +144,7 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
     Route::post('updateSite', [SiteController::class, 'updateSite']);
     Route::post('deleteSite', [SiteController::class, 'deleteSite']);
 
+    Route::post('eventTypeDD', [AdminEventTypeController::class, 'index']);
     Route::post('bannerDaysDD', [DropDownController::class, 'bannerDaysDD']);
     Route::post('bannerImageOrientationDD', [DropDownController::class, 'bannerImageOrientationDD']);
     Route::post('bannerLevelsDD', [DropDownController::class, 'bannerLevelsDD']);

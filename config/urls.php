@@ -16,6 +16,7 @@ return [
         'addGuestQuery',
         'deleteMyAccount',
         'googleAuth',
-        'advertisingPackages'
+        'advertisingPackages',
+        'eventTypeDD'
     ]
 ];
