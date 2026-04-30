@@ -41,6 +41,7 @@ use App\Http\Controllers\User\V2\{
     RouteController,
     EventController,
     EventTypeController,
+    EventGalleryController,
     EventInteractionController,
     NotificationController,
     HealthCheckController,
@@ -255,6 +256,11 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('updateEvent', [EventController::class, 'update']);
     Route::post('deleteEvent', [EventController::class, 'destroy']);
     Route::post('cancelEvent', [EventController::class, 'cancel']);
+
+    // Event Gallery (completed events only)
+    Route::post('getEventGallery', [EventGalleryController::class, 'index']);
+    Route::post('uploadEventGallery', [EventGalleryController::class, 'upload']);
+    Route::post('deleteEventGallery', [EventGalleryController::class, 'destroy']);
 
     // Event Interactions
     Route::post('likeEvent', [EventInteractionController::class, 'like']);

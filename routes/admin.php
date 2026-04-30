@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\V2\EventController as AdminEventController;
 use App\Http\Controllers\Admin\V2\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\V2\MessageController as AdminMessageController;
 use App\Http\Controllers\Admin\V2\EventTypeController as AdminEventTypeController;
+use App\Http\Controllers\Admin\V2\EventGalleryController as AdminEventGalleryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -212,6 +213,11 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
     Route::post('rejectEvent', [AdminEventController::class, 'reject']);
     Route::post('featureEvent', [AdminEventController::class, 'feature']);
     Route::post('eventAnalytics', [AdminEventController::class, 'analytics']);
+
+    // ── Event Gallery ─────────────────────────────────────────────────────────
+    Route::post('getEventGallery', [AdminEventGalleryController::class, 'index']);
+    Route::post('uploadEventGallery', [AdminEventGalleryController::class, 'upload']);
+    Route::post('deleteEventGallery', [AdminEventGalleryController::class, 'destroy']);
 
     // ── Comment Moderation ────────────────────────────────────────────────────
     Route::post('pendingComments', [AdminCommentController::class, 'pending']);

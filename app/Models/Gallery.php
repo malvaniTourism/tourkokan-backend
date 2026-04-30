@@ -36,14 +36,18 @@ class Gallery extends Model
      *
      * @var array
      */
+    protected $appends = ['path_url'];
+
     protected $casts = [
         'is_url' => 'boolean',
         'status' => 'boolean'
     ];
 
-    /**
-     * Get all of the models that own comments.
-     */
+    public function getPathUrlAttribute(): ?string
+    {
+        return storageUrl($this->path);
+    }
+
     public function galleryable()
     {
         return $this->morphTo();

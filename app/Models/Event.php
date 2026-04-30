@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\Hashidable;
+use App\Models\Gallery;
 
 class Event extends Model
 {
@@ -82,6 +83,11 @@ class Event extends Model
         return $this->morphMany(Favourite::class, 'favouritable');
     }
 
+    public function galleries()
+    {
+        return $this->morphMany(Gallery::class, 'galleryable');
+    }
+
     // ── Scopes ─────────────────────────────────────────────────────
 
     public function scopeApproved($query)
@@ -108,14 +114,21 @@ class Event extends Model
         return $query->where('status', 'pending');
     }
 
+    protected $appends = ['banner_image_url', 'is_active', 'countdown_days'];
+
     // ── Accessors ──────────────────────────────────────────────────
 
-    public function getIsActiveAttribute()
+    public function getBannerImageUrlAttribute(): ?string
+    {
+        return storageUrl($this->banner_image);
+    }
+
+    public function getIsActiveAttribute(): bool
     {
         return $this->status === 'approved' && $this->end_date >= now()->toDateString();
     }
 
-    public function getCountdownDaysAttribute()
+    public function getCountdownDaysAttribute(): int
     {
         return now()->diffInDays($this->start_date, false);
     }

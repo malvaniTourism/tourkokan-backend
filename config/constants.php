@@ -22,6 +22,8 @@ return [
         'busType'           => env('APP_ENV', 'other').'/bus_types',
         'site'              => env('APP_ENV', 'other').'/sites',
         'banner'            => env('APP_ENV', 'other').'/banners',
+        'event_banner'      => env('APP_ENV', 'other').'/events/banners',
+        'event_gallery'     => env('APP_ENV', 'other').'/events/gallery',
     ],
     'models' => [
         'City' => 'App\Models\City',

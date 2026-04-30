@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class EventController extends BaseController
@@ -115,6 +116,15 @@ class EventController extends BaseController
                 $input['organizer_email'] = $input['organizer_email'] ?? $user->email;
             }
 
+            // Upload banner image to S3
+            unset($input['banner_image']);
+            if ($request->hasFile('banner_image')) {
+                $input['banner_image'] = uploadFile(
+                    $request->file('banner_image'),
+                    config('constants.upload_path.event_banner')
+                )['path'];
+            }
+
             $event = Event::create($input);
 
             return $this->sendResponse(
@@ -135,7 +145,22 @@ class EventController extends BaseController
     {
         try {
             $event = Event::findOrFail($request->id);
-            $event->update($request->validated());
+
+            $validated = $request->validated();
+
+            // Upload new banner and delete old one from S3
+            unset($validated['banner_image']);
+            if ($request->hasFile('banner_image')) {
+                if ($event->banner_image) {
+                    Storage::delete($event->banner_image);
+                }
+                $validated['banner_image'] = uploadFile(
+                    $request->file('banner_image'),
+                    config('constants.upload_path.event_banner')
+                )['path'];
+            }
+
+            $event->update($validated);
 
             return $this->sendResponse([
                 'id'     => $event->id,
