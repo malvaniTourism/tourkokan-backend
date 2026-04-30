@@ -28,7 +28,7 @@ class EventTypeController extends BaseController
             'is_hot_type' => 'nullable|boolean',
             'top_level'   => 'nullable|boolean',
             'parent_id'   => 'nullable|integer|exists:event_types,id',
-            'status'      => 'nullable|boolean',
+            'status'      => 'nullable',
         ]);
 
         if ($validator->fails()) {
