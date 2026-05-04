@@ -97,7 +97,7 @@ class CategoryController extends BaseController
             'name' => ['required', 'string', 'between:2,100', Rule::unique('categories', 'name')->whereNull('deleted_at')],
             'parent_id' => 'sometimes|integer|exists:categories,id',
             'description' => 'required|string',
-            'icon' => 'nullable|mimes:jpeg,jpg,png|max:512',
+            'icon' => 'nullable|mimes:jpeg,jpg,png,webp|max:512',
             'status' => 'boolean',
             'meta_data' => 'nullable|json'
         ]);
@@ -138,7 +138,7 @@ class CategoryController extends BaseController
             'name' => ['sometimes', 'string', 'between:2,100', Rule::unique('categories', 'name')->ignore($request->id)->whereNull('deleted_at')],
             'parent_id' => 'sometimes|integer|exists:categories,id',
             'description' => 'sometimes|string',
-            'icon' => 'sometimes|nullable|mimes:jpeg,jpg,png|max:512',
+            'icon' => 'sometimes|nullable|mimes:jpeg,jpg,png,webp|max:512',
             'status' => 'sometimes|boolean',
             'meta_data' => 'sometimes|nullable|json'
         ]);
@@ -157,12 +157,10 @@ class CategoryController extends BaseController
 
         foreach ($fileFields as $field) {
             if ($image = $request->file($field)) {
-                $currentFilePath = $category->$field;
-
-                if (Storage::exists($currentFilePath)) {
-                    Storage::delete($currentFilePath);
+                $rawPath = $category->getRawOriginal($field);
+                if ($rawPath && Storage::exists($rawPath)) {
+                    Storage::delete($rawPath);
                 }
-
                 $input[$field] = uploadFile($image, $uploadPath)['path'];
             }
         }
@@ -201,8 +199,9 @@ class CategoryController extends BaseController
             return $this->sendError('Empty', [], 404);
         }
 
-        if (Storage::exists($category->icon)) {
-            Storage::delete($category->icon);
+        $rawIcon = $category->getRawOriginal('icon');
+        if ($rawIcon && Storage::exists($rawIcon)) {
+            Storage::delete($rawIcon);
         }
 
         Cache::forget('subCategories_' . $request->id);

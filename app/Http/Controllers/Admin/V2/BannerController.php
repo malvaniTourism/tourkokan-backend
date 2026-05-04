@@ -26,6 +26,7 @@ class BannerController extends BaseController
         }, 'bannerable.categories' =>  function ($query) {
             $query->select('id', 'name', 'code');
         }])
+            ->orderby('created_at', 'desc')
             ->paginate(10);
 
         return $this->sendResponse($banner, 'All Banner successfully Retrieved...!');
@@ -102,7 +103,7 @@ class BannerController extends BaseController
        
         $uploadPath = config('constants.upload_path.banner');
 
-        $fileFields = ['logo', 'icon', 'image'];
+        $fileFields = ['image'];
 
         foreach ($fileFields as $field) {
             if ($image = $request->file($field)) {
@@ -173,19 +174,18 @@ class BannerController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $image = null;
-        Log::info("upload file starting");
-        //Image 1 store      
-        if ($image = $request->file('image')) {
-            Log::info("inside upload image");
+        $banner = Banner::findOrFail($request->id);
 
-            $image = date('YmdHis') . "." . $image->getClientOriginalExtension();
+        $input = $request->except(['id', 'bannerable_id', 'bannerable_type']);
 
-            $path = $request->file('image')->store(config('constants.upload_path.banner') . $request->bannerable_type . '/' . $request->name);
-
-            $image = Storage::url($path);
-
-            Log::info("FILE STORED" . $image);
+        if ($request->hasFile('image')) {
+            $rawPath = $banner->getRawOriginal('image');
+            if ($rawPath && Storage::exists($rawPath)) {
+                Storage::delete($rawPath);
+            }
+            $input['image'] = uploadFile($request->file('image'), config('constants.upload_path.banner'))['path'];
+        } else {
+            unset($input['image']);
         }
 
         if ($request->bannerable_id && $request->bannerable_type) {
@@ -195,31 +195,12 @@ class BannerController extends BaseController
                 return $this->sendError($request->bannerable_type . ' Not Exist..!', '', 400);
             }
 
-            $banner = Banner::findOrFail($request->id);
-
-            $banner->fill(array_filter([
-                'name'              => $request->name,
-                'image'             => $image,
-                'start_date'        => $request->start_date,
-                'duration'          => $request->duration,
-                'level'             => $request->level,
-                'image_orientation' => $request->image_orientation,
-                'status'            => $request->status,
-                'meta_data'         => $request->meta_data,
-            ], fn($v) => !is_null($v)));
-
             $banner->bannerable()->associate($data);
-            $banner->save();
-
-            return $this->sendResponse($banner, 'Banner updated successfully...!');
         }
 
-        $input = $request->all();
-        $input['image'] = $image;
+        $banner->update(array_filter($input, fn($v) => !is_null($v)));
 
-        $banner = Banner::where('id', $input['id'])->update(array_filter($input, fn($v) => !is_null($v)));
-
-        return $this->sendResponse($input, 'Banner updated successfully...!');
+        return $this->sendResponse($banner->refresh(), 'Banner updated successfully...!');
     }
 
     /**
@@ -239,6 +220,11 @@ class BannerController extends BaseController
         }
 
         $banner = Banner::find($request->id);
+
+        $rawImage = $banner->getRawOriginal('image');
+        if ($rawImage && Storage::exists($rawImage)) {
+            Storage::delete($rawImage);
+        }
 
         $banner->delete();
 

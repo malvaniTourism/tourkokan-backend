@@ -378,27 +378,11 @@ class AuthController extends BaseController
                 $input['password'] = bcrypt($request->password);
             }
 
-            if (isValidReturn($input, 'profile_picture')) {
-
-                $directory = config('constants.upload_path.profile_picture') . $request->name;
-
-                $image_64 = $request->input('profile_picture');
-
-                $extension = explode('/', explode(':', substr($image_64, 0, strpos($image_64, ';')))[1])[1];
-
-                $replace = substr($image_64, 0, strpos($image_64, ',') + 1);
-
-                $image = str_replace($replace, '', $image_64);
-
-                $image = str_replace(' ', '+', $image);
-
-                $imageName = Str::random(10) . '.' . $extension;
-
-                Storage::put($directory . '/' . $imageName, base64_decode($image));
-
-                $input['profile_picture'] = $directory . '/' . $imageName;
-
-                Log::info("FILE STORED" . $input['profile_picture']);
+            if (isset($input['profile_picture']) && $input['profile_picture']) {
+                $rawOld = $user->getRawOriginal('profile_picture');
+                if ($rawOld && !str_starts_with($rawOld, 'http') && Storage::exists($rawOld)) {
+                    Storage::delete($rawOld);
+                }
             }
 
             $updateData = array_filter($input, fn($v) => $v !== null && $v !== '');
@@ -821,7 +805,7 @@ class AuthController extends BaseController
                         'role_id' => $roles->id,
                         'email_verified_at' => Carbon::now(),
                         'isVerified' => true,
-                        'profile_picture' => $googleUser['picture'],
+                        'profile_picture' => preg_replace('/=s\d+-c$/', '=s400-c', $googleUser['picture'] ?? ''),
                         'uid' => Str::random(10), // Assuming uid as coupon code
                     ];
                     
