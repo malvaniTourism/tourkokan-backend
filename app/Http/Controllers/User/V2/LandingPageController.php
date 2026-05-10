@@ -248,6 +248,43 @@ class LandingPageController extends BaseController
             ->limit(5)
             ->get();
 
+        #Hot Sites
+        $hotSitesQuery = Site::select('id', 'name', 'mr_name', 'tag_line', 'logo', 'icon', 'image', 'is_hot_place', 'parent_id')
+            ->withAvg('rating', 'rate')
+            ->whereStatus(true)
+            ->selectSub(function ($query) {
+                $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
+                    ->from('favourites')
+                    ->whereColumn('sites.id', 'favourites.favouritable_id')
+                    ->where('favourites.favouritable_type', Site::class)
+                    ->where('favourites.user_id', auth()->id());
+            }, 'is_favorite')
+            ->inRandomOrder()
+            ->limit(4);
+
+        if ($request->filled('site_id')) {
+            $hotSites = (clone $hotSitesQuery)
+                ->where('parent_id', $request->site_id)
+                ->where('is_hot_place', true)
+                ->get();
+
+            if ($hotSites->isEmpty()) {
+                $hotSites = (clone $hotSitesQuery)
+                    ->where('parent_id', $request->site_id)
+                    ->get();
+            }
+        } else {
+            $hotSites = (clone $hotSitesQuery)
+                ->where('is_hot_place', true)
+                ->get();
+        }
+
+        $hotSites->load(['categories:id,name,code,parent_id,icon,status,is_hot_category']);
+        foreach ($hotSites as $site) {
+            $site->rating_avg_rate = number_format($site->rating_avg_rate, 1);
+            $site->setRelation('gallery', $site->gallery()->limit(3)->get());
+        }
+
 
         $gallery = Gallery::with([
             'galleryable:id,name,parent_id',
@@ -275,7 +312,7 @@ class LandingPageController extends BaseController
         );
         
 
-        $records = Cache::remember('landing_page_data' . auth()->user()->id . '_' . $request->site_id, 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs, $emergency, $categorySites) {
+        $records = Cache::remember('landing_page_data' . auth()->user()->id . '_' . $request->site_id, 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs, $emergency, $categorySites, $hotSites) {
             return array(
                 'version' => AppVersion::latest()->first(),
                 'user' => auth()->user()->load(['addresses']),
@@ -292,7 +329,8 @@ class LandingPageController extends BaseController
                 'gallery' => $gallery,
                 'queries' => $queries,
                 'emergencies' => $emergency,
-                'blogs' => $blogs
+                'blogs' => $blogs,
+                'hot_sites' => $hotSites,
             );
         });
 
@@ -300,6 +338,7 @@ class LandingPageController extends BaseController
 
         if ($cachedData) {
             $cachedData['cities'] = $cities;
+            $cachedData['hot_sites'] = $hotSites;
             $cachedData['unread_message_count'] = AdminMessage::where('user_id', auth()->id())
                 ->where('is_read', false)
                 ->count();
