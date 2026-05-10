@@ -170,6 +170,9 @@ class LandingPageController extends BaseController
                     $query->where('code', $code)
                      ->whereStatus(true);
                 })
+                ->when($request->filled('site_id'), function ($query) use ($request) {
+                    $query->where('parent_id', $request->site_id);
+                })
                 ->selectSub(function ($query) {
                     $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                         ->from('favourites')
