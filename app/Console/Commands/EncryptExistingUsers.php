@@ -42,27 +42,21 @@ class EncryptExistingUsers extends Command
                 $update[$field] = Crypt::encryptString($value);
             }
 
-            // Always recompute blind index hash columns to fix any stale/incorrect values.
-            // Raw DB value may be plaintext (old data) or encrypted (new data).
-            if (!empty($row->email)) {
-                if (!$this->isAlreadyEncrypted($row->email)) {
-                    $update['email_hash'] = User::makeBlindIndex($row->email);
-                } else {
-                    try {
-                        $plain = Crypt::decryptString($row->email);
-                        $update['email_hash'] = User::makeBlindIndex($plain);
-                    } catch (\Throwable) {}
-                }
-            }
+            // Recompute blind-index hashes.
+            // name_hash is always computed — it's a new column, always null for existing rows.
+            // email_hash / mobile_hash are skipped if already populated (set by a previous run).
+            foreach (['name' => 'name_hash', 'email' => 'email_hash', 'mobile' => 'mobile_hash'] as $field => $hashColumn) {
+                $raw = $row->$field ?? null;
+                if (empty($raw)) continue;
 
-            if (!empty($row->mobile)) {
-                if (!$this->isAlreadyEncrypted($row->mobile)) {
-                    $update['mobile_hash'] = User::makeBlindIndex($row->mobile);
-                } else {
-                    try {
-                        $plain = Crypt::decryptString($row->mobile);
-                        $update['mobile_hash'] = User::makeBlindIndex($plain);
-                    } catch (\Throwable) {}
+                if ($field !== 'name' && !empty($row->$hashColumn)) continue;
+
+                $plain = $this->isAlreadyEncrypted($raw)
+                    ? $this->safeDecrypt($raw)
+                    : $raw;
+
+                if ($plain !== null) {
+                    $update[$hashColumn] = User::makeBlindIndex($plain);
                 }
             }
 
@@ -105,6 +99,15 @@ class EncryptExistingUsers extends Command
             return true;
         } catch (\Throwable) {
             return false;
+        }
+    }
+
+    private function safeDecrypt(string $value): ?string
+    {
+        try {
+            return Crypt::decryptString($value);
+        } catch (\Throwable) {
+            return null;
         }
     }
 }

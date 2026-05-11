@@ -20,7 +20,7 @@ class User extends Authenticatable implements JWTSubject
     protected array $fileFields = ['profile_picture'];
 
     /** Fields that get a blind-index hash column auto-populated on save */
-    protected array $blindIndexFields = ['email', 'mobile'];
+    protected array $blindIndexFields = ['name', 'email', 'mobile'];
 
     /**
      * The attributes that are mass assignable.
@@ -32,6 +32,7 @@ class User extends Authenticatable implements JWTSubject
         'language',
         'project_id',
         'name',
+        'name_hash',
         'email',
         'email_hash',
         'password',
@@ -57,6 +58,7 @@ class User extends Authenticatable implements JWTSubject
         'password',
         'remember_token',
         'otp',
+        'name_hash',
         'email_hash',
         'mobile_hash',
     ];
