@@ -6,7 +6,7 @@ namespace App\Traits;
  * Handles encryption of PII fields and blind-index hashing for searchable fields.
  *
  * Model must define:
- *   protected array $blindIndexFields = ['email', 'mobile'];
+ *   protected array $blindIndexFields = ['name', 'email', 'mobile'];
  *
  * Hash columns are auto-populated on every save.
  * Use Model::findByEmail($email) / findByMobile($mobile) for lookups.
