@@ -7,7 +7,6 @@ use App\Models\Category;
 use App\Models\Route;
 use App\Models\RouteStops;
 use App\Models\Site;
-use DateTime;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -39,7 +38,6 @@ class ProcessRouteImport implements ShouldQueue
     public function handle()
     {
         try {
-            $faker = \Faker\Factory::create();
             $errors = [];
             foreach ($this->data as $key => $value) {
                 $sourceSite = Site::where('name', $value['from_stop_name'])->first();
@@ -70,10 +68,6 @@ class ProcessRouteImport implements ShouldQueue
                     $this->writeToCsv('error_routes.csv', $errors);
                     continue;
                 }
-
-                $start_time = new DateTime($faker->dateTimeThisCentury()->format('h:i:s A'));
-
-                $end_time = new DateTime($faker->dateTimeThisCentury($start_time)->format('h:i:s A'));
 
                 $route = Route::where([['name', $value['route_name'], 'route_no' => $value['route_no']]])->first();
 
