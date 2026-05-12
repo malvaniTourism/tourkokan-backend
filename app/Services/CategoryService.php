@@ -43,7 +43,7 @@ class CategoryService
         $query = Category::with($with)
             ->select($fields)
             ->withCount(['sites', 'subCategories'])
-            ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
+            ->whereNotIn('code', self::LOCATION_CODES)
             ->whereStatus(true)
             ->latest()
             ->when($category, fn($q) => $q->where('code', $category))
@@ -66,5 +66,39 @@ class CategoryService
         }
 
         return $categories;
+    }
+
+    /**
+     * Returns codes of all active hot categories.
+     * Used by SiteService::getTrending() to build the trending section dynamically.
+     * Result is cached for 60 minutes — clear with Cache::forget('trending_category_codes').
+     *
+     * @return array<string>
+     */
+    protected const LOCATION_CODES = ['country', 'state', 'district'];
+
+    /**
+     * Returns codes of all active hot categories that have at least one active site.
+     * Location-type categories are excluded — trending is for place types only.
+     * Result is cached for 60 minutes — clear with Cache::forget('trending_category_codes').
+     *
+     * @return array<string>
+     */
+    public function getTrendingCodes(): array
+    {
+        return Cache::remember('trending_category_codes', 60, function () {
+            return Category::whereStatus(true)
+                // ->where('is_hot_category', true)
+                ->whereNotIn('code', self::LOCATION_CODES)
+                ->whereExists(function ($query) {
+                    $query->select(\DB::raw(1))
+                        ->from('category_site')
+                        ->join('sites', 'sites.id', '=', 'category_site.site_id')
+                        ->whereColumn('category_site.category_id', 'categories.id')
+                        ->where('sites.status', true);
+                })
+                ->pluck('code')
+                ->toArray();
+        });
     }
 }

@@ -6,10 +6,16 @@ use App\Models\Site;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\Category;
+use App\Services\SiteService;
 use Illuminate\Support\Facades\Validator;
 
 class SiteController extends BaseController
 {
+    public function __construct(protected SiteService $siteService)
+    {
+        $this->middleware('auth:api');
+    }
+
     public function listCities()
     {
         $user = auth()->user();
@@ -77,7 +83,10 @@ class SiteController extends BaseController
             ->limit(5)
             ->find($request->id);
 
-        return $this->sendResponse($city, 'Cities successfully Retrieved...!');
+        $city->setAttribute('trending',  $this->siteService->getTrending($request->id));
+        $city->setAttribute('hot_sites', $this->siteService->getHotSites($request->id));
+
+        return $this->sendResponse($city, 'Site successfully Retrieved...!');
     }
 
     public function stops()

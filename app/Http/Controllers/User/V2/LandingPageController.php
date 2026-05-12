@@ -26,6 +26,7 @@ use App\Models\AdminMessage;
 use App\Models\Contact;
 use App\Services\CategoryService;
 use App\Services\ContactService;
+use App\Services\SiteService;
 
 class LandingPageController extends BaseController
 {
@@ -37,6 +38,7 @@ class LandingPageController extends BaseController
     public function __construct(
         protected CategoryService $categoryService,
         protected ContactService $contactService,
+        protected SiteService $siteService,
     ) {
         $this->middleware('auth:api');
     }
@@ -159,62 +161,7 @@ class LandingPageController extends BaseController
         }
 
         #Top 5 Hotels, Restaurants, Resorts
-        $categoryCodes = ['hotel', 'restaurant', 'resort'];
-        $categorySites = [];
-
-        foreach ($categoryCodes as $code) {
-            $sites = Site::withCount(['sites', 'photos', 'comment'])
-                ->withAvg('rating', 'rate')
-                ->whereStatus(true)
-                ->whereHas('categories', function ($query) use ($code) {
-                    $query->where('code', $code)
-                     ->whereStatus(true);
-                })
-                ->when($request->filled('site_id'), function ($query) use ($request) {
-                    $query->where('parent_id', $request->site_id);
-                })
-                ->selectSub(function ($query) {
-                    $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
-                        ->from('favourites')
-                        ->whereColumn('sites.id', 'favourites.favouritable_id')
-                        ->where('favourites.favouritable_type', Site::class)
-                        ->where('favourites.user_id', auth()->id());
-                }, 'is_favorite')
-                ->latest()
-                ->limit(5)
-                ->get()
-                ->map(function ($site) {
-                    $site->rating_avg_rate = number_format($site->rating_avg_rate, 1);
-                    return $site;
-                });
-
-            $sites->load([
-                'categories:id,name,code,parent_id,icon,status,is_hot_category'
-            ]);
-
-            foreach ($sites as $site) {
-                $site->setRelation('gallery', $site->gallery()
-                        ->limit(5)
-                        ->get());
-
-                $site->setRelation('comment', $site->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
-                        ->limit(5)
-                        ->get()
-                        ->each(function ($comment) {
-                            $comment->setRelation('comments', $comment->comments()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
-                                    ->limit(5)
-                                    ->get()
-                                    ->each(function ($reply) {
-                                        $reply->setRelation('users', $reply->users()->select('id', 'name', 'email', 'profile_picture')->get());
-                                    }
-                                )
-                            );
-                            $comment->setRelation('users', $comment->users()->select('id', 'name', 'email', 'profile_picture')->get());
-                        })
-                );
-            }
-            $categorySites[\Illuminate\Support\Str::plural($code)] = $sites;
-        }
+        $categorySites = $this->siteService->getTrending($request->filled('site_id') ? $request->site_id : null);
 
         #Routes
         $routes = Route::with([
@@ -252,41 +199,7 @@ class LandingPageController extends BaseController
             ->get();
 
         #Hot Sites
-        $hotSitesQuery = Site::select('id', 'name', 'mr_name', 'tag_line', 'logo', 'icon', 'image', 'is_hot_place', 'parent_id')
-            ->withAvg('rating', 'rate')
-            ->whereStatus(true)
-            ->selectSub(function ($query) {
-                $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
-                    ->from('favourites')
-                    ->whereColumn('sites.id', 'favourites.favouritable_id')
-                    ->where('favourites.favouritable_type', Site::class)
-                    ->where('favourites.user_id', auth()->id());
-            }, 'is_favorite')
-            ->inRandomOrder()
-            ->limit(4);
-
-        if ($request->filled('site_id')) {
-            $hotSites = (clone $hotSitesQuery)
-                ->where('parent_id', $request->site_id)
-                ->where('is_hot_place', true)
-                ->get();
-
-            if ($hotSites->isEmpty()) {
-                $hotSites = (clone $hotSitesQuery)
-                    ->where('parent_id', $request->site_id)
-                    ->get();
-            }
-        } else {
-            $hotSites = (clone $hotSitesQuery)
-                ->where('is_hot_place', true)
-                ->get();
-        }
-
-        $hotSites->load(['categories:id,name,code,parent_id,icon,status,is_hot_category']);
-        foreach ($hotSites as $site) {
-            $site->rating_avg_rate = number_format($site->rating_avg_rate, 1);
-            $site->setRelation('gallery', $site->gallery()->limit(3)->get());
-        }
+        $hotSites = $this->siteService->getHotSites($request->filled('site_id') ? $request->site_id : null);
 
 
         $gallery = Gallery::with([
