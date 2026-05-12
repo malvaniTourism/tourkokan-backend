@@ -174,6 +174,10 @@ function callExternalAPI($method, $url, $payload)
 
 function getLocationDetails($latitude, $longitude)
 {
+    if (empty($latitude) || empty($longitude)) {
+        return null;
+    }
+
     try {
 
         $country = null;
