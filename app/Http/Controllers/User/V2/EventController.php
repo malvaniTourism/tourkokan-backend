@@ -16,15 +16,14 @@ use Illuminate\Support\Facades\Validator;
 class EventController extends BaseController
 {
     /**
-     * List approved upcoming events with filters.
+     * List all approved events with optional filters.
      * GET /api/v2/events
      */
     public function index(Request $request)
     {
         try {
             $query = Event::with(['eventType', 'site:id,name'])
-                ->approved()
-                ->upcoming();
+                ->approved();
 
             if ($request->filled('search')) {
                 $search = $request->search;
@@ -53,6 +52,10 @@ class EventController extends BaseController
 
             if ($request->filled('end_date')) {
                 $query->where('end_date', '<=', $request->end_date);
+            }
+
+            if ($request->boolean('upcoming')) {
+                $query->upcoming();
             }
 
             if ($request->filled('is_featured') && $request->is_featured) {
