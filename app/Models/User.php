@@ -75,7 +75,7 @@ class User extends Authenticatable implements JWTSubject
         'name'              => 'encrypted',
         'email'             => 'encrypted',
         'mobile'            => 'encrypted',
-        'dob'               => 'encrypted',
+        'dob'               => 'date:Y-m-d',
         'gender'            => 'encrypted',
     ];
 

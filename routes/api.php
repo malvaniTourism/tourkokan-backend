@@ -48,7 +48,6 @@ use App\Http\Controllers\User\V2\{
     HealthCheckController,
     MessageController,
 };
-use App\Http\Controllers\Admin\V2\SiteController as AdminSiteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -290,11 +289,11 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('deleteSiteGallery', [SiteGalleryController::class, 'destroy']);
 
     // ── Site Onboarding (user-submitted places) ─────────────────────
-    Route::post('parseMapUrl', [AdminSiteController::class, 'parseMapUrl']);
-    Route::post('addSite', [AdminSiteController::class, 'submitSite']);
-    Route::post('mySubmissions', [AdminSiteController::class, 'mySubmissions']);
-    Route::post('updateMySubmission', [AdminSiteController::class, 'updateSubmission']);
-    Route::post('deleteMySubmission', [AdminSiteController::class, 'deleteSubmission']);
+    Route::post('parseMapUrl', [SiteController::class, 'parseMapUrl']);
+    Route::post('addSite', [SiteController::class, 'submitSite']);
+    Route::post('mySubmissions', [SiteController::class, 'mySubmissions']);
+    Route::post('updateMySubmission', [SiteController::class, 'updateSubmission']);
+    Route::post('deleteMySubmission', [SiteController::class, 'deleteSubmission']);
 });
 
 use Illuminate\Support\Facades\Mail;

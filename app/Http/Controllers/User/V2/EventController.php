@@ -220,12 +220,33 @@ class EventController extends BaseController
                 )['path'];
             }
 
+            // If the event was approved, move it back to pending for re-review
+            $previousStatus = $event->status;
+            if ($previousStatus === 'approved') {
+                $validated['status']       = 'pending';
+                $validated['approved_by']  = null;
+                $validated['approved_at']  = null;
+                $validated['meta_data']    = array_merge($event->meta_data ?? [], [
+                    'resubmission' => [
+                        'message'         => 'Event details were updated by the organizer and require re-approval.',
+                        'previous_status' => $previousStatus,
+                        'updated_at'      => now()->toDateTimeString(),
+                    ],
+                ]);
+            }
+
             $event->update($validated);
 
+            $fresh = $event->fresh();
+
             return $this->sendResponse([
-                'id'     => $event->id,
-                'status' => $event->fresh()->status,
-            ], 'Event updated successfully');
+                'id'       => $fresh->id,
+                'status'   => $fresh->status,
+                'meta_data' => $fresh->meta_data,
+            ], $previousStatus === 'approved'
+                ? 'Event updated and sent for re-approval.'
+                : 'Event updated successfully.'
+            );
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
             throw $th;

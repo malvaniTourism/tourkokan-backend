@@ -26,7 +26,7 @@ class Event extends Model
         'favourite_count', 'going_count', 'interested_count',
         'is_featured', 'featured_until', 'is_sponsored', 'sponsor_name',
         'notification_sent', 'reminder_sent',
-        'approved_by', 'approved_at', 'admin_notes',
+        'approved_by', 'approved_at', 'admin_notes', 'meta_data',
     ];
 
     protected $casts = [
@@ -44,6 +44,7 @@ class Event extends Model
         'registration_required' => 'boolean',
         'notification_sent'     => 'boolean',
         'reminder_sent'         => 'boolean',
+        'meta_data'             => 'array',
     ];
 
     // ── Relationships ──────────────────────────────────────────────
