@@ -154,11 +154,20 @@ class CommentController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $comment = Comment::where([
-            'id' => $request->id, 'user_id' => auth()->id()
-        ])->update($request->all());
+        $comment = Comment::where('id', $request->id)
+            ->where('user_id', auth()->id())
+            ->first();
 
-        return $this->sendResponse($comment, 'Comment updated successfully...!');
+        if (!$comment) {
+            return $this->sendError('Comment not found or you are not authorized to edit it.', '', 403);
+        }
+
+        $comment->update([
+            'comment' => $request->comment,
+            'status'  => false,
+        ]);
+
+        return $this->sendResponse(['pending' => true], 'Comment updated and awaiting approval.');
     }
 
     /**
@@ -176,11 +185,16 @@ class CommentController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $comment = Comment::where([
-            'id' => $request->id,
-            'user_id' => auth()->id()
-        ])->delete();
+        $comment = Comment::where('id', $request->id)
+            ->where('user_id', auth()->id())
+            ->first();
 
-        return $this->sendResponse($comment, 'Comment deleted successfully...!');
+        if (!$comment) {
+            return $this->sendError('Comment not found or you are not authorized to delete it.', '', 403);
+        }
+
+        $comment->delete();
+
+        return $this->sendResponse(null, 'Comment deleted successfully.');
     }
 }

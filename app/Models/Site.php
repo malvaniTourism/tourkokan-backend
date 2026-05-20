@@ -191,7 +191,7 @@ class Site extends Model
      */
     public function comment()
     {
-        return $this->morphMany(Comment::class, 'commentable')->whereNull('parent_id');
+        return $this->morphMany(Comment::class, 'commentable')->whereNull('parent_id')->where('status', true);
     }
 
     /**

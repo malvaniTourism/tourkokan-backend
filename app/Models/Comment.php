@@ -59,7 +59,7 @@ class Comment extends Model
      */
     public function comments()
     {
-        return $this->hasMany(Comment::class, 'parent_id');
+        return $this->hasMany(Comment::class, 'parent_id')->where('status', true);
     }
     
     /**

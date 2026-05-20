@@ -62,15 +62,15 @@ class LandingPageController extends BaseController
         $banners = BannerPlacement::with(['banners' => function ($query) {
             $query->where('is_active', true)
                 ->where('status', 'approved')
-                ->whereDate('start_date', '<=', now())
-                ->whereDate('end_date', '>=', now())
+                // ->whereDate('start_date', '<=', now())
+                // ->whereDate('end_date', '>=', now())
                 ->latest();
         }])
             ->whereHas('banners', function ($query) {
                 $query->where('is_active', true)
-                    ->where('status', 'approved')
-                    ->whereDate('start_date', '<=', now())
-                    ->whereDate('end_date', '>=', now());
+                    ->where('status', 'approved');
+                    // ->whereDate('start_date', '<=', now())
+                    // ->whereDate('end_date', '>=', now());
             })
             ->get()
             ->mapWithKeys(function ($item) {
