@@ -28,7 +28,6 @@ class User extends Authenticatable implements JWTSubject
      * @var string[]
      */
     protected $fillable = [
-        'role_id',
         'language',
         'project_id',
         'name',
@@ -121,7 +120,12 @@ class User extends Authenticatable implements JWTSubject
      */
     public function roles()
     {
-        return $this->belongsTo(Roles::class, 'role_id');
+        return $this->belongsToMany(Roles::class, 'user_roles', 'user_id', 'role_id');
+    }
+
+    public function hasRole(string $code): bool
+    {
+        return $this->roles()->where('code', $code)->exists();
     }
 
     /**

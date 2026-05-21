@@ -24,13 +24,34 @@ class AppServiceProvider extends ServiceProvider
         // Custom auth provider using blind-index hashes for encrypted email/mobile lookups
         Auth::provider('encrypted', fn($app, $config) => new EncryptedUserProvider($app['hash']));
 
-        // Rate limiters (moved from RouteServiceProvider)
+        // General read API: 60/min per authenticated user or IP
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Admin operations: 60/min per user (admins do more frequent CRUD)
         RateLimiter::for('admin', function (Request $request) {
-            return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Auth routes (login/register/googleAuth): 10/min per IP — brute-force protection
+        RateLimiter::for('auth', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip());
+        });
+
+        // OTP send/verify: 3/min per IP — prevents SMS cost abuse
+        RateLimiter::for('otp', function (Request $request) {
+            return Limit::perMinute(3)->by($request->ip());
+        });
+
+        // Write/mutation routes (create, update, delete): 30/min per user
+        RateLimiter::for('writes', function (Request $request) {
+            return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // File upload routes: 5/min per user — storage cost protection
+        RateLimiter::for('uploads', function (Request $request) {
+            return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
         });
 
         // Model observers

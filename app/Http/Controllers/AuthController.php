@@ -47,7 +47,7 @@ class AuthController extends BaseController
 
     public function allUsers()
     {
-        if (in_array(auth()->user()->roles->code, ['superadmin', 'admin'])) {
+        if (auth()->user()->hasRole('superadmin') || auth()->user()->hasRole('admin')) {
             $user = User::with('roles')
                 ->paginate(request()->per_page);
             return $this->sendResponse($user, 'User successfully registered');
@@ -116,16 +116,13 @@ class AuthController extends BaseController
 
         $user = Auth::user();
 
-        $roles = Roles::whereIn('name', ['superadmin', 'admin'])->get();
-        if (
-            $user &&
-            Str::startsWith($request->route()->getPrefix(), 'admin') &&
-            !in_array($user->roles->id, array_column($roles->toArray(), 'id'))
-        ) {
+        $isAdmin = $user->hasRole('superadmin') || $user->hasRole('admin');
+
+        if ($user && Str::startsWith($request->route()->getPrefix(), 'admin') && !$isAdmin) {
             return $this->sendError('Unauthorized', '', 401);
         }
 
-        if ($user && !$user->isVerified && !in_array($user->roles->id, array_column($roles->toArray(), 'id'))) {
+        if ($user && !$user->isVerified && !$isAdmin) {
             return $this->sendError('Please verify your email for login', '', 200);
         }
 
@@ -148,7 +145,7 @@ class AuthController extends BaseController
             $isGuest = $request->input('is_guest', false);
 
             $rules = [
-                'role_id' => 'sometimes|exists:roles,id',
+                'role_code' => 'sometimes|exists:roles,code',
                 'language' => 'sometimes|required|in:mr,en',
                 'name' => 'required|string|between:2,60',
                 'email' => 'required_if:mobile,null|nullable|string|email|max:100',
@@ -236,16 +233,13 @@ class AuthController extends BaseController
 
             $input['password'] = bcrypt($password);
 
-            if (
-                Str::startsWith($request->route()->getPrefix(), 'admin') &&
-                $request->has('role_id')
-            ) {
-                $input['role_id'] = $request->role_id;
+            // Determine role to assign
+            if (Str::startsWith($request->route()->getPrefix(), 'admin') && $request->filled('role_code')) {
+                $assignRole = Roles::where('code', $request->role_code)->first();
             } else {
-                $roles = Roles::whereIn('code', ['tourist'])->first();
-
-                $input['role_id'] = $roles->id;
+                $assignRole = Roles::where('code', 'tourist')->first();
             }
+            unset($input['role_code']);
 
             #considering uid as coupon code
             $input['uid'] = Str::random(10);
@@ -257,6 +251,10 @@ class AuthController extends BaseController
             }
 
             $user = User::create($input);
+
+            if ($assignRole) {
+                $user->roles()->attach($assignRole->id);
+            }
 
             $referrer = [];
 
@@ -294,7 +292,9 @@ class AuthController extends BaseController
 
             $user->wallets()->save($newUserWallet);
 
-            $user = User::select('id', 'role_id', 'name', 'email', 'isVerified', 'profile_picture', 'gender', 'uid')->find($user->id);
+            $user = User::with('roles:id,name,code')
+                ->select('id', 'name', 'email', 'isVerified', 'profile_picture', 'gender', 'uid')
+                ->find($user->id);
 
             if ($request->has(['latitude', 'longitude'])) {
                 $locationDetails = getLocationDetails($request->latitude, $request->longitude);
@@ -304,13 +304,11 @@ class AuthController extends BaseController
                 }
             }
 
-            $roles = Roles::whereIn('code', ['superadmin', 'admin'])->get();
-
             if (
                 $user &&
                 !empty($user->email) &&
                 !Str::startsWith($request->route()->getPrefix(), 'admin') &&
-                !in_array($user->roles->id, array_column($roles->toArray(), 'id'))
+                !($user->hasRole('superadmin') || $user->hasRole('admin'))
             ) {
                 Mail::to($user->email)->send(new WelcomeEmail($user, $password));
             }
@@ -560,12 +558,15 @@ class AuthController extends BaseController
      */
     protected function createNewToken($token, $message, $isGuest = false)
     {
+        $user = JWTAuth::setToken($token)->authenticate();
+        $user->load('roles:id,name,code');
+
         $response = [
             'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => null,
-            'isGuest' => $isGuest,
-            'user' => JWTAuth::setToken($token)->authenticate()
+            'token_type'   => 'bearer',
+            'expires_in'   => null,
+            'isGuest'      => $isGuest,
+            'user'         => $user,
         ];
 
         return $this->sendResponse($response, $message);
@@ -800,12 +801,11 @@ class AuthController extends BaseController
                     $input = [
                         'name' => $googleUser['name'],
                         'email' => $googleUser['email'],
-                        'password' => bcrypt($password), // Store hashed password
-                        'role_id' => $roles->id,
+                        'password' => bcrypt($password),
                         'email_verified_at' => Carbon::now(),
                         'isVerified' => true,
                         'profile_picture' => preg_replace('/=s\d+-c$/', '=s400-c', $googleUser['picture'] ?? ''),
-                        'uid' => Str::random(10), // Assuming uid as coupon code
+                        'uid' => Str::random(10),
                     ];
                     
                     $joiningBonus = BonusTypes::where(['code' => 'joining_bonus_coins'])->first();
@@ -815,7 +815,8 @@ class AuthController extends BaseController
                     }
     
                     $user = User::create($input);
-    
+                    $user->roles()->attach($roles->id);
+
                     $referrer = [];
 
                     if (isValidReturn($request, 'referral_code')) {
@@ -852,8 +853,10 @@ class AuthController extends BaseController
         
                     $user->wallets()->save($newUserWallet);
         
-                    $user = User::select('id', 'role_id', 'name', 'email', 'isVerified', 'profile_picture', 'gender', 'uid')->find($user->id);
-        
+                    $user = User::with('roles:id,name,code')
+                        ->select('id', 'name', 'email', 'isVerified', 'profile_picture', 'gender', 'uid')
+                        ->find($user->id);
+
                     if ($request->has(['latitude', 'longitude'])) {
                         $locationDetails = getLocationDetails($request->latitude, $request->longitude);
         

@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
@@ -29,11 +30,19 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth'          => \App\Http\Middleware\Authenticate::class,
             'guest'         => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'admin'         => \App\Http\Middleware\AdminAccessMiddleware::class,
+            'vendor'        => \App\Http\Middleware\VendorMiddleware::class,
             'premiddleware' => \App\Http\Middleware\PreMiddleware::class,
             'throttle'      => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Too many requests. Please slow down and try again later.',
+            ], 429, ['Retry-After' => $e->getHeaders()['Retry-After'] ?? 60]);
+        });
+
         $exceptions->render(function (AuthenticationException $e, Request $request) {
             return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
         });

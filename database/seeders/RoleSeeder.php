@@ -46,6 +46,10 @@ class RoleSeeder extends Seeder
             [
                 'code' => 'vlogger',
                 'name' => 'Vlogger'
+            ],
+            [
+                'code' => 'vendor',
+                'name' => 'Vendor'
             ]
         );
 

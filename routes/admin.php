@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\V2\MessageController as AdminMessageController;
 use App\Http\Controllers\Admin\V2\EventTypeController as AdminEventTypeController;
 use App\Http\Controllers\Admin\V2\EventGalleryController as AdminEventGalleryController;
 use App\Http\Controllers\Admin\V2\SiteGalleryController as AdminSiteGalleryController;
+use App\Http\Controllers\Admin\V2\UserRoleRequestController as AdminUserRoleRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,7 +47,7 @@ Route::get('/', function () {
     print('I am an admin');
 });
 
-Route::group(['middleware' => ['api', 'premiddleware']], function ($router) {
+Route::group(['middleware' => ['api', 'premiddleware', 'throttle:auth']], function ($router) {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -124,15 +125,18 @@ Route::group(['middleware' => ['admin', 'auth:api', 'premiddleware'], 'prefix' =
 });
 
 
-Route::group(['middleware' => ['api', 'premiddleware'], 'prefix' => 'v2/auth'], function ($router) {
+Route::group(['middleware' => ['api', 'premiddleware', 'throttle:auth'], 'prefix' => 'v2/auth'], function ($router) {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('refresh', [AuthController::class, 'refresh']);
-    Route::post('sendOtp', [AuthController::class, 'sendOtp']);
-    Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
+
+    Route::middleware('throttle:otp')->group(function () {
+        Route::post('sendOtp', [AuthController::class, 'sendOtp']);
+        Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
+    });
 });
 
-Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'], function ($router) {
+Route::group(['middleware' =>  ['auth:api', 'premiddleware', 'throttle:admin'], 'prefix' => 'v2'], function ($router) {
     Route::post('listcategories', [CategoryController::class, 'listcategories']);
     Route::post('getCategory', [CategoryController::class, 'getCategory']);
     Route::post('addCategory', [CategoryController::class, 'addCategory']);
@@ -217,7 +221,7 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 
     // ── Event Gallery ─────────────────────────────────────────────────────────
     Route::post('getEventGallery', [AdminEventGalleryController::class, 'index']);
-    Route::post('uploadEventGallery', [AdminEventGalleryController::class, 'upload']);
+    Route::post('uploadEventGallery', [AdminEventGalleryController::class, 'upload'])->middleware('throttle:uploads');
     Route::post('deleteEventGallery', [AdminEventGalleryController::class, 'destroy']);
 
     // ── Comment Moderation ────────────────────────────────────────────────────
@@ -228,7 +232,7 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 
     // ── Site Gallery ──────────────────────────────────────────────────────────
     Route::post('getSiteGallery', [AdminSiteGalleryController::class, 'index']);
-    Route::post('uploadSiteGallery', [AdminSiteGalleryController::class, 'upload']);
+    Route::post('uploadSiteGallery', [AdminSiteGalleryController::class, 'upload'])->middleware('throttle:uploads');
     Route::post('deleteSiteGallery', [AdminSiteGalleryController::class, 'destroy']);
 
     // ── Site Submission Review ────────────────────────────────────────────────
@@ -237,6 +241,11 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
     Route::post('approveSite', [SiteController::class, 'approveSite']);
     Route::post('rejectSite', [SiteController::class, 'rejectSite']);
 
+    // ── User Role Requests ────────────────────────────────────────────────────
+    Route::post('userRoleRequests', [AdminUserRoleRequestController::class, 'index']);
+    Route::post('approveRoleRequest', [AdminUserRoleRequestController::class, 'approve']);
+    Route::post('rejectRoleRequest', [AdminUserRoleRequestController::class, 'reject']);
+
     // ── Direct Messaging ──────────────────────────────────────────────────────
     Route::post('sendMessage', [AdminMessageController::class, 'send']);
     Route::post('listMessages', [AdminMessageController::class, 'index']);
@@ -244,7 +253,7 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 });
 
 // Admin-only route management (requires admin role)
-Route::group(['middleware' => ['auth:api', 'premiddleware', 'admin'], 'prefix' => 'v2'], function () {
+Route::group(['middleware' => ['auth:api', 'premiddleware', 'admin', 'throttle:admin'], 'prefix' => 'v2'], function () {
     Route::post('addRoute', [RouteController::class, 'addRoute']);
     Route::post('routesUpdate', [RouteController::class, 'routesUpdate']);
     Route::post('deleteRoute', [RouteController::class, 'deleteRoute']);
