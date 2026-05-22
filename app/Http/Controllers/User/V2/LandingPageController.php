@@ -255,6 +255,7 @@ class LandingPageController extends BaseController
         if ($cachedData) {
             $cachedData['cities'] = $cities;
             $cachedData['hot_sites'] = $hotSites;
+            $cachedData['trending'] = $categorySites;
             $cachedData['unread_message_count'] = AdminMessage::where('user_id', auth()->id())
                 ->where('is_read', false)
                 ->count();
