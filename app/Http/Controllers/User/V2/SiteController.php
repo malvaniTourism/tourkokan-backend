@@ -29,7 +29,7 @@ class SiteController extends BaseController
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
-                    ->where('favourites.favouritable_type', Site::class)
+                    ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                     ->where('favourites.user_id', $user->id);
             }, 'is_favorite')
             ->whereHas('categories', function ($query) {
@@ -79,7 +79,7 @@ class SiteController extends BaseController
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
-                    ->where('favourites.favouritable_type', Site::class)
+                    ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                     ->where('favourites.user_id', $user_id);
             }, 'is_favorite')
             ->latest()
@@ -136,7 +136,7 @@ class SiteController extends BaseController
                         $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                             ->from('favourites')
                             ->whereColumn('sites.id', 'favourites.favouritable_id')
-                            ->where('favourites.favouritable_type', Site::class)
+                            ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                             ->where('favourites.user_id', $user->id);
                     }, 'is_favorite')
                     ->orderBy('name', 'asc')
@@ -197,7 +197,7 @@ class SiteController extends BaseController
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
-                    ->where('favourites.favouritable_type', Site::class)
+                    ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                     ->where('favourites.user_id', $user->id);
             }, 'is_favorite')
                 ->withAvg("rating", 'rate')

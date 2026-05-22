@@ -36,7 +36,7 @@ class SiteService
                     $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                         ->from('favourites')
                         ->whereColumn('sites.id', 'favourites.favouritable_id')
-                        ->where('favourites.favouritable_type', Site::class)
+                        ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                         ->where('favourites.user_id', auth()->id());
                 }, 'is_favorite')
                 ->latest()
@@ -100,7 +100,7 @@ class SiteService
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
-                    ->where('favourites.favouritable_type', Site::class)
+                    ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                     ->where('favourites.user_id', auth()->id());
             }, 'is_favorite')
             ->inRandomOrder()
