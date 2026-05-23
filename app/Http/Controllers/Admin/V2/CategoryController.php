@@ -44,6 +44,10 @@ class CategoryController extends BaseController
         $categories = Category::select(isValidReturn(config('grid.categories.' . $request->apitype), 'columns', '*'))
             ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area', 'destination']);
 
+        if ($request->apitype === 'list') {
+            $categories = $categories->with(['subCategories:id,name,mr_name,code,parent_id,icon,status,is_hot_category']);
+        }
+
         if ($request->parent_id) {
             $categories = $categories->where('parent_id', $request->parent_id);
         } else {
