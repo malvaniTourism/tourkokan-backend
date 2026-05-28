@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Log;
 
 class FirebaseService
 {
-    private string $serverKey;
-    private string $fcmUrl;
+    private ?string $serverKey;
+    private ?string $fcmUrl;
 
     public function __construct()
     {
