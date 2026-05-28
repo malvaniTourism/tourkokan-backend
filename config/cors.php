@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*', 'https://malvanitourism.github.io', 'https://tourkokan.com', 'https://dev.tourkokan.com'],
+    'allowed_origins' => ['*', 'https://malvanitourism.github.io', 'https://tourkokan.com', 'https://dev.tourkokan.com', "https://api-test.tourkokan.com"],
     
     'allowed_origins_patterns' => [],
 
