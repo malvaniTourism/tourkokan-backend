@@ -67,15 +67,8 @@ class RouteController extends BaseController
     public function routes(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'per_page' => 'sometimes|integer|min:1|max:20',
-        ]);
-
-        if ($validator->fails()) {
-            return $this->sendError($validator->errors(), '', 200);
-        }
-        
-        $validator = Validator::make($request->all(), [
-            'source_place_id' => 'nullable|required_with:destination_place_id|exists:sites,id',
+            'per_page'             => 'sometimes|integer|min:1|max:20',
+            'source_place_id'      => 'nullable|required_with:destination_place_id|exists:sites,id',
             'destination_place_id' => 'nullable|required_with:source_place_id|exists:sites,id',
         ]);
 
@@ -83,87 +76,12 @@ class RouteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        // if ($request->source_place_id) {
-        //    return 5;
-        // }
-        // return $request->all();
-
-        // $routeIds = Route::whereHas('routeStops', function ($query) use ($request) {
-        //     if ($request->source_place_id && $request->destination_place_id) {
-        //         $query->where('site_id', $request->source_place_id)
-        //             ->whereBetween('serial_no', [
-        //                 DB::raw("(SELECT MIN(serial_no) FROM route_stops WHERE route_id = routes.id AND site_id IN ($request->source_place_id, $request->destination_place_id))"),
-        //                 DB::raw("(SELECT MAX(serial_no) FROM route_stops WHERE route_id = routes.id AND site_id IN ($request->source_place_id, $request->destination_place_id))"),
-        //             ]);
-        //     }
-        // })->pluck('id');
-
-        // $where = array(
-        //     'source_place_id' => $request->source_place_id,
-        //     'destination_place_id' => $request->destination_place_id,
-        // );
-
-        // // $routeIds = Route::with('routeStops')->where($where)->get();
-
-        // $whereRouteStops = array(
-        //     'site_id' => $request->source_place_id,
-        //     'site_id' => $request->destination_place_id
-        // );
-        // $routeIds = RouteStops::where($whereRouteStops)->get();
-
-        $routes = RouteStops::where('site_id', $request->source_place_id)
-            ->orWhere('site_id', $request->destination_place_id)
-            ->orderBy('route_id')
-            ->get();
-
-        // Group routes by route id
-        $groupedRoutes = $routes->groupBy('route_id');
-
-        // Filter routes with both source and destination place ids
-        $validRoutes = $groupedRoutes->filter(function ($stops) use ($request) {
-            $sourceStop = $stops->firstWhere('site_id', $request->source_place_id);
-            $destinationStop = $stops->firstWhere('site_id', $request->destination_place_id);
-
-            // Check if both source and destination stops exist in the route
-            if ($sourceStop && $destinationStop) {
-                // Ensure source stop's serial number is less than destination stop's serial number
-                return $sourceStop->serial_no < $destinationStop->serial_no;
-            }
-
-            return false; // Return false if any of the stops is missing
-        });
-
-        // Get the route_ids of the filtered routes
-        $routeIds = $validRoutes->keys()->toArray();
-
-        // $routeIds = Route::whereHas('routeStops', function ($query) use ($request) {
-        //     if ($request->source_place_id && $request->destination_place_id) {
-        //         $query->whereIn('site_id', [$request->source_place_id, $request->destination_place_id])
-        //             ->where(function ($q) use ($request) {
-        //                 $q->where('serial_no', '>', function ($subQuery) use ($request) {
-        //                     $subQuery->select(DB::raw('MIN(serial_no)'))
-        //                         ->from('route_stops')
-        //                         ->whereColumn('route_stops.route_id', 'routes.id')
-        //                         ->whereIn('site_id', [$request->source_place_id, $request->destination_place_id]);
-        //                 })->where('serial_no', '<', function ($subQuery) use ($request) {
-        //                     $subQuery->select(DB::raw('MAX(serial_no)'))
-        //                         ->from('route_stops')
-        //                         ->whereColumn('route_stops.route_id', 'routes.id')
-        //                         ->whereIn('site_id', [$request->source_place_id, $request->destination_place_id]);
-        //                 });
-        //             });
-        //     }
-        // })->pluck('id');
-
-        $routes = Route::with([
-            'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time,distance',
-            'routeStops.site:id,name,mr_name',
-            'routeStops.site.categories:id,name,icon',
+        $query = Route::with([
             'sourcePlace:id,name,mr_name',
             'sourcePlace.categories:id,name,icon',
             'destinationPlace:id,name,mr_name',
             'destinationPlace.categories:id,name,icon',
-            'busType:id,type,logo,meta_data'
+            'busType:id,type,logo,meta_data',
         ])->select(
             'id',
             'source_place_id',
@@ -174,52 +92,24 @@ class RouteController extends BaseController
             'end_time',
             'total_time',
             'delayed_time',
-            DB::raw('ROUND((SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id), 2) AS distance')
+            DB::raw('ROUND((SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id), 2) AS distance'),
+            DB::raw('(SELECT COUNT(*) FROM route_stops WHERE route_id = routes.id) AS route_stops_count')
         );
 
-        if ($request->source_place_id && $request->destination_place_id) {
-            $routes->whereIn('id', $routeIds);
+        if ($request->filled('source_place_id') && $request->filled('destination_place_id')) {
+            // Self-join on route_stops: find routes where source serial_no < destination serial_no
+            $routeIds = DB::table('route_stops as rs1')
+                ->join('route_stops as rs2', 'rs1.route_id', '=', 'rs2.route_id')
+                ->where('rs1.site_id', $request->source_place_id)
+                ->where('rs2.site_id', $request->destination_place_id)
+                ->whereColumn('rs1.serial_no', '<', 'rs2.serial_no')
+                ->distinct()
+                ->pluck('rs1.route_id');
+
+            $query->whereIn('id', $routeIds);
         }
 
-        $routes = $routes->paginate($request->input('per_page', 15));
-
-        #need to test on both query for performance
-
-        // $data = $request->validate([
-        //     'source_place_id' => 'exists:places,id|required_with:destination_place_id',
-        //     'destination_place_id' => 'exists:places,id|required_with:source_place_id',
-        // ]);
-
-
-        // $routes = Route::with([
-        //     'routeStops:id,serial_no,route_id,place_id,arr_time,dept_time,total_time,delayed_time',
-        //     'routeStops.place:id,name,place_category_id',
-        //     'routeStops.place.category:id,name,icon',
-        //     'sourcePlace:id,name,place_category_id',
-        //     'sourcePlace.category:id,name,icon',
-        //     'destinationPlace:id,name,place_category_id',
-        //     'destinationPlace.category:id,name,icon',
-        //     'busType:id,type,logo'
-        // ])->select('id', 'source_place_id', 'destination_place_id', 'bus_type_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time')
-        //     ->whereHas('routeStops', function ($query) use ($request) {
-        //         $sourcePlaceId = $request->source_place_id;
-        //         $destinationPlaceId = $request->destination_place_id;
-
-        //         $query->where('place_id', $sourcePlaceId)
-        //             ->whereExists(function ($subquery) use ($sourcePlaceId, $destinationPlaceId) {
-        //                 $subquery->select(DB::raw(1))
-        //                     ->from('route_stops')
-        //                     ->where('route_id', DB::raw('routes.id'))
-        //                     ->where('place_id', $destinationPlaceId)
-        //                     ->where('serial_no', '>', function ($subsubquery) use ($sourcePlaceId) {
-        //                         $subsubquery->select('serial_no')
-        //                             ->from('route_stops')
-        //                             ->where('route_id', DB::raw('routes.id'))
-        //                             ->where('place_id', $sourcePlaceId);
-        //                     });
-        //             });
-        //     })
-        //     ->paginate(5);
+        $routes = $query->paginate($request->input('per_page', 15));
 
         return $this->sendResponse($routes, 'available routes successfully Retrieved...!');
     }

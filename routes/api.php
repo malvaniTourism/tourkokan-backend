@@ -48,6 +48,7 @@ use App\Http\Controllers\User\V2\{
     HealthCheckController,
     MessageController,
     UserRoleRequestController,
+    RouteStopsController,
 };
 
 /*
@@ -226,6 +227,7 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
 
     Route::post('listroutes', [RouteController::class, 'listroutes']);
     Route::post('routes', [RouteController::class, 'routes']);
+    Route::post('getRouteStops', [RouteStopsController::class, 'getRouteStops']);
     Route::post('downloadRoute', [RouteController::class, 'downloadRoute']);
 
     Route::post('favourites', [FavouriteController::class, 'index']);
