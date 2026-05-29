@@ -67,6 +67,14 @@ class RouteController extends BaseController
     public function routes(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'per_page' => 'sometimes|integer|min:1|max:20',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+        
+        $validator = Validator::make($request->all(), [
             'source_place_id' => 'nullable|required_with:destination_place_id|exists:sites,id',
             'destination_place_id' => 'nullable|required_with:source_place_id|exists:sites,id',
         ]);
@@ -173,7 +181,7 @@ class RouteController extends BaseController
             $routes->whereIn('id', $routeIds);
         }
 
-        $routes = $routes->paginate(70);
+        $routes = $routes->paginate($request->input('per_page', 15));
 
         #need to test on both query for performance
 
