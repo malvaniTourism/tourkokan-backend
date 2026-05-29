@@ -26,8 +26,16 @@ class RouteController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function listroutes()
+    public function listroutes(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'per_page' => 'sometimes|integer|min:1|max:20',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
         $routes = Route::withCount(['routeStops'])
             ->with([
                 'sourcePlace:id,name',
@@ -46,7 +54,7 @@ class RouteController extends BaseController
                 'delayed_time',
                 DB::raw('(SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id) AS distance')
             )
-            ->paginate();
+            ->paginate($request->input('per_page', 15));
 
         return $this->sendResponse($routes, 'Routes successfully Retrieved...!');
     }
