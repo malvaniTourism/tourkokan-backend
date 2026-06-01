@@ -19,17 +19,40 @@ class BannerController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function listBanners()
+    public function listBanners(Request $request)
     {
-        $banner = Banner::with(['bannerable' =>  function ($query) {
-            $query->select('id', 'name');
-        }, 'bannerable.categories' =>  function ($query) {
-            $query->select('id', 'name', 'code');
-        }])
-            ->orderby('created_at', 'desc')
-            ->paginate(10);
+        $validator = Validator::make($request->all(), [
+            'per_page'             => 'sometimes|integer|min:1|max:100',
+            'status'               => 'sometimes|boolean',
+            'is_active'            => 'sometimes|boolean',
+            'banner_placement_id'  => 'sometimes|exists:banner_placements,id',
+            'banner_package_id'    => 'sometimes|exists:banner_packages,id',
+            'level'                => 'sometimes|in:' . implode(',', array_column(config('constants.banner_levels'), 'code')),
+            'search'               => 'sometimes|string|max:100',
+        ]);
 
-        return $this->sendResponse($banner, 'All Banner successfully Retrieved...!');
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        $query = Banner::with([
+            'package:id,name,duration_days,price',
+            'placement:id,code,description,screen,width,height',
+            'bannerable' => fn($q) => $q->select('id', 'name'),
+            'bannerable.categories' => fn($q) => $q->select('id', 'name', 'code'),
+        ]);
+
+        $query->when($request->filled('status'),              fn($q) => $q->where('status', $request->status));
+        $query->when($request->filled('is_active'),           fn($q) => $q->where('is_active', $request->is_active));
+        $query->when($request->filled('banner_placement_id'), fn($q) => $q->where('banner_placement_id', $request->banner_placement_id));
+        $query->when($request->filled('banner_package_id'),   fn($q) => $q->where('banner_package_id', $request->banner_package_id));
+        $query->when($request->filled('level'),               fn($q) => $q->where('level', $request->level));
+        $query->when($request->filled('search'),              fn($q) => $q->where('name', 'like', '%' . $request->search . '%'));
+
+        $banners = $query->orderByDesc('created_at')
+            ->paginate($request->input('per_page', 10));
+
+        return $this->sendResponse($banners, 'All Banner successfully Retrieved...!');
     }
 
     public function store(Request $request)
