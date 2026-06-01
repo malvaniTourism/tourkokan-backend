@@ -11,6 +11,29 @@ use Illuminate\Support\Facades\Validator;
 
 class AdminBannerController extends BaseController
 {
+    // ─── Dropdowns ───────────────────────────────────────────────────────────
+
+    public function bannerFormDD()
+    {
+        $placements = BannerPlacement::where('is_active', true)
+            ->orderByDesc('id')
+            ->get(['id', 'code', 'description', 'screen', 'width', 'height'])
+            ->keyBy('code');
+
+        $packages = BannerPackage::where('is_active', true)
+            ->orderBy('price')
+            ->get(['id', 'name', 'duration_days', 'price', 'allowed_placements'])
+            ->map(function ($package) use ($placements) {
+                $package->allowed_placements = collect($package->allowed_placements)
+                    ->map(fn($code) => $placements->get($code))
+                    ->filter()
+                    ->values();
+                return $package;
+            });
+
+        return $this->sendResponse($packages, 'Banner form dropdown retrieved successfully');
+    }
+
     // ─── Banner Packages (Pricing) ───────────────────────────────────────────
 
     public function listPackages(Request $request)

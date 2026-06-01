@@ -307,23 +307,36 @@ POST /admin/v2/getBanner
 POST /admin/v2/addBanner
 Content-Type: multipart/form-data
 ```
+
+> ⚠️ `level`, `duration`, and `image_orientation` are **standalone fields** selected by the admin. They are NOT derived from package or placement. Fetch their options from the dropdown APIs listed in Section 4.
+
 | Field | Type | Required | Notes |
 |-------|------|----------|-------|
 | `name` | string | ✅ | Unique, 2–40 chars |
-| `image` | file | ✅ | jpeg/jpg/png/webp |
+| `image` | file | ✅ | jpeg / jpg / png / webp |
 | `start_date` | string | ✅ | Format: `Y-m-d H:i:s` e.g. `2026-06-01 00:00:00` |
-| `duration` | string | ✅ | One of: `1`, `3`, `5`, `7` |
-| `level` | string | ✅ | One of: `carousel`, `middle`, `footer` |
-| `image_orientation` | string | ✅ | One of: `potrait`, `landscape` |
-| `bannerable_type` | string | ✅ | e.g. `Site`, `Place` |
-| `bannerable_id` | integer | ✅ | ID of the linked entity |
-| `status` | boolean | ❌ | Default false |
+| `duration` | string | ✅ | Days the banner runs. Values from `bannerDaysDD`: `1`, `3`, `5`, `7` |
+| `level` | string | ✅ | Position on screen. Values from `bannerLevelsDD`: `carousel`, `middle`, `footer` |
+| `image_orientation` | string | ✅ | Image layout. Values from `bannerImageOrientationDD`: `potrait`, `landscape` |
+| `bannerable_type` | string | ✅ | Entity type the banner is linked to. Values: `Site` or `Place` |
+| `bannerable_id` | integer | ✅ | ID of the linked Site or Place |
+| `redirect_url` | string | ❌ | URL to open when banner is tapped |
+| `status` | boolean | ❌ | Default `false` (inactive until approved) |
 | `meta_data` | JSON string | ❌ | Extra metadata |
 
-**Dropdown values (fetch from APIs below):**
-- `duration` → `POST /admin/v2/bannerDaysDD`
-- `level` → `POST /admin/v2/bannerLevelsDD`
-- `image_orientation` → `POST /admin/v2/bannerImageOrientationDD`
+**Dropdowns needed on the form (fetch on mount in parallel):**
+
+| Form field | Dropdown API | Send value | Display label |
+|---|---|---|---|
+| `level` | `POST /admin/v2/bannerLevelsDD` | `code` | `name` |
+| `duration` | `POST /admin/v2/bannerDaysDD` | `code` | `name` |
+| `image_orientation` | `POST /admin/v2/bannerImageOrientationDD` | `code` | `name` |
+| `banner_package_id` | `POST /admin/v2/bannerFormDD` | `id` | `name + " — ₹" + price` |
+| `banner_placement_id` | from selected package's `allowed_placements` | `id` | `code + " (" + width + "×" + height + ")"` |
+| `bannerable_type` | hardcoded | `Site` or `Place` | `Site` or `Place` |
+| `bannerable_id` | depends on `bannerable_type` | `id` | `name` |
+
+> After a package is selected, filter the placement dropdown to only show placements whose `code` is in the package's `allowed_placements` array. Show the recommended dimensions (`width × height`) next to each placement option.
 
 ---
 
@@ -341,8 +354,9 @@ Content-Type: multipart/form-data
 | `level` | string | ❌ | `carousel`, `middle`, `footer` |
 | `image_orientation` | string | ❌ | `potrait`, `landscape` |
 | `status` | boolean | ❌ | |
-| `bannerable_type` | string | ❌ | Required if `bannerable_id` sent |
+| `bannerable_type` | string | ❌ | Required if `bannerable_id` sent. `Site` or `Place` |
 | `bannerable_id` | integer | ❌ | Required if `bannerable_type` sent |
+| `redirect_url` | string | ❌ | URL to open when banner is tapped |
 | `meta_data` | JSON string | ❌ | |
 
 ---
@@ -376,6 +390,46 @@ POST /admin/v2/changeBannerStatus
 ## Section 4 — Dropdown Helper APIs
 
 Call these to populate select inputs in forms.
+
+### Banner Form Dropdown (Packages + Placements — merged)
+```
+POST /admin/v2/bannerFormDD
+```
+Returns only **active** packages. Each package's `allowed_placements` array contains full placement objects (ordered by ID desc) instead of plain codes — call this **once** on form mount to populate both the package selector and the placement selector.
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Basic Starter",
+      "duration_days": 7,
+      "price": "499.00",
+      "allowed_placements": [
+        { "id": 10, "code": "CITY_MIDDLE", "description": "Middle banner on city page", "screen": "CityDetail", "width": 1200, "height": 400 },
+        { "id": 8,  "code": "HOME_MIDDLE", "description": "Middle banner on home screen", "screen": "Home", "width": 1080, "height": 400 }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Premium",
+      "duration_days": 30,
+      "price": "1499.00",
+      "allowed_placements": [
+        { "id": 12, "code": "APP_SPLASH", "description": "Full screen splash on app load", "screen": "App", "width": 1080, "height": 1920 }
+      ]
+    }
+  ]
+}
+```
+
+**Frontend usage:**
+1. On form mount → call `bannerFormDD` once, store result in state
+2. Render **Package** select from `data` array
+3. On package select → render **Placement** select from `selectedPackage.allowed_placements`
+4. On placement select → show `width × height` as recommended image size hint to admin
+
+---
 
 ### Banner Duration Options
 ```
@@ -528,6 +582,7 @@ export const deletePlacement  = (id)    => axios.post(`${BASE}/deleteBannerPlace
 export const getBannerDaysDD         = () => axios.post(`${BASE}/bannerDaysDD`, {}, authHeader())
 export const getBannerLevelsDD       = () => axios.post(`${BASE}/bannerLevelsDD`, {}, authHeader())
 export const getBannerOrientationsDD = () => axios.post(`${BASE}/bannerImageOrientationDD`, {}, authHeader())
+export const getBannerFormDD         = () => axios.post(`${BASE}/bannerFormDD`, {}, authHeader())
 ```
 
 ---
@@ -565,10 +620,24 @@ const handleStatus = async (id, status) => {
 | Level | `level` |
 | Duration | `duration` days |
 | Orientation | `image_orientation` |
+| Package | `package.name` |
+| Placement | `placement.code` |
 | Linked To | `bannerable.name` |
 | Start Date | `start_date` |
-| Status | `status` badge |
+| End Date | `end_date` |
+| Impressions | `impressions` |
+| Clicks | `clicks` |
+| Active | `is_active` toggle |
+| Status | `status` badge (`pending` / `approved` / `rejected` / `expired`) |
 | Actions | Edit / Delete / Approve / Reject |
+
+**Filter bar UI (wire to `listBanners` filters):**
+- Search input → `search`
+- Level select → `level` (options from `bannerLevelsDD`)
+- Placement select → `banner_placement_id` (options from `listBannerPlacements`)
+- Package select → `banner_package_id` (options from `listBannerPackages`)
+- Status toggle → `status` (`1` / `0`)
+- Active toggle → `is_active` (`1` / `0`)
 
 ---
 
@@ -594,18 +663,58 @@ useEffect(() => {
   }
 }, [])
 
-// Submit — always use FormData because of file upload
+// On mount: fetch all 3 dropdowns in parallel
+useEffect(() => {
+  Promise.all([
+    getBannerDaysDD(),
+    getBannerLevelsDD(),
+    getBannerOrientationsDD(),
+  ]).then(([days, levels, orientations]) => {
+    setDays(days.data.data)
+    setLevels(levels.data.data)
+    setOrientations(orientations.data.data)
+  })
+
+  if (id) {
+    getBanner(id).then(r => {
+      const b = r.data.data
+      setForm({
+        name: b.name,
+        start_date: b.start_date,
+        duration: String(b.duration),
+        level: b.level,
+        image_orientation: b.image_orientation,
+        bannerable_type: b.bannerable_type,
+        bannerable_id: b.bannerable_id,
+        redirect_url: b.redirect_url || '',
+        status: b.status,
+      })
+    })
+  }
+}, [])
+
+// When bannerable_type changes, fetch the entity list for bannerable_id dropdown
+useEffect(() => {
+  if (form.bannerable_type === 'Site') {
+    // fetch sites list → setSiteOptions(...)
+  } else if (form.bannerable_type === 'Place') {
+    // fetch places list → setPlaceOptions(...)
+  }
+}, [form.bannerable_type])
+
+// Submit — always FormData because of file upload
 const handleSubmit = async (e) => {
   e.preventDefault()
   const fd = new FormData()
   fd.append('name', form.name)
-  fd.append('start_date', form.start_date)   // format: "2026-06-01 00:00:00"
-  fd.append('duration', form.duration)        // "1" | "3" | "5" | "7"
-  fd.append('level', form.level)              // "carousel" | "middle" | "footer"
-  fd.append('image_orientation', form.image_orientation)
-  fd.append('bannerable_type', 'Site')
-  fd.append('bannerable_id', form.site_id)
-  if (form.image) fd.append('image', form.image)
+  fd.append('start_date', form.start_date)          // "2026-06-01 00:00:00"
+  fd.append('duration', form.duration)               // "1" | "3" | "5" | "7"
+  fd.append('level', form.level)                     // "carousel" | "middle" | "footer"
+  fd.append('image_orientation', form.image_orientation) // "potrait" | "landscape"
+  fd.append('bannerable_type', form.bannerable_type) // "Site" | "Place"
+  fd.append('bannerable_id', form.bannerable_id)
+  if (form.redirect_url) fd.append('redirect_url', form.redirect_url)
+  if (form.image) fd.append('image', form.image)     // only when new file selected
   if (id) {
     fd.append('id', id)
     await updateBanner(fd)
@@ -617,15 +726,21 @@ const handleSubmit = async (e) => {
 ```
 
 **Form fields:**
-- `name` — text input
-- `image` — file input (accept: jpg/png/webp)
-- `start_date` — datetime picker (format to `Y-m-d H:i:s`)
-- `duration` — select from `getBannerDaysDD()` (value = `code`)
-- `level` — select from `getBannerLevelsDD()` (value = `code`)
-- `image_orientation` — select from `getBannerOrientationsDD()` (value = `code`)
-- `bannerable_type` — select: `Site` / `Place`
-- `bannerable_id` — number input (or searchable dropdown of sites)
-- `status` — toggle checkbox
+
+| Field | Input type | Source |
+|---|---|---|
+| `name` | text | — |
+| `image` | file (jpg/png/webp) | — |
+| `start_date` | datetime picker | format to `Y-m-d H:i:s` |
+| `duration` | select | `getBannerDaysDD()` → use `code` as value |
+| `level` | select | `getBannerLevelsDD()` → use `code` as value |
+| `image_orientation` | select | `getBannerOrientationsDD()` → use `code` as value |
+| `bannerable_type` | select | hardcoded: `Site`, `Place` |
+| `bannerable_id` | select | fetch sites/places based on `bannerable_type` selection |
+| `redirect_url` | url text input | — (optional) |
+| `status` | toggle | boolean |
+
+> `bannerable_type` and `bannerable_id` together identify which site or place this banner is attached to. When `bannerable_type` changes, re-fetch the entity list and reset `bannerable_id`.
 
 ---
 

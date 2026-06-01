@@ -115,6 +115,7 @@ class BannerController extends BaseController
             'status' => 'boolean',
             'bannerable_type' => 'required|string',
             'bannerable_id' => 'required|numeric',
+            'redirect_url' => 'nullable|url',
             'meta_data' => 'nullable|json'
         ]);
 
@@ -190,6 +191,7 @@ class BannerController extends BaseController
             'status' => 'boolean',
             'bannerable_type' => 'nullable|required_with:bannerable_id|string',
             'bannerable_id' => 'nullable|required_with:bannerable_type|numeric',
+            'redirect_url' => 'nullable|url',
             'meta_data' => 'nullable|json'
         ]);
 

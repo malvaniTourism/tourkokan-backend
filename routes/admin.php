@@ -190,6 +190,9 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware', 'throttle:admin'], 
     Route::post('getGallery', [GalleryController::class, 'getGallery']);
     Route::post('updateGallery', [GalleryController::class, 'updateGallery']);
 
+    // Banner Form Dropdown (packages with full placement objects)
+    Route::post('bannerFormDD', [AdminBannerController::class, 'bannerFormDD']);
+
     // Banner Packages (Pricing)
     Route::post('listBannerPackages', [AdminBannerController::class, 'listPackages']);
     Route::post('getBannerPackage', [AdminBannerController::class, 'getPackage']);
