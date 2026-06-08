@@ -111,6 +111,12 @@ class RouteController extends BaseController
 
         $routes = $query->paginate($request->input('per_page', 15));
 
+        $request->attributes->set('log_meta_data', [
+            'source_id'      => $request->source_place_id ? (int) $request->source_place_id : null,
+            'destination_id' => $request->destination_place_id ? (int) $request->destination_place_id : null,
+            'results_count'  => $routes->total(),
+        ]);
+
         return $this->sendResponse($routes, 'available routes successfully Retrieved...!');
     }
     /**

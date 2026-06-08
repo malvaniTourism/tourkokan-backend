@@ -68,6 +68,11 @@ class FavouriteController extends BaseController
 
         if ($favourite) {
             $favourite->delete();
+
+            $request->attributes->set('log_entity_type', strtolower($request->favouritable_type));
+            $request->attributes->set('log_entity_id',   (int) $request->favouritable_id);
+            $request->attributes->set('log_meta_data', ['action' => 'remove']);
+
             return $this->sendResponse(null, 'Favourite deleted successfully...!');
         } else {
             $favourite = [
@@ -76,6 +81,10 @@ class FavouriteController extends BaseController
 
             $favourite = $data->favourites()->create(array_filter($favourite));
         }
+
+        $request->attributes->set('log_entity_type', strtolower($request->favouritable_type));
+        $request->attributes->set('log_entity_id',   (int) $request->favouritable_id);
+        $request->attributes->set('log_meta_data', ['action' => 'add']);
 
         return $this->sendResponse($favourite, 'Favourite created successfully...!');
     }

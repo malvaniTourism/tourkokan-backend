@@ -30,6 +30,8 @@ function getDbColumns($tableName)
 
 function getData($id, $model)
 {
+    $data = null;
+
     switch ($model) {
         case 'City':
             $data = City::find($id);

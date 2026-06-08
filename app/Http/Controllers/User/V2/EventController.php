@@ -144,6 +144,15 @@ class EventController extends BaseController
                 ];
             }
 
+            $request->attributes->set('log_entity_type', 'event');
+            $request->attributes->set('log_entity_id',   $event->id);
+            $request->attributes->set('log_entity_name', $event->title);
+            $request->attributes->set('log_meta_data', [
+                'event_type' => $event->eventType?->name,
+                'is_free'    => $event->is_free,
+                'is_online'  => $event->is_online,
+            ]);
+
             return $this->sendResponse($event, 'Event fetched successfully');
         } catch (\Throwable $th) {
             Log::error($th->getMessage());

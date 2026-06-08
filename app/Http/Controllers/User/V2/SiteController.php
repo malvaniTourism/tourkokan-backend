@@ -89,6 +89,14 @@ class SiteController extends BaseController
         $city->setAttribute('trending',  $this->siteService->getTrending($request->id));
         $city->setAttribute('hot_sites', $this->siteService->getHotSites($request->id));
 
+        $request->attributes->set('log_entity_type', 'site');
+        $request->attributes->set('log_entity_id',   $city->id);
+        $request->attributes->set('log_entity_name', $city->getRawOriginal('name'));
+        $request->attributes->set('log_meta_data', [
+            'categories'  => $city->categories->pluck('code')->toArray(),
+            'is_favorite' => (bool) $city->is_favorite,
+        ]);
+
         return $this->sendResponse($city, 'Site successfully Retrieved...!');
     }
 

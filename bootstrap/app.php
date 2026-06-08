@@ -26,6 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
         ]);
 
+        $middleware->append(\App\Http\Middleware\ActivityLogMiddleware::class);
+
         $middleware->alias([
             'auth'          => \App\Http\Middleware\Authenticate::class,
             'guest'         => \App\Http\Middleware\RedirectIfAuthenticated::class,

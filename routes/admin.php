@@ -31,6 +31,7 @@ use App\Http\Controllers\Admin\V2\EventTypeController as AdminEventTypeControlle
 use App\Http\Controllers\Admin\V2\EventGalleryController as AdminEventGalleryController;
 use App\Http\Controllers\Admin\V2\SiteGalleryController as AdminSiteGalleryController;
 use App\Http\Controllers\Admin\V2\UserRoleRequestController as AdminUserRoleRequestController;
+use App\Http\Controllers\Admin\V2\AnalyticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -253,6 +254,20 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware', 'throttle:admin'], 
     Route::post('sendMessage', [AdminMessageController::class, 'send']);
     Route::post('listMessages', [AdminMessageController::class, 'index']);
     Route::post('deleteMessage', [AdminMessageController::class, 'destroy']);
+
+    // ── Analytics ─────────────────────────────────────────────────────────────
+    Route::post('analytics/activityLogs',      [AnalyticsController::class, 'activityLogs']);
+    Route::post('analytics/userTimeline',      [AnalyticsController::class, 'userTimeline']);
+    Route::post('analytics/topSites',          [AnalyticsController::class, 'topSites']);
+    Route::post('analytics/topEvents',         [AnalyticsController::class, 'topEvents']);
+    Route::post('analytics/topRoutes',         [AnalyticsController::class, 'topRoutes']);
+    Route::post('analytics/userInterests',     [AnalyticsController::class, 'userInterests']);
+    Route::post('analytics/loginHistory',      [AnalyticsController::class, 'loginHistory']);
+    Route::post('analytics/activeUsers',       [AnalyticsController::class, 'activeUsers']);
+    Route::post('analytics/dashboardStats',    [AnalyticsController::class, 'dashboardStats']);
+    Route::post('analytics/eventTypeSummary',  [AnalyticsController::class, 'eventTypeSummary']);
+    Route::post('analytics/platformBreakdown', [AnalyticsController::class, 'platformBreakdown']);
+    Route::post('analytics/favouriteActivity', [AnalyticsController::class, 'favouriteActivity']);
 });
 
 // Admin-only route management (requires admin role)
