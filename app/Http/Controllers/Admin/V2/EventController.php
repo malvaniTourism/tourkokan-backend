@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\V2;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Event\CreateEventRequest;
 use App\Http\Requests\Event\UpdateEventRequest;
+use App\Rules\ImageGuideline;
 use App\Models\Event;
 use App\Models\EventNotification;
 use App\Models\User;
@@ -45,8 +46,7 @@ class EventController extends BaseController
                 });
             }
 
-            $perPage = $request->input('per_page', 20);
-            $events  = $query->orderByDesc('created_at')->paginate($perPage);
+            $events = $query->orderByDesc('created_at')->paginateSafe();
 
             return $this->sendResponse($events, 'Events fetched successfully');
         } catch (\Throwable $th) {
@@ -95,6 +95,7 @@ class EventController extends BaseController
             [
                 'user_id'          => 'nullable|exists:users,id',
                 'organizer_phone'  => 'required|string|max:20',
+                'banner_image'     => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', new ImageGuideline('event')],
             ]
         ));
 
@@ -143,6 +144,15 @@ class EventController extends BaseController
      */
     public function update(UpdateEventRequest $request)
     {
+        // Image guideline check is admin-only — UpdateEventRequest is shared with the user API
+        $imageValidator = Validator::make($request->all(), [
+            'banner_image' => ['sometimes', 'nullable', new ImageGuideline('event')],
+        ]);
+
+        if ($imageValidator->fails()) {
+            return $this->sendError($imageValidator->errors(), '', 200);
+        }
+
         try {
             $event = Event::findOrFail($request->id);
 
@@ -207,7 +217,7 @@ class EventController extends BaseController
             $events = Event::with(['user:id,name,email', 'eventType:id,name', 'site:id,name'])
                 ->pending()
                 ->orderBy('created_at')
-                ->paginate($request->input('per_page', 20));
+                ->paginateSafe();
 
             return $this->sendResponse($events, 'Pending events fetched');
         } catch (\Throwable $th) {

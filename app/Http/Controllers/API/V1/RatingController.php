@@ -30,7 +30,7 @@ class RatingController extends BaseController
         $ratings = Rating::with(['user' =>  function ($query) {
                                 $query->select('id', 'name', 'email', 'profile_picture');
                             }])
-                         ->paginate(10);
+                         ->paginateSafe();
 
         return $this->sendResponse($ratings, 'All Ratings successfully Retrieved...!');   
     }

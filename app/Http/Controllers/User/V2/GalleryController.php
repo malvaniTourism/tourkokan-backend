@@ -20,7 +20,7 @@ class GalleryController extends BaseController
             'search'   => 'sometimes|nullable|string|max:255',
             'category' => 'sometimes|nullable|exists:categories,code',
             'site_id'  => 'sometimes|nullable|exists:sites,id',
-            'per_page' => 'sometimes|nullable|integer|min:1|max:100',
+            'per_page' => 'sometimes|nullable|integer|min:1|max:30',
         ]);
 
         if ($validator->fails()) {
@@ -57,7 +57,7 @@ class GalleryController extends BaseController
             });
         }
 
-        $gallery = $gallery->latest()->paginate($request->input('per_page', 10));
+        $gallery = $gallery->latest()->paginateSafe();
 
         return $this->sendResponse($gallery, 'Gallery images successfully retrieved.');
     }

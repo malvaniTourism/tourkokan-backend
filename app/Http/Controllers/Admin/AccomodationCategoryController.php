@@ -27,7 +27,7 @@ class AccomodationCategoryController extends BaseController
      */
     public function index()
     {
-        $accomodationCategory = AccomodationCategory::paginate(10);
+        $accomodationCategory = AccomodationCategory::paginateSafe();
 
         return $this->sendResponse($accomodationCategory, 'Accomodation Category successfully Retrieved...!');  
     }

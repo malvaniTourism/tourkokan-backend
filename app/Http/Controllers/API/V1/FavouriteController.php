@@ -30,7 +30,7 @@ class FavouriteController extends BaseController
      */
     public function index()
     {
-        $favourite =  Favourite::paginate(10);
+        $favourite =  Favourite::paginateSafe();
 
         return $this->sendResponse($favourite, 'Favourites successfully Retrieved...!');
     }

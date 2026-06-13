@@ -30,7 +30,7 @@ class UserRoleRequestController extends BaseController
         }
 
         return $this->sendResponse(
-            $query->paginate($request->input('per_page', 20)),
+            $query->paginateSafe(),
             'Role requests fetched.'
         );
     }

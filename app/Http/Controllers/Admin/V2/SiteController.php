@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\V2;
 
 use App\Models\Site;
+use App\Rules\ImageGuideline;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\Category;
@@ -77,7 +78,7 @@ class SiteController extends BaseController
         }
 
         $sites = $sites->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'))
-            ->paginate(isValidReturn($request->all(), 'per_page', 15));
+            ->paginateSafe();
 
         return $this->sendResponse($sites, 'Sites successfully Retrieved...!');
     }
@@ -115,7 +116,7 @@ class SiteController extends BaseController
         $places = Site::with(['site:id,name,icon', 'categories:id,name,code,parent_id,icon,status,is_hot_category'])
             ->whereIn('bus_stop_type', ['Depo', 'Stop'])
             ->select('id', 'name', 'parent_id', 'icon', 'status', 'is_hot_place', 'bus_stop_type')
-            ->paginate(10);
+            ->paginateSafe();
 
         return $this->sendResponse($places, 'Stops successfully Retrieved...!');
     }
@@ -143,7 +144,7 @@ class SiteController extends BaseController
         }
 
         $places = $places->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'))
-            ->paginate();
+            ->paginateSafe();
 
         return $this->sendResponse($places, 'Places successfully Retrieved...!');
     }
@@ -182,8 +183,8 @@ class SiteController extends BaseController
             'description'   => 'required|string',
             'domain_name'   => 'nullable|string',
             'logo'          => 'nullable|mimes:jpeg,jpg,png,webp|max:1024',
-            'icon'          => 'nullable|mimes:jpeg,jpg,png,webp|max:512',
-            'image'         => 'nullable|mimes:jpeg,jpg,png,webp|max:1024',
+            'icon'          => ['nullable', 'mimes:jpeg,jpg,png,webp', new ImageGuideline('icon')],
+            'image'         => ['nullable', 'mimes:jpeg,jpg,png,webp', new ImageGuideline('hero_site')],
             'status'        => 'boolean:true,false',
             'latitude'      => 'nullable|required_with:longitude|between:-90,90',
             'longitude'     => 'nullable|required_with:latitude|between:-90,90',
@@ -232,8 +233,8 @@ class SiteController extends BaseController
             'description'  => 'sometimes|required|string',
             'domain_name'  => 'sometimes|required|string',
             'logo'         => 'sometimes|nullable|mimes:jpeg,jpg,png,webp|max:1024',
-            'icon'         => 'sometimes|nullable|mimes:jpeg,jpg,png,webp|max:512',
-            'image'        => 'sometimes|nullable|mimes:jpeg,jpg,png,webp|max:1024',
+            'icon'         => ['sometimes', 'nullable', 'mimes:jpeg,jpg,png,webp', new ImageGuideline('icon')],
+            'image'        => ['sometimes', 'nullable', 'mimes:jpeg,jpg,png,webp', new ImageGuideline('hero_site')],
             'status'       => 'sometimes|required|boolean:true,false',
             'latitude'     => 'sometimes|required|required_with:longitude|between:-90,90',
             'longitude'    => 'sometimes|required|required_with:latitude|between:-90,90',
@@ -307,7 +308,7 @@ class SiteController extends BaseController
         $sites = Site::where('submission_status', 'pending')
             ->with(['categories:id,name,code', 'user:id,name,email'])
             ->latest()
-            ->paginate($request->input('per_page', 20));
+            ->paginateSafe();
 
         return $this->sendResponse($sites, 'Pending site submissions fetched.');
     }
@@ -329,7 +330,7 @@ class SiteController extends BaseController
         }
 
         return $this->sendResponse(
-            $query->paginate($request->input('per_page', 20)),
+            $query->paginateSafe(),
             'Submissions fetched.'
         );
     }

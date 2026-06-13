@@ -52,7 +52,7 @@ class MessageController extends BaseController
             $query->where('user_id', $request->user_id);
         }
 
-        $messages = $query->paginate($request->input('per_page', 20));
+        $messages = $query->paginateSafe();
 
         return $this->sendResponse($messages, 'Messages fetched.');
     }

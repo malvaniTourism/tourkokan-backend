@@ -46,7 +46,7 @@ class CommentController extends BaseController
                 },
             ])
             ->latest()
-            ->paginate($request->per_page);
+            ->paginateSafe();
 
 
         return $this->sendResponse($comments, 'Comments successfully Retrieved...!');

@@ -30,7 +30,7 @@ class BlogController extends BaseController
         $blogs = Blog::withCount(['category', 'photos', 'comments'])
                     ->orderBy('id', 'desc')
                     ->latest()                
-                    ->paginate(10);
+                    ->paginateSafe();
 
         return $this->sendResponse($blogs, 'Blogs successfully Retrieved...!');
     }

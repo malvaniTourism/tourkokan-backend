@@ -1,6 +1,21 @@
 <?php
 
 return [
+    'pagination' => [
+        'default' => 15,
+        'max'     => 30,
+    ],
+    // Mirror of docs/IMAGE_GUIDELINES.md — keep both in sync
+    'image_rules' => [
+        'hero_home' => ['ratio' => 1.35,   'min_width' => 1080, 'max_kb' => 400],
+        'hero_site' => ['ratio' => 4 / 3,  'min_width' => 1080, 'max_kb' => 400],
+        'ad_banner' => ['ratio' => 2.5,    'min_width' => 1080, 'max_kb' => 400],
+        'gallery'   => ['ratio' => 1,      'min_width' => 720,  'max_kb' => 500],
+        'event'     => ['ratio' => 16 / 9, 'min_width' => 960,  'max_kb' => 250],
+        'card'      => ['ratio' => 1.5,    'min_width' => 600,  'max_kb' => 250],
+        'icon'      => ['ratio' => 1,      'min_width' => 128,  'max_kb' => 50],
+        'ratio_tolerance' => 0.10,
+    ],
     'upload_path' => [
         'base'              => env('APP_ENV', 'other'),
         'user'              => env('APP_ENV', 'other').'/users',

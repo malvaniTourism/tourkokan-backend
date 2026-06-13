@@ -49,7 +49,7 @@ class AuthController extends BaseController
     {
         if (auth()->user()->hasRole('superadmin') || auth()->user()->hasRole('admin')) {
             $user = User::with('roles')
-                ->paginate(request()->per_page);
+                ->paginateSafe();
             return $this->sendResponse($user, 'User successfully registered');
         } else {
             return $this->sendError('Unauthorized', '', 401);
@@ -61,7 +61,7 @@ class AuthController extends BaseController
         $validator = Validator::make($request->all(), [
             'apitype' => 'required|string|in:list,dropdown',
             'search'  => 'nullable|string|max:100',
-            'per_page'=> 'nullable|integer|min:1|max:200',
+            'per_page'=> 'nullable|integer|min:1|max:30',
         ]);
 
         if ($validator->fails()) {
@@ -87,7 +87,7 @@ class AuthController extends BaseController
             });
         }
 
-        $users = $query->latest()->paginate($request->input('per_page', 20));
+        $users = $query->latest()->paginateSafe();
 
         return $this->sendResponse($users, 'Users retrieved successfully.');
     }
@@ -299,7 +299,8 @@ class AuthController extends BaseController
             if ($request->has(['latitude', 'longitude'])) {
                 $locationDetails = getLocationDetails($request->latitude, $request->longitude);
 
-                if ($locationDetails && $locationDetails != 400) {
+                // getLocationDetails() may return an int status code or error string on failure
+                if (is_array($locationDetails)) {
                     $user->address()->create($locationDetails);
                 }
             }
@@ -392,7 +393,8 @@ class AuthController extends BaseController
             if ($request->has('latitude') && $request->has('longitude')) {
                 $locationDetails = getLocationDetails($request->latitude, $request->longitude);
 
-                if ($locationDetails && $locationDetails != 400) {
+                // getLocationDetails() may return an int status code or error string on failure
+                if (is_array($locationDetails)) {
                     $user->address()->updateOrCreate(
                         ['addressable_id' => $user->id, 'addressable_type' => get_class($user)],
                         $locationDetails
@@ -859,8 +861,9 @@ class AuthController extends BaseController
 
                     if ($request->has(['latitude', 'longitude'])) {
                         $locationDetails = getLocationDetails($request->latitude, $request->longitude);
-        
-                        if ($locationDetails && $locationDetails != 400) {
+
+                        // getLocationDetails() may return an int status code or error string on failure
+                        if (is_array($locationDetails)) {
                             $user->address()->create($locationDetails);
                         }
                     }

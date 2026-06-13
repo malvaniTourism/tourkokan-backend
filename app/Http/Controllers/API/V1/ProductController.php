@@ -113,7 +113,7 @@ class ProductController extends BaseController
                             ->where([['project_id', '=', $id],
                                     ['productable_type', '=', $request->type]])
                             ->latest()
-                            ->paginate(10);
+                            ->paginateSafe();
         
         if (is_null($products)) {
             return $this->sendError('Empty', [], 404);

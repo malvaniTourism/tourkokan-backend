@@ -27,7 +27,7 @@ class PhotosController extends BaseController
      */
     public function index()
     {
-        $photos = Photos::paginate(10);
+        $photos = Photos::paginateSafe();
         return $this->sendResponse($photos, 'Photos successfully Retrieved...!');  
     }
 

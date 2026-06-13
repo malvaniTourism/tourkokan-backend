@@ -21,15 +21,15 @@ class BonusTypesController extends BaseController
     public function listBonusTypes(Request $request)
     {
         $page = $request->input('page', 1); // Default to page 1
-        $perPage = $request->input('per_page', 15); // Default to 15 items per page
+        $perPage = $request->perPage(); // Clamped per_page (default 15, max 30)
 
         // Generate a unique cache key based on the page number and items per page
         $cacheKey = 'bonus_types_page_' . $page . '_per_page_' . $perPage;
 
         // Check if cache exists for the generated key
         if (!Cache::has($cacheKey)) {
-            $bonusTypes = Cache::remember($cacheKey, 60, function () use ($perPage) {
-                return BonusTypes::paginate($perPage);
+            $bonusTypes = Cache::remember($cacheKey, 60, function () {
+                return BonusTypes::paginateSafe();
             });
         } else {
             $bonusTypes = Cache::get($cacheKey);

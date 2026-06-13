@@ -51,18 +51,17 @@ class ContactService
 
     /**
      * Get paginated queries for a user.
+     * per_page is taken from the request globally (default 15, max 30).
      *
      * $options = [
      *   'user_id'  => int,      // required
-     *   'per_page' => int,      // default: 15
      *   'status'   => string,   // optional: unread|read|replied
      * ]
      */
     public function getPaginatedForUser(array $options = [])
     {
-        $userId  = $options['user_id']  ?? null;
-        $perPage = $options['per_page'] ?? 15;
-        $status  = $options['status']   ?? null;
+        $userId  = $options['user_id'] ?? null;
+        $status  = $options['status']  ?? null;
 
         $counts = Contact::where('user_id', $userId)
             ->selectRaw('status, count(*) as total')
@@ -72,7 +71,7 @@ class ContactService
         $contacts = Contact::where('user_id', $userId)
             ->when($status, fn($q) => $q->where('status', $status))
             ->orderBy('created_at', 'DESC')
-            ->paginate($perPage);
+            ->paginateSafe();
 
         $response = $contacts->toArray();
         $response['counts'] = [

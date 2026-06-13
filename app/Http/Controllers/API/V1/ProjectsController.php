@@ -43,7 +43,7 @@ class ProjectsController extends BaseController
                     $query->orwhere($field[$i], 'like',  '%' . $string . '%');
                 }
             })
-            ->paginate(10);
+            ->paginateSafe();
 
         Log::info("Records fetched");
 

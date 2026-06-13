@@ -17,7 +17,7 @@ class AnalyticsController extends BaseController
     public function activityLogs(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'per_page'    => 'sometimes|integer|min:1|max:200',
+            'per_page'    => 'sometimes|integer|min:1|max:30',
             'user_id'     => 'sometimes|exists:users,id',
             'event_type'  => 'sometimes|string|max:50',
             'entity_type' => 'sometimes|string|max:50',
@@ -49,7 +49,7 @@ class AnalyticsController extends BaseController
                    ->orWhere('entity_name', 'like', '%' . $request->search . '%');
             }))
             ->orderByDesc('created_at')
-            ->paginate($request->input('per_page', 50));
+            ->paginateSafe();
 
         return $this->sendResponse($logs, 'Activity logs retrieved successfully');
     }
@@ -60,7 +60,7 @@ class AnalyticsController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'user_id'   => 'required|exists:users,id',
-            'per_page'  => 'sometimes|integer|min:1|max:100',
+            'per_page'  => 'sometimes|integer|min:1|max:30',
             'date_from' => 'sometimes|date',
             'date_to'   => 'sometimes|date',
         ]);
@@ -77,7 +77,7 @@ class AnalyticsController extends BaseController
             ->when($request->filled('date_from'), fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
             ->when($request->filled('date_to'),   fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
             ->orderByDesc('created_at')
-            ->paginate($request->input('per_page', 50));
+            ->paginateSafe();
 
         return $this->sendResponse([
             'user' => $user,
@@ -230,7 +230,7 @@ class AnalyticsController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'user_id'   => 'sometimes|exists:users,id',
-            'per_page'  => 'sometimes|integer|min:1|max:100',
+            'per_page'  => 'sometimes|integer|min:1|max:30',
             'date_from' => 'sometimes|date',
             'date_to'   => 'sometimes|date',
             'platform'  => 'sometimes|in:mobile,web,admin',
@@ -247,7 +247,7 @@ class AnalyticsController extends BaseController
             ->when($request->filled('date_from'), fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
             ->when($request->filled('date_to'),   fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
             ->orderByDesc('created_at')
-            ->paginate($request->input('per_page', 50));
+            ->paginateSafe();
 
         return $this->sendResponse($logs, 'Login history retrieved successfully');
     }
@@ -384,7 +384,7 @@ class AnalyticsController extends BaseController
         $validator = Validator::make($request->all(), [
             'user_id'     => 'sometimes|exists:users,id',
             'entity_type' => 'sometimes|in:site,event',
-            'per_page'    => 'sometimes|integer|min:1|max:100',
+            'per_page'    => 'sometimes|integer|min:1|max:30',
             'date_from'   => 'sometimes|date',
             'date_to'     => 'sometimes|date',
         ]);
@@ -400,7 +400,7 @@ class AnalyticsController extends BaseController
             ->when($request->filled('date_from'),   fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
             ->when($request->filled('date_to'),     fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
             ->orderByDesc('created_at')
-            ->paginate($request->input('per_page', 50));
+            ->paginateSafe();
 
         return $this->sendResponse($logs, 'Favourite activity retrieved successfully');
     }

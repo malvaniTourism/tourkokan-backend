@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +25,19 @@ class AppServiceProvider extends ServiceProvider
     {
         // Custom auth provider using blind-index hashes for encrypted email/mobile lookups
         Auth::provider('encrypted', fn($app, $config) => new EncryptedUserProvider($app['hash']));
+
+        // Global pagination: per_page from request, default 15, hard cap 30
+        Request::macro('perPage', function () {
+            $perPage = (int) $this->input('per_page', config('constants.pagination.default'));
+            return max(1, min($perPage, config('constants.pagination.max')));
+        });
+
+        $paginateSafe = function () {
+            return $this->paginate(request()->perPage());
+        };
+        EloquentBuilder::macro('paginateSafe', $paginateSafe);
+        QueryBuilder::macro('paginateSafe', $paginateSafe);
+        Relation::macro('paginateSafe', $paginateSafe);
 
         // General read API: 60/min per authenticated user or IP
         RateLimiter::for('api', function (Request $request) {

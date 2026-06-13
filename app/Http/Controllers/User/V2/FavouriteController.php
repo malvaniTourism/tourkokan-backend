@@ -18,7 +18,7 @@ class FavouriteController extends BaseController
     public function index()
     {
         $favourite =  Favourite::where('user_id', auth()->id())
-            ->paginate(10);
+            ->paginateSafe();
 
         return $this->sendResponse($favourite, 'Favourites successfully Retrieved...!');
     }

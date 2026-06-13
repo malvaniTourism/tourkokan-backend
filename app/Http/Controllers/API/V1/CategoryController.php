@@ -27,7 +27,7 @@ class CategoryController extends BaseController
      */
     public function index()
     {
-        $categories = Category::paginate(10);
+        $categories = Category::paginateSafe();
         return $this->sendResponse($categories, 'Categories successfully Retrieved...!');   
     }
 

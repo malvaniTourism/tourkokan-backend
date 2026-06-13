@@ -28,7 +28,7 @@ class PlaceCategoryController extends BaseController
     public function index()
     {
         $placeCategory = PlaceCategory::with(['places'])
-                                        ->paginate(10);
+                                        ->paginateSafe();
         return $this->sendResponse($placeCategory, 'Place Category successfully Retrieved...!');  
     }
 

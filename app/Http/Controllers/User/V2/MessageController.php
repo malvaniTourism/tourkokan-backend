@@ -18,7 +18,7 @@ class MessageController extends BaseController
         $messages = AdminMessage::where('user_id', auth()->id())
             ->with(['admin:id,name'])
             ->latest()
-            ->paginate($request->input('per_page', 20));
+            ->paginateSafe();
 
         return $this->sendResponse($messages, 'Inbox fetched.');
     }

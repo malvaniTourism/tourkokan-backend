@@ -35,7 +35,7 @@ class RouteController extends BaseController
                 'destinationPlace.category:id,name,icon'
             ])
             ->select('id', 'source_place_id', 'destination_place_id', 'name', 'start_time', 'end_time', 'total_time', 'delayed_time')
-            ->paginate();
+            ->paginateSafe();
 
         return $this->sendResponse($routes, 'Routes successfully Retrieved...!');
     }
@@ -82,7 +82,7 @@ class RouteController extends BaseController
             $query->whereIn('id', $routeIds);
         });
 
-        $routes = $routes->paginate(5);
+        $routes = $routes->paginateSafe();
 
         #need to test on both query for performance
 

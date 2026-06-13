@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\V2;
 use App\Http\Controllers\BaseController;
 use App\Models\Gallery;
 use App\Models\Site;
+use App\Rules\ImageGuideline;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -46,7 +47,7 @@ class SiteGalleryController extends BaseController
         $validator = Validator::make($request->all(), [
             'site_id'     => 'required|exists:sites,id',
             'images'      => 'required|array|min:1|max:20',
-            'images.*'    => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'images.*'    => ['required', 'image', 'mimes:jpeg,jpg,png,webp', new ImageGuideline('gallery')],
             'title'       => 'nullable|string|max:255',
             'description' => 'nullable|string|max:500',
         ]);

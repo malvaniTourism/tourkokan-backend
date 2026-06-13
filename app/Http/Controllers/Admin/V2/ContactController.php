@@ -29,7 +29,7 @@ class ContactController extends BaseController
         ])
             ->when(request()->status, fn($q) => $q->where('status', request()->status))
             ->orderBy('created_at', 'DESC')
-            ->paginate(request()->per_page ?? 15);
+            ->paginateSafe();
 
         $response = $contacts->toArray();
         $response['counts'] = [

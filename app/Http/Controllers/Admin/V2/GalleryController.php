@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\V2;
 
 use App\Models\Gallery;
+use App\Rules\ImageGuideline;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\BaseController;
@@ -64,7 +65,7 @@ class GalleryController extends BaseController
         });
 
         // Paginate the results
-        $galleries = $galleryQuery->paginate($request->input('per_page', 10));
+        $galleries = $galleryQuery->paginateSafe();
 
         return $this->sendResponse($galleries, 'Gallery images successfully retrieved!');
     }
@@ -125,7 +126,7 @@ class GalleryController extends BaseController
             'id' => 'required|exists:galleries,id',
             'title' => 'sometimes|required|string|between:2,100',
             'description' => 'sometimes|required|string|between:2,500',
-            'path' => 'sometimes|nullable|mimes:jpeg,jpg,png.webp|max:512',
+            'path' => ['sometimes', 'nullable', 'mimes:jpeg,jpg,png,webp', new ImageGuideline('gallery')],
             'is_url' => 'sometimes|boolean:true,false',
             'status' => 'sometimes|boolean:true,false'
         ]);

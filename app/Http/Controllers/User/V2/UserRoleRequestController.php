@@ -78,7 +78,7 @@ class UserRoleRequestController extends BaseController
         $requests = UserRoleRequest::where('user_id', auth()->id())
             ->with('role:id,name,code')
             ->latest()
-            ->paginate($request->input('per_page', 15));
+            ->paginateSafe();
 
         return $this->sendResponse($requests, 'Role requests fetched.');
     }

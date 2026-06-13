@@ -34,7 +34,7 @@ class RouteController extends BaseController
             'search' => 'nullable|string|alpha|max:255',
             'apitype' => 'required|string|max:255|in:list,dropdown',
             'with_stops' => 'sometimes|required|boolean:true,false',
-            'per_page' => 'nullable|integer|max:50|min:1'
+            'per_page' => 'nullable|integer|max:30|min:1'
         ]);
 
         if ($validator->fails()) {
@@ -154,7 +154,7 @@ class RouteController extends BaseController
         }
 
         $routes = $routes->select(isValidReturn(config('grid.listRoutes.' . $request->apitype), 'columns', '*'))
-            ->paginate(isValidReturn($request->all(), 'per_page', 15));
+            ->paginateSafe();
 
         #need to test on both query for performance
 

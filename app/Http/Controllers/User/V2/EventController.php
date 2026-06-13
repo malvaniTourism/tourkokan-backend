@@ -62,8 +62,7 @@ class EventController extends BaseController
                 $query->featured();
             }
 
-            $perPage = $request->input('per_page', 15);
-            $events  = $query->orderBy('start_date')->paginate($perPage);
+            $events = $query->orderBy('start_date')->paginateSafe();
 
             // Append user interaction flags if authenticated
             if (auth()->check()) {
@@ -308,8 +307,7 @@ class EventController extends BaseController
                 $query->where('status', $request->status);
             }
 
-            $perPage = $request->input('per_page', 15);
-            $events  = $query->orderByDesc('created_at')->paginate($perPage);
+            $events = $query->orderByDesc('created_at')->paginateSafe();
 
             return $this->sendResponse($events, 'My events fetched successfully');
         } catch (\Throwable $th) {

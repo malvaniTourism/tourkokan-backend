@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\V2;
 
 use App\Models\Category;
+use App\Rules\ImageGuideline;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Http\Controllers\BaseController as BaseController;
@@ -58,7 +59,7 @@ class CategoryController extends BaseController
             $categories = $categories->whereStatus($request->status);
         }
 
-        $categories = $categories->paginate($request->per_page);
+        $categories = $categories->paginateSafe();
 
         return $this->sendResponse($categories, 'Categories successfully Retrieved...!');
     }
@@ -101,7 +102,7 @@ class CategoryController extends BaseController
             'name' => ['required', 'string', 'between:2,100', Rule::unique('categories', 'name')->whereNull('deleted_at')],
             'parent_id' => 'sometimes|integer|exists:categories,id',
             'description' => 'required|string',
-            'icon' => 'nullable|mimes:jpeg,jpg,png,webp|max:512',
+            'icon' => ['nullable', 'mimes:jpeg,jpg,png,webp', new ImageGuideline('icon')],
             'status' => 'boolean',
             'meta_data' => 'nullable|json'
         ]);
@@ -142,7 +143,7 @@ class CategoryController extends BaseController
             'name' => ['sometimes', 'string', 'between:2,100', Rule::unique('categories', 'name')->ignore($request->id)->whereNull('deleted_at')],
             'parent_id' => 'sometimes|integer|exists:categories,id',
             'description' => 'sometimes|string',
-            'icon' => 'sometimes|nullable|mimes:jpeg,jpg,png,webp|max:512',
+            'icon' => ['sometimes', 'nullable', 'mimes:jpeg,jpg,png,webp', new ImageGuideline('icon')],
             'status' => 'sometimes|boolean',
             'meta_data' => 'sometimes|nullable|json'
         ]);

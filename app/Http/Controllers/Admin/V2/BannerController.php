@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\V2;
 
 use App\Http\Controllers\BaseController;
+use App\Rules\ImageGuideline;
 use Illuminate\Http\Request;
 use App\Models\Banner;
 use App\Models\BannerPackage;
@@ -22,7 +23,7 @@ class BannerController extends BaseController
     public function listBanners(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'per_page'             => 'sometimes|integer|min:1|max:100',
+            'per_page'             => 'sometimes|integer|min:1|max:30',
             'status'               => 'sometimes|boolean',
             'is_active'            => 'sometimes|boolean',
             'banner_placement_id'  => 'sometimes|exists:banner_placements,id',
@@ -50,7 +51,7 @@ class BannerController extends BaseController
         $query->when($request->filled('search'),              fn($q) => $q->where('name', 'like', '%' . $request->search . '%'));
 
         $banners = $query->orderByDesc('created_at')
-            ->paginate($request->input('per_page', 10));
+            ->paginateSafe();
 
         return $this->sendResponse($banners, 'All Banner successfully Retrieved...!');
     }
@@ -105,9 +106,12 @@ class BannerController extends BaseController
      */
     public function addBanner(Request $request)
     {
+        // Carousel renders as home hero (1.35:1); middle/footer are ad slots (2.5:1)
+        $imageType = $request->input('level') === 'carousel' ? 'hero_home' : 'ad_banner';
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|unique:banners|between:2,40',
-            'image' => 'required|mimes:jpeg,jpg,png,webp',
+            'image' => ['required', 'mimes:jpeg,jpg,png,webp', new ImageGuideline($imageType)],
             'start_date' => 'required|date_format:Y-m-d H:i:s',
             'duration' => 'required|in:' . implode(',', array_column(config('constants.banner_days'), 'code')),
             'level' =>  'required|in:' . implode(',', array_column(config('constants.banner_levels'), 'code')),
@@ -181,9 +185,13 @@ class BannerController extends BaseController
      */
     public function updateBanner(Request $request)
     {
+        // Level may be absent on update — fall back to the banner's stored level
+        $level     = $request->input('level') ?? Banner::where('id', $request->id)->value('level');
+        $imageType = $level === 'carousel' ? 'hero_home' : 'ad_banner';
+
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:banners,id',
-            'image' => 'nullable|mimes:jpeg,jpg,png,webp',
+            'image' => ['nullable', 'mimes:jpeg,jpg,png,webp', new ImageGuideline($imageType)],
             'start_date' => 'nullable|date_format:Y-m-d H:i:s',
             'duration' => 'nullable|in:' . implode(',', array_column(config('constants.banner_days'), 'code')),
             'level' =>  'nullable|in:' . implode(',', array_column(config('constants.banner_levels'), 'code')),

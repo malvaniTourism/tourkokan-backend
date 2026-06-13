@@ -21,7 +21,7 @@ class CommentController extends BaseController
                 'commentable:id,name,user_id',
             ])
             ->latest()
-            ->paginate($request->input('per_page', 20));
+            ->paginateSafe();
 
         return $this->sendResponse($comments, 'Pending comments fetched.');
     }
@@ -44,7 +44,7 @@ class CommentController extends BaseController
                   ->where('commentable_id', $request->commentable_id);
         }
 
-        $comments = $query->paginate($request->input('per_page', 20));
+        $comments = $query->paginateSafe();
 
         return $this->sendResponse($comments, 'Comments fetched.');
     }

@@ -53,12 +53,12 @@ class CategoryService
             return $query->get();
         }
 
-        $categories = $query->paginate($perPage);
+        $categories = $query->paginateSafe();
 
         if ($category) {
-            $categories->getCollection()->transform(function ($cat) {
-                $cat->subCategories->transform(function ($subCategory) {
-                    $subCategory->setRelation('sites', $subCategory->sites->take(15));
+            $categories->getCollection()->transform(function ($cat) use ($perPage) {
+                $cat->subCategories->transform(function ($subCategory) use ($perPage) {
+                    $subCategory->setRelation('sites', $subCategory->sites->take($perPage ?? 15));
                     return $subCategory;
                 });
                 return $cat;

@@ -29,7 +29,7 @@ class RatingController extends BaseController
             $query->select('id', 'name', 'email', 'profile_picture');
         }])
             ->where('user_id', auth()->id())
-            ->paginate(10);
+            ->paginateSafe();
 
         return $this->sendResponse($ratings, 'All Ratings successfully Retrieved...!');
     }

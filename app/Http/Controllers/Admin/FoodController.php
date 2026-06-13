@@ -27,7 +27,7 @@ class FoodController extends BaseController
      */
     public function index()
     {
-        $food = Food::paginate(10);
+        $food = Food::paginateSafe();
 
         return $this->sendResponse($food, 'Food successfully Retrieved...!'); 
     }

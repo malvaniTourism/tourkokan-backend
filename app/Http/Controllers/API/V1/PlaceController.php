@@ -28,7 +28,7 @@ class PlaceController extends BaseController
                     ->where('favourites.favouritable_type', Place::class)
                     ->where('favourites.user_id', $user->id);
             }, 'is_favorite')
-            ->paginate(10);
+            ->paginateSafe();
         return $this->sendResponse($places, 'Places successfully Retrieved...!');
     }
 
@@ -88,7 +88,7 @@ class PlaceController extends BaseController
             });
         }
         $places = $places->select('id', 'name', 'city_id', 'parent_id', 'place_category_id', 'image_url', 'bg_image_url', 'visitors_count')
-            ->paginate();
+            ->paginateSafe();
 
         return $this->sendResponse($places, 'Stops successfully Retrieved...!');
     }
@@ -107,7 +107,7 @@ class PlaceController extends BaseController
                 $query->whereIn('name', ['Bus Stop', 'Bus Depo']);
             })
             ->select('id', 'name', 'city_id', 'parent_id', 'place_category_id', 'image_url', 'bg_image_url', 'visitors_count')
-            ->paginate(10);
+            ->paginateSafe();
 
         return $this->sendResponse($places, 'Stops successfully Retrieved...!');
     }

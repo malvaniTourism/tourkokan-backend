@@ -29,7 +29,7 @@ class RouteController extends BaseController
     public function listroutes(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'per_page' => 'sometimes|integer|min:1|max:20',
+            'per_page' => 'sometimes|integer|min:1|max:30',
         ]);
 
         if ($validator->fails()) {
@@ -54,7 +54,7 @@ class RouteController extends BaseController
                 'delayed_time',
                 DB::raw('(SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id) AS distance')
             )
-            ->paginate($request->input('per_page', 15));
+            ->paginateSafe();
 
         return $this->sendResponse($routes, 'Routes successfully Retrieved...!');
     }
@@ -67,7 +67,7 @@ class RouteController extends BaseController
     public function routes(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'per_page'             => 'sometimes|integer|min:1|max:20',
+            'per_page'             => 'sometimes|integer|min:1|max:30',
             'source_place_id'      => 'nullable|required_with:destination_place_id|exists:sites,id',
             'destination_place_id' => 'nullable|required_with:source_place_id|exists:sites,id',
         ]);
@@ -109,7 +109,7 @@ class RouteController extends BaseController
             $query->whereIn('id', $routeIds);
         }
 
-        $routes = $query->paginate($request->input('per_page', 15));
+        $routes = $query->paginateSafe();
 
         $request->attributes->set('log_meta_data', [
             'source_id'      => $request->source_place_id ? (int) $request->source_place_id : null,
