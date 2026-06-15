@@ -774,6 +774,30 @@ class AuthController extends BaseController
             return $this->sendError('Google token is required.', '', 200);
         }
 
+        // Decode the token locally (claims only, never the signature) to reveal WHY
+        // Google might reject it: expired, wrong token type, or wrong audience.
+        $segments = explode('.', $token);
+        if (count($segments) !== 3) {
+            // A JWT id_token has 3 segments; an opaque access_token (ya29.*) does not
+            Log::warning('[googleAuth] Token is not a JWT id_token', [
+                'segments'     => count($segments),
+                'token_length' => strlen($token),
+                'token_prefix' => substr($token, 0, 12),
+            ]);
+        } else {
+            $claims = json_decode(base64_decode(strtr($segments[1], '-_', '+/')), true) ?? [];
+            Log::info('[googleAuth] Token claims', [
+                'iss'         => $claims['iss'] ?? null,
+                'aud'         => $claims['aud'] ?? null,
+                'azp'         => $claims['azp'] ?? null,
+                'email'       => $claims['email'] ?? null,
+                'iat'         => isset($claims['iat']) ? date('Y-m-d H:i:s', $claims['iat']) : null,
+                'exp'         => isset($claims['exp']) ? date('Y-m-d H:i:s', $claims['exp']) : null,
+                'is_expired'  => isset($claims['exp']) ? ($claims['exp'] < time()) : null,
+                'server_time' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
         try {
             $googleUser = Http::get('https://oauth2.googleapis.com/tokeninfo', [
                 'id_token' => $token,
