@@ -744,7 +744,13 @@ class AuthController extends BaseController
     public function googleAuth(Request $request)
     {
         $token = $request->input('token');
-    
+
+        Log::info('[googleAuth] Request received', [
+            'ip'         => $request->ip(),
+            'has_token'  => !empty($token),
+            'user_email' => $request->input('userEmail'),
+        ]);
+
         $validator = Validator::make(
             $request->all(),
             [
@@ -759,16 +765,40 @@ class AuthController extends BaseController
         );
 
         if ($validator->fails()) {
+            Log::warning('[googleAuth] Validation failed', ['errors' => $validator->errors()->toArray()]);
             return $this->sendError($validator->errors(), [], 200);
         }
 
-        $googleUser = Http::get('https://oauth2.googleapis.com/tokeninfo', [
-            'id_token' => $token,
-        ])->json();
-    
-        if (isset($googleUser['sub'])) {
+        if (empty($token)) {
+            Log::warning('[googleAuth] No token provided in request');
+            return $this->sendError('Google token is required.', '', 200);
+        }
 
-            try {
+        try {
+            $googleUser = Http::get('https://oauth2.googleapis.com/tokeninfo', [
+                'id_token' => $token,
+            ])->json() ?? [];
+        } catch (\Throwable $th) {
+            Log::error('[googleAuth] tokeninfo request failed: ' . $th->getMessage());
+            return $this->sendError('Could not verify Google token. Please try again.', '', 200);
+        }
+
+        // Google returns {error, error_description} when the token is invalid/expired
+        if (!isset($googleUser['sub'])) {
+            $reason = $googleUser['error_description'] ?? $googleUser['error'] ?? 'Token verification failed';
+            Log::warning('[googleAuth] Token rejected by Google', [
+                'reason'   => $reason,
+                'response' => $googleUser,
+            ]);
+            return $this->sendError('Google authentication failed: ' . $reason, '', 200);
+        }
+
+        Log::info('[googleAuth] Token verified by Google', [
+            'sub'   => $googleUser['sub'],
+            'email' => $googleUser['email'] ?? null,
+        ]);
+
+        try {
                 $user = User::findByEmail($googleUser['email']);
 
                 if ($user) {
@@ -777,9 +807,12 @@ class AuthController extends BaseController
                         'isVerified'        => true,
                     ]);
 
+                    Log::info('[googleAuth] Existing user logged in', ['user_id' => $user->id]);
+
                     $token = JWTAuth::fromUser($user);
                     return $this->createNewToken($token, 'Logged In Successfully!');
                 } else {
+                    Log::info('[googleAuth] New user — starting registration', ['email' => $googleUser['email']]);
                     $validator = Validator::make(
                         $request->all(),
                         [
@@ -789,14 +822,16 @@ class AuthController extends BaseController
                     );
             
                     if ($validator->fails()) {
+                        Log::warning('[googleAuth] Registration validation failed (lat/lng)', ['errors' => $validator->errors()->toArray()]);
                         return $this->sendError($validator->errors(), [], 200);
                     }
-                    
+
                     // Create a new user if not found
                     $password = Str::random(10);
                     $roles = Roles::where('code', 'tourist')->first();
-    
+
                     if (!$roles) {
+                        Log::error('[googleAuth] "tourist" role not found — cannot register user');
                         return $this->sendError('Role not found', '', 200);
                     }
     
@@ -813,24 +848,29 @@ class AuthController extends BaseController
                     $joiningBonus = BonusTypes::where(['code' => 'joining_bonus_coins'])->first();
 
                     if (!$joiningBonus) {
+                        Log::error('[googleAuth] "joining_bonus_coins" bonus type not found');
                         return $this->sendError('Something went wrong', '', 200);
                     }
-    
+
                     $user = User::create($input);
                     $user->roles()->attach($roles->id);
+
+                    Log::info('[googleAuth] New user created', ['user_id' => $user->id]);
 
                     $referrer = [];
 
                     if (isValidReturn($request, 'referral_code')) {
                         $referrer = User::where('uid', $request['referral_code'])->first();
-        
+
                         if (!$referrer) {
+                            Log::warning('[googleAuth] Invalid referral code', ['referral_code' => $request['referral_code']]);
                             return $this->sendError('Invalid Referral Code...!', '', 200);
                         }
-        
+
                         $referralBonus = BonusTypes::where(['code' => 'referral_bonus_coins'])->first();
-        
+
                         if (!$referralBonus) {
+                            Log::error('[googleAuth] "referral_bonus_coins" bonus type not found');
                             return $this->sendError('Something went wrong', '', 200);
                         }
         
@@ -865,17 +905,26 @@ class AuthController extends BaseController
                         // getLocationDetails() may return an int status code or error string on failure
                         if (is_array($locationDetails)) {
                             $user->address()->create($locationDetails);
+                        } else {
+                            Log::warning('[googleAuth] Geocoding failed — user created without address', [
+                                'user_id' => $user->id,
+                                'result'  => $locationDetails,
+                            ]);
                         }
                     }
-    
+
+                    Log::info('[googleAuth] Registration completed', ['user_id' => $user->id]);
+
                     $token = JWTAuth::fromUser($user);
                     return $this->createNewToken($token, 'Account Created Successfully!');
                 }
             } catch (\Throwable $th) {
-                Log::error($th->getMessage());
+                Log::error('[googleAuth] Exception during auth', [
+                    'message' => $th->getMessage(),
+                    'file'    => $th->getFile(),
+                    'line'    => $th->getLine(),
+                ]);
                 return $this->sendError('An error occurred.', [], 500);
             }
-        }
-        return $this->sendError('Unauthorized', '', 401);
     }
 }
