@@ -22,6 +22,7 @@ class CategoryService
     {
         $paginate = $options['paginate'] ?? true;
         $fields   = $options['fields']   ?? ['*'];
+        $include_empty   = $options['include_empty']   ?? false;
 
         // Always ensure 'id' is selected so eager loads work
         if ($fields !== ['*'] && !in_array('id', $fields)) {
@@ -32,7 +33,7 @@ class CategoryService
             'subCategories' => fn($q) => $q
                 ->select('id', 'name', 'mr_name', 'code', 'parent_id', 'icon', 'is_hot_category')
                 ->withCount('sites')
-                ->has('sites')
+                ->when(!$include_empty, fn($sub) => $sub->has('sites'))
                 ->latest(),
         ];
 
@@ -47,7 +48,8 @@ class CategoryService
             ->whereStatus(true)
             ->latest()
             ->when($category, fn($q) => $q->where('code', $category))
-            ->when(!$category, fn($q) => $q->whereNull('parent_id')->whereHas('subCategories.sites'));
+            ->when(!$category, fn($q) => $q->whereNull('parent_id')
+                ->when(!$include_empty, fn($qq) => $qq->whereHas('subCategories.sites')));
 
         if (!$paginate) {
             return $query->get();

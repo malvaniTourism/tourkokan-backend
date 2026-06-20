@@ -22,7 +22,11 @@ class CategoryController extends BaseController
     {
         $categories = $this->categoryService->getPaginated(
             $request->category,
-            $request->get('page', 1)
+            $request->get('page', 1),
+            $request->get('per_page', 15),
+            [
+                'include_empty' => $request->boolean('include_empty'),
+            ]
         );
 
         return $this->sendResponse($categories, 'Categories successfully Retrieved...!');
