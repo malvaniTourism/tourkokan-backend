@@ -15,7 +15,7 @@ class SiteSeeder extends Seeder
      */
     public function run()
     {
-        $path = 'excels/new_sites.xls';
+        $path = 'excels/tourkokan.csv';
 		Excel::import(new SiteImport, $path);
     }
 }
