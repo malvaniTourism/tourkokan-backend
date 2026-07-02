@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
         // $this->call(PlaceCategorySeeder::class);
         // $this->call(PlaceSeeder::class);
         // $this->call(ProjectSeeder::class);
+        $this->call(BannerSeeder::class);
         $this->call(SiteSeeder::class);
         $this->call(BusTypeSeeder::class);
       
@@ -32,7 +33,6 @@ class DatabaseSeeder extends Seeder
 
 
        // //   $this->call(GallerySeeder::class);
-       // // $this->call(BannerSeeder::class);
        // // $this->call(RouteAndRouteStopsSeeder::class);
 
     }

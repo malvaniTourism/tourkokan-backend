@@ -9,6 +9,13 @@ use App\Models\BannerPlacement;
 use App\Models\User;
 use Carbon\Carbon;
 
+/**
+ * Seeds the banner advertising system: placements, packages and placeholder
+ * "Ad Space" banners for every sellable slot.
+ *
+ * Pricing rationale and calculations: docs/ADVERTISING_PRICING.md
+ * Idempotent — safe to re-run (updateOrCreate everywhere).
+ */
 class BannerSeeder extends Seeder
 {
     /**
@@ -53,7 +60,7 @@ class BannerSeeder extends Seeder
                 'height' => 1920,
                 'is_active' => true,
             ],
-            
+
             // --- City Details Page ---
             [
                 'code' => 'CITY_MIDDLE',
@@ -117,30 +124,67 @@ class BannerSeeder extends Seeder
         }
 
         // 2. Seed Banner Packages
-        // Collect all placement codes
+        // Placement groups — see docs/ADVERTISING_PRICING.md §4
         $allPlacementCodes = array_column($placements, 'code');
+        $innerPlacements = [
+            'CITY_MIDDLE', 'CITY_FOOTER',
+            'ROUTE_DETAIL_MIDDLE', 'ROUTE_DETAIL_FOOTER',
+            'ROUTE_LIST_MIDDLE', 'ROUTE_LIST_FOOTER',
+        ];
+        $homeSecondary = ['HOME_MIDDLE', 'HOME_FOOTER'];
 
         $packages = [
+            // --- Phase 1: launch rate card (active) ---
+            [
+                'name' => 'Starter',
+                'duration_days' => 7,
+                'price' => 499.00,
+                'allowed_placements' => $innerPlacements,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Growth',
+                'duration_days' => 30,
+                'price' => 1499.00,
+                'allowed_placements' => array_merge($innerPlacements, $homeSecondary),
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Spotlight',
+                'duration_days' => 30,
+                'price' => 3999.00,
+                'allowed_placements' => $allPlacementCodes,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Season Pass',
+                'duration_days' => 90,
+                'price' => 9999.00,
+                'allowed_placements' => $allPlacementCodes,
+                'is_active' => true,
+            ],
+
+            // --- Phase 2: growth rate card (inactive until ~10-15k MAU) ---
             [
                 'name' => 'Basic Starter',
                 'duration_days' => 7,
                 'price' => 2999.00,
                 'allowed_placements' => ['HOME_MIDDLE', 'CITY_MIDDLE', 'ROUTE_LIST_MIDDLE', 'ROUTE_DETAIL_MIDDLE'],
-                'is_active' => true,
+                'is_active' => false,
             ],
             [
                 'name' => 'Standard Growth',
                 'duration_days' => 30,
                 'price' => 9999.99,
                 'allowed_placements' => ['HOME_HERO', 'HOME_FOOTER', 'CITY_FOOTER', 'ROUTE_LIST_FOOTER', 'ROUTE_DETAIL_FOOTER'],
-                'is_active' => true,
+                'is_active' => false,
             ],
             [
                 'name' => 'Premium Dominance',
                 'duration_days' => 90,
                 'price' => 21999.99,
-                'allowed_placements' => $allPlacementCodes, // All allowed
-                'is_active' => true,
+                'allowed_placements' => $allPlacementCodes,
+                'is_active' => false,
             ],
         ];
 
@@ -151,57 +195,65 @@ class BannerSeeder extends Seeder
             );
         }
 
-        // 3. Seed Banners
-        $user = User::first(); 
-        $premiumPackage = BannerPackage::where('name', 'Premium Dominance')->first();
-        
-        // Helper to create banner
-        $createBanner = function($placementCode, $count, $prefix) use ($user, $premiumPackage) {
-            $placement = BannerPlacement::where('code', $placementCode)->first();
-            if (!$placement || !$premiumPackage) return;
+        // 3. Seed placeholder "Ad Space" banners — one per sellable slot,
+        // linked to the cheapest package that can book that placement.
+        $user = User::first();
+        $starter = BannerPackage::where('name', 'Starter')->first();
+        $growth = BannerPackage::where('name', 'Growth')->first();
+        $spotlight = BannerPackage::where('name', 'Spotlight')->first();
 
-            for ($i = 1; $i <= $count; $i++) {
-                $startDate = Carbon::now()->subDays(rand(0, 5));
-                $endDate = (clone $startDate)->addDays($premiumPackage->duration_days);
-
-                Banner::create([
-                    'name' => "Click to Buy This Ad Space",
-                    'image' => "https://placehold.co/{$placement->width}x{$placement->height}/png?text=Click to Buy This Ad Space",
-                    'user_id' => $user ? $user->id : null,
-                    'banner_package_id' => $premiumPackage->id,
-                    'banner_placement_id' => $placement->id,
-                    'start_date' => $startDate,
-                    'end_date' => $endDate,
-                    'status' => 'approved',
-                    'is_active' => true,
-                    'redirect_url' => 'https://tourkokan.com/#Contact',
-                    'impressions' => rand(100, 10000),
-                    'clicks' => rand(10, 500),
-                    'duration' => $premiumPackage->duration_days,
-                    'level' => 'standard', 
-                    'image_orientation' => ($placement->width > $placement->height) ? 'landscape' : 'portrait',
-                ]);
-            }
-        };
-
-        // Landing Page Specifics
-        $createBanner('HOME_HERO', 4, 'Home Hero');
-        $createBanner('HOME_MIDDLE', 3, 'Home Middle');
-        $createBanner('HOME_FOOTER', 1, 'Home Footer');
-        $createBanner('APP_SPLASH', 1, 'App Splash');
-
-        // Other Pages (City, Route Details, Route List)
-        $otherPages = [
-            'CITY_MIDDLE' => 2,
-            'CITY_FOOTER' => 1,
-            'ROUTE_DETAIL_MIDDLE' => 2,
-            'ROUTE_DETAIL_FOOTER' => 1,
-            'ROUTE_LIST_MIDDLE' => 2,
-            'ROUTE_LIST_FOOTER' => 1,
+        // placement code => [slot count, package for the placeholder]
+        $slots = [
+            'HOME_HERO' => [4, $spotlight],
+            'HOME_MIDDLE' => [3, $growth],
+            'HOME_FOOTER' => [1, $growth],
+            'APP_SPLASH' => [1, $spotlight],
+            'CITY_MIDDLE' => [2, $starter],
+            'CITY_FOOTER' => [1, $starter],
+            'ROUTE_DETAIL_MIDDLE' => [2, $starter],
+            'ROUTE_DETAIL_FOOTER' => [1, $starter],
+            'ROUTE_LIST_MIDDLE' => [2, $starter],
+            'ROUTE_LIST_FOOTER' => [1, $starter],
         ];
 
-        foreach ($otherPages as $code => $count) {
-            $createBanner($code, $count, ucwords(str_replace('_', ' ', strtolower($code))));
+        foreach ($slots as $code => [$count, $package]) {
+            $placement = BannerPlacement::where('code', $code)->first();
+            if (!$placement || !$package) {
+                continue;
+            }
+
+            $level = 'middle';
+            if (in_array($code, ['HOME_HERO', 'APP_SPLASH'])) {
+                $level = 'carousel';
+            } elseif (str_ends_with($code, '_FOOTER')) {
+                $level = 'footer';
+            }
+
+            for ($i = 1; $i <= $count; $i++) {
+                $startDate = Carbon::now();
+                $endDate = (clone $startDate)->addDays($package->duration_days);
+
+                Banner::updateOrCreate(
+                    ['name' => "Ad Space - {$code} #{$i}"],
+                    [
+                        'image' => "https://placehold.co/{$placement->width}x{$placement->height}/png?text=Advertise+Here",
+                        'user_id' => $user ? $user->id : null,
+                        'banner_package_id' => $package->id,
+                        'banner_placement_id' => $placement->id,
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        // banners.status is boolean (tinyint) — see docs/ADVERTISING_PRICING.md §9
+                        'status' => true,
+                        'is_active' => true,
+                        'redirect_url' => 'https://tourkokan.com/#Contact',
+                        'impressions' => 0,
+                        'clicks' => 0,
+                        'duration' => $package->duration_days,
+                        'level' => $level,
+                        'image_orientation' => ($placement->width > $placement->height) ? 'landscape' : 'potrait',
+                    ]
+                );
+            }
         }
     }
 }
