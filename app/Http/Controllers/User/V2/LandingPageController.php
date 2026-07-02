@@ -60,15 +60,16 @@ class LandingPageController extends BaseController
 
         #Banners
         $banners = BannerPlacement::with(['banners' => function ($query) {
+            // banners.status is a boolean column (tinyint), not a workflow string
             $query->where('is_active', true)
-                ->where('status', 'approved')
+                ->where('status', true)
                 // ->whereDate('start_date', '<=', now())
                 // ->whereDate('end_date', '>=', now())
                 ->latest();
         }])
             ->whereHas('banners', function ($query) {
                 $query->where('is_active', true)
-                    ->where('status', 'approved');
+                    ->where('status', true);
                     // ->whereDate('start_date', '<=', now())
                     // ->whereDate('end_date', '>=', now());
             })

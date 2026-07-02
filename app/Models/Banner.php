@@ -63,8 +63,9 @@ class Banner extends Model
 
     public function scopeActive($query)
     {
+        // banners.status is a boolean column (tinyint), not a workflow string
         return $query->where('is_active', true)
-                     ->where('status', 'approved')
+                     ->where('status', true)
                      ->whereDate('start_date', '<=', now())
                      ->whereDate('end_date', '>=', now());
     }
