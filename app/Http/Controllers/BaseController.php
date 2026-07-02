@@ -4,45 +4,31 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 class BaseController extends Controller
 {
-    /**
-     * success response method.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function sendResponse($result, $message, $status = true)
     {
-        $version =  config('app_version');
+        $version  = request()->attributes->get('app_version');
+        $language = request()->attributes->get('language', 'en');
 
         if ($version == null) {
-            $response = [
+            return response()->json([
                 'success' => false,
-                'message' => "Unauthorised Access"
-            ];
-            return response()->json($response, 200);
+                'message' => "Unauthorised Access",
+            ], 200);
         }
-        
-        $response = [
-            'version' => $version,
-            'language' => config('language'),
-            'success' => $status,
-            'message' => $message,
-            'data'    => $result,
-        ];
 
-        return response()->json($response, 200);
+        return response()->json([
+            'version'  => $version,
+            'language' => $language,
+            'success'  => $status,
+            'message'  => $message,
+            'data'     => $result,
+        ], 200);
     }
 
-
-    /**
-     * return error response.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function sendError($error, $errorMessages = [], $code)
+    public function sendError($error, $errorMessages = [], $code = 400)
     {
         $response = [
             'success' => false,

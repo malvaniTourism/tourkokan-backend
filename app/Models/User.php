@@ -8,12 +8,19 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Traits\Hashidable;
+use App\Traits\HasStorageFiles;
+use App\Traits\EncryptsPersonalData;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasApiTokens, Hashidable, HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, Hashidable, HasFactory, Notifiable, SoftDeletes, HasStorageFiles, EncryptsPersonalData;
+
+    protected array $fileFields = ['profile_picture'];
+
+    /** Fields that get a blind-index hash column auto-populated on save */
+    protected array $blindIndexFields = ['name', 'email', 'mobile'];
 
     /**
      * The attributes that are mass assignable.
@@ -21,13 +28,15 @@ class User extends Authenticatable implements JWTSubject
      * @var string[]
      */
     protected $fillable = [
-        'role_id',
         'language',
         'project_id',
         'name',
+        'name_hash',
         'email',
+        'email_hash',
         'password',
         'mobile',
+        'mobile_hash',
         'code',
         'gender',
         'dob',
@@ -36,7 +45,7 @@ class User extends Authenticatable implements JWTSubject
         'isVerified',
         'uid',
         'otp',
-        'otp_created_at'
+        'otp_created_at',
     ];
 
     /**
@@ -47,6 +56,10 @@ class User extends Authenticatable implements JWTSubject
     protected $hidden = [
         'password',
         'remember_token',
+        'otp',
+        'name_hash',
+        'email_hash',
+        'mobile_hash',
     ];
 
     /**
@@ -56,8 +69,29 @@ class User extends Authenticatable implements JWTSubject
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'otp_created_at' => 'datetime',
+        'otp_created_at'    => 'datetime',
+        // PII — encrypted at rest using APP_KEY (AES-256-CBC)
+        'name'              => 'encrypted',
+        'email'             => 'encrypted',
+        'mobile'            => 'encrypted',
+        'dob'               => 'date:Y-m-d',
+        'gender'            => 'encrypted',
     ];
+
+    /**
+     * Override castAttribute to gracefully handle records encrypted with a
+     * different APP_KEY (e.g. data migrated from another environment).
+     * Returns null instead of throwing DecryptException so the rest of the
+     * response is still usable.
+     */
+    protected function castAttribute($key, $value)
+    {
+        try {
+            return parent::castAttribute($key, $value);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException) {
+            return null;
+        }
+    }
 
     /**
      * Get the identifier that will be stored in the subject claim of the JWT.
@@ -86,7 +120,12 @@ class User extends Authenticatable implements JWTSubject
      */
     public function roles()
     {
-        return $this->belongsTo(Roles::class, 'role_id');
+        return $this->belongsToMany(Roles::class, 'user_roles', 'user_id', 'role_id');
+    }
+
+    public function hasRole(string $code): bool
+    {
+        return $this->roles()->where('code', $code)->exists();
     }
 
     /**

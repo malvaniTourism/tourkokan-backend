@@ -36,7 +36,7 @@ class CityImport implements ToCollection, WithHeadingRow
 
                     // Get the downloadable URL for the file
 
-                    $value['image_url'] = Storage::url($destinationFilePath);
+                    $value['image_url'] = $destinationFilePath;
 
                     Log::info("FILE STORED" . $value['image_url']);
                 }
@@ -57,7 +57,7 @@ class CityImport implements ToCollection, WithHeadingRow
 
                     // Get the downloadable URL for the file
 
-                    $value['bg_image_url'] = Storage::url($destinationFilePath);
+                    $value['bg_image_url'] = $destinationFilePath;
 
                     Log::info("FILE STORED" . $value['bg_image_url']);
                 }

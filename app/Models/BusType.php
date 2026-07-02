@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use App\Traits\Hashidable;
+use App\Traits\HasStorageFiles;
 
 class BusType extends Model
 {
-    use Hashidable, HasFactory, Notifiable;
+    use Hashidable, HasFactory, Notifiable, HasStorageFiles;
+
+    protected array $fileFields = ['logo'];
 
     /**
      * The attributes that are mass assignable.

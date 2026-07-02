@@ -38,10 +38,4 @@ class BonusTypes extends Model
         'amount' => 'decimal:2',
     ];
 
-    /**
-     * The attributes that should be mutated to dates.
-     *
-     * @var array
-     */
-    protected $dates = ['deleted_at'];
 }

@@ -4,24 +4,26 @@ import Carousel from '../components/Carousel';
 import About from '../components/About';
 import Contact from '../components/Contact';
 import Footer from '../components/Footer';
-import Team from '../components/Team';
 import DeleteMyAccount from '../components/DeleteMyAccount ';
+import Pricing from '../components/Pricing';
 
 function Home() {
     return (
-        <div>
+        <div style={{ paddingTop: "80px" }}>
             <NavigationBar />
             <Carousel />
-            <div id='About'>
+            <div id="About">
                 <About />
             </div>
-            <div id='Contact' style={{ padding: 50, backgroundColor: "#152F4F" }}>
+            <div id="Pricing">
+                <Pricing />
+            </div>
+            <div id="Contact" style={{ padding: "50px 0", backgroundColor: "#152F4F" }}>
                 <Contact />
             </div>
-            <div id='DeleteMyAccount'>
+            <div id="DeleteMyAccount">
                 <DeleteMyAccount />
             </div>
-            {/* <Team /> */}
             <Footer />
         </div>
     );

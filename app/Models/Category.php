@@ -4,17 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 use App\Traits\Hashidable;
+use App\Traits\HasStorageFiles;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 
 class Category extends Model
 {
-    use HasFactory, Hashidable, HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Hashidable, SoftDeletes, HasStorageFiles;
+
+    protected array $fileFields = ['icon'];
 
     /**
      * The attributes that are mass assignable.
@@ -62,7 +61,7 @@ class Category extends Model
 
     public function getNameAttribute($value)
     {
-        $language = config('language');
+        $language = auth()->user()?->language ?? 'en';
 
         // return $language === 'en' ? $value :  ($this->mr_name == "" ? $value :  $this->mr_name);
         return empty($language) || $language === 'en' ? $value : ($this->mr_name == "" ? $value : $this->mr_name);
@@ -86,6 +85,11 @@ class Category extends Model
     public function subCategories()
     {
         return $this->hasMany(Category::class, 'parent_id', 'id')->where('status', true);
+    }
+
+    public function allSubCategories()
+    {
+        return $this->hasMany(Category::class, 'parent_id', 'id');
     }
 
     /**

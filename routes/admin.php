@@ -13,7 +13,7 @@ use App\Http\Controllers\Admin\TourPackageController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\AccomodationCategoryController;
 use App\Http\Controllers\Admin\V2\BannerController;
-use App\Http\Controllers\Admin\BusTypeController;
+use App\Http\Controllers\Admin\V2\BusTypeController;
 use App\Http\Controllers\Admin\DropDownController;
 use App\Http\Controllers\Admin\V2\AppVersionController;
 use App\Http\Controllers\Admin\V2\BonusTypesController;
@@ -23,6 +23,15 @@ use App\Http\Controllers\Admin\V2\GalleryController;
 use App\Http\Controllers\Admin\V2\RolesController;
 use App\Http\Controllers\Admin\V2\RouteController;
 use App\Http\Controllers\Admin\V2\SiteController;
+use App\Http\Controllers\Admin\V2\AdminBannerController;
+use App\Http\Controllers\Admin\V2\EventController as AdminEventController;
+use App\Http\Controllers\Admin\V2\CommentController as AdminCommentController;
+use App\Http\Controllers\Admin\V2\MessageController as AdminMessageController;
+use App\Http\Controllers\Admin\V2\EventTypeController as AdminEventTypeController;
+use App\Http\Controllers\Admin\V2\EventGalleryController as AdminEventGalleryController;
+use App\Http\Controllers\Admin\V2\SiteGalleryController as AdminSiteGalleryController;
+use App\Http\Controllers\Admin\V2\UserRoleRequestController as AdminUserRoleRequestController;
+use App\Http\Controllers\Admin\V2\AnalyticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,14 +48,14 @@ Route::get('/', function () {
     print('I am an admin');
 });
 
-Route::group(['middleware' => 'api'], function ($router) {
+Route::group(['middleware' => ['api', 'premiddleware', 'throttle:auth']], function ($router) {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/refresh', [AuthController::class, 'refresh']);
 });
 
-Route::group(['middleware' => ['admin', 'auth:api'], 'prefix' => 'api'], function ($router) {
+Route::group(['middleware' => ['admin', 'auth:api', 'premiddleware'], 'prefix' => 'api'], function ($router) {
 
     Route::get('/user-profile', [AuthController::class, 'userProfile']);
     Route::post('/users', [AuthController::class, 'index']);
@@ -117,15 +126,18 @@ Route::group(['middleware' => ['admin', 'auth:api'], 'prefix' => 'api'], functio
 });
 
 
-Route::group(['middleware' => 'api', 'prefix' => 'v2/auth'], function ($router) {
+Route::group(['middleware' => ['api', 'premiddleware', 'throttle:auth'], 'prefix' => 'v2/auth'], function ($router) {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('refresh', [AuthController::class, 'refresh']);
-    Route::post('sendOtp', [AuthController::class, 'sendOtp']);
-    Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
-}); 
 
-Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'], function ($router) {
+    Route::middleware('throttle:otp')->group(function () {
+        Route::post('sendOtp', [AuthController::class, 'sendOtp']);
+        Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
+    });
+});
+
+Route::group(['middleware' =>  ['auth:api', 'premiddleware', 'throttle:admin'], 'prefix' => 'v2'], function ($router) {
     Route::post('listcategories', [CategoryController::class, 'listcategories']);
     Route::post('getCategory', [CategoryController::class, 'getCategory']);
     Route::post('addCategory', [CategoryController::class, 'addCategory']);
@@ -139,6 +151,7 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
     Route::post('updateSite', [SiteController::class, 'updateSite']);
     Route::post('deleteSite', [SiteController::class, 'deleteSite']);
 
+    Route::post('eventTypeDD', [AdminEventTypeController::class, 'index']);
     Route::post('bannerDaysDD', [DropDownController::class, 'bannerDaysDD']);
     Route::post('bannerImageOrientationDD', [DropDownController::class, 'bannerImageOrientationDD']);
     Route::post('bannerLevelsDD', [DropDownController::class, 'bannerLevelsDD']);
@@ -162,8 +175,10 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
     Route::post('getQueries', [ContactController::class, 'getQueries']);
     Route::post('getQuery', [ContactController::class, 'getQuery']);
     Route::post('updateQuery', [ContactController::class, 'updateQuery']);
+    Route::post('replyQuery', [ContactController::class, 'replyQuery']);
 
     Route::post('allUsers', [AuthController::class, 'allUsers']);
+    Route::post('listUsers', [AuthController::class, 'listUsers']);
 
     Route::post('roleDD', [RolesController::class, 'roleDD']);
 
@@ -175,4 +190,90 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware'], 'prefix' => 'v2'],
 
     Route::post('getGallery', [GalleryController::class, 'getGallery']);
     Route::post('updateGallery', [GalleryController::class, 'updateGallery']);
+
+    // Banner Form Dropdown (packages with full placement objects)
+    Route::post('bannerFormDD', [AdminBannerController::class, 'bannerFormDD']);
+
+    // Banner Packages (Pricing)
+    Route::post('listBannerPackages', [AdminBannerController::class, 'listPackages']);
+    Route::post('getBannerPackage', [AdminBannerController::class, 'getPackage']);
+    Route::post('addBannerPackage', [AdminBannerController::class, 'storePackage']);
+    Route::post('updateBannerPackage', [AdminBannerController::class, 'updatePackage']);
+    Route::post('deleteBannerPackage', [AdminBannerController::class, 'deletePackage']);
+
+    // Banner Placements
+    Route::post('listBannerPlacements', [AdminBannerController::class, 'listPlacements']);
+    Route::post('getBannerPlacement', [AdminBannerController::class, 'getPlacement']);
+    Route::post('addBannerPlacement', [AdminBannerController::class, 'storePlacement']);
+    Route::post('updateBannerPlacement', [AdminBannerController::class, 'updatePlacement']);
+    Route::post('deleteBannerPlacement', [AdminBannerController::class, 'deletePlacement']);
+
+    // Banner Status
+    Route::post('changeBannerStatus', [AdminBannerController::class, 'changeStatus']);
+
+    // ── Events ────────────────────────────────────────────────────────────────
+    Route::post('listEvents', [AdminEventController::class, 'index']);
+    Route::post('getEvent', [AdminEventController::class, 'show']);
+    Route::post('createEvent', [AdminEventController::class, 'store']);
+    Route::post('updateEvent', [AdminEventController::class, 'update']);
+    Route::post('deleteEvent', [AdminEventController::class, 'destroy']);
+    Route::post('pendingEvents', [AdminEventController::class, 'pending']);
+    Route::post('approveEvent', [AdminEventController::class, 'approve']);
+    Route::post('rejectEvent', [AdminEventController::class, 'reject']);
+    Route::post('featureEvent', [AdminEventController::class, 'feature']);
+    Route::post('eventAnalytics', [AdminEventController::class, 'analytics']);
+
+    // ── Event Gallery ─────────────────────────────────────────────────────────
+    Route::post('getEventGallery', [AdminEventGalleryController::class, 'index']);
+    Route::post('uploadEventGallery', [AdminEventGalleryController::class, 'upload'])->middleware('throttle:uploads');
+    Route::post('deleteEventGallery', [AdminEventGalleryController::class, 'destroy']);
+
+    // ── Comment Moderation ────────────────────────────────────────────────────
+    Route::post('pendingComments', [AdminCommentController::class, 'pending']);
+    Route::post('listComments', [AdminCommentController::class, 'index']);
+    Route::post('approveComment', [AdminCommentController::class, 'approve']);
+    Route::post('rejectComment', [AdminCommentController::class, 'reject']);
+
+    // ── Site Gallery ──────────────────────────────────────────────────────────
+    Route::post('getSiteGallery', [AdminSiteGalleryController::class, 'index']);
+    Route::post('uploadSiteGallery', [AdminSiteGalleryController::class, 'upload'])->middleware('throttle:uploads');
+    Route::post('deleteSiteGallery', [AdminSiteGalleryController::class, 'destroy']);
+
+    // ── Site Submission Review ────────────────────────────────────────────────
+    Route::post('pendingSites', [SiteController::class, 'pendingSubmissions']);
+    Route::post('allSubmissions', [SiteController::class, 'allSubmissions']);
+    Route::post('approveSite', [SiteController::class, 'approveSite']);
+    Route::post('rejectSite', [SiteController::class, 'rejectSite']);
+
+    // ── User Role Requests ────────────────────────────────────────────────────
+    Route::post('userRoleRequests', [AdminUserRoleRequestController::class, 'index']);
+    Route::post('approveRoleRequest', [AdminUserRoleRequestController::class, 'approve']);
+    Route::post('rejectRoleRequest', [AdminUserRoleRequestController::class, 'reject']);
+
+    // ── Direct Messaging ──────────────────────────────────────────────────────
+    Route::post('sendMessage', [AdminMessageController::class, 'send']);
+    Route::post('listMessages', [AdminMessageController::class, 'index']);
+    Route::post('deleteMessage', [AdminMessageController::class, 'destroy']);
+
+    // ── Analytics ─────────────────────────────────────────────────────────────
+    Route::post('analytics/activityLogs',      [AnalyticsController::class, 'activityLogs']);
+    Route::post('analytics/userTimeline',      [AnalyticsController::class, 'userTimeline']);
+    Route::post('analytics/topSites',          [AnalyticsController::class, 'topSites']);
+    Route::post('analytics/topEvents',         [AnalyticsController::class, 'topEvents']);
+    Route::post('analytics/topRoutes',         [AnalyticsController::class, 'topRoutes']);
+    Route::post('analytics/userInterests',     [AnalyticsController::class, 'userInterests']);
+    Route::post('analytics/loginHistory',      [AnalyticsController::class, 'loginHistory']);
+    Route::post('analytics/activeUsers',       [AnalyticsController::class, 'activeUsers']);
+    Route::post('analytics/dashboardStats',    [AnalyticsController::class, 'dashboardStats']);
+    Route::post('analytics/eventTypeSummary',  [AnalyticsController::class, 'eventTypeSummary']);
+    Route::post('analytics/platformBreakdown', [AnalyticsController::class, 'platformBreakdown']);
+    Route::post('analytics/favouriteActivity', [AnalyticsController::class, 'favouriteActivity']);
+});
+
+// Admin-only route management (requires admin role)
+Route::group(['middleware' => ['auth:api', 'premiddleware', 'admin', 'throttle:admin'], 'prefix' => 'v2'], function () {
+    Route::post('addRoute', [RouteController::class, 'addRoute']);
+    Route::post('routesUpdate', [RouteController::class, 'routesUpdate']);
+    Route::post('deleteRoute', [RouteController::class, 'deleteRoute']);
+    Route::post('massRouteStopsUpdate', [RouteController::class, 'massRouteStopsUpdate']);
 });

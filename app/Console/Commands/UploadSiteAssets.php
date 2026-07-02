@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\Site;
-use GrahamCampbell\ResultType\Success;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -48,12 +47,11 @@ class UploadSiteAssets extends Command
             $sourceFilePath = public_path('assets/city/' . $value['name'] . '_bg.jpg');
             $destinationFilePath = config('constants.upload_path.site') . '/' . $value['name'] . '_bg.jpg';
 
-            if (File::exists($destinationFilePath)) {
+            if (Storage::exists($destinationFilePath)) {
                 continue;
             }
 
             if (!File::exists($sourceFilePath)) {
-                // File exists, you can proceed with your logic
                 continue;
             }
 
@@ -65,7 +63,7 @@ class UploadSiteAssets extends Command
 
             // // Get the downloadable URL for the file
 
-            $updateData = array('image' => Storage::url($destinationFilePath));
+            $updateData = array('image' => $destinationFilePath);
 
             Site::find($value['id'])->update($updateData);
             

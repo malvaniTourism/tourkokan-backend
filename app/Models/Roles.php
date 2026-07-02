@@ -18,6 +18,7 @@ class Roles extends Model
      */
     protected $fillable = [
         'name',
+        'code',
         'display_name',
     ];
 
@@ -42,6 +43,6 @@ class Roles extends Model
      */
     public function users()
     {
-        return $this->hasMany(User::class, 'role_id');
+        return $this->belongsToMany(User::class, 'user_roles', 'role_id', 'user_id');
     }
 }

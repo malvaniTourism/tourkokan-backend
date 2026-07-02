@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\V2;
 
 use App\Models\BusType;
 use Illuminate\Http\Request;
@@ -53,7 +53,7 @@ class BusTypeController extends BaseController
         //Image 1 store      
         $input = $request->all();
 
-        $uploadPath = config('constants.upload_path.category');
+        $uploadPath = config('constants.upload_path.busType');
 
         $fileFields = ['icon'];
 

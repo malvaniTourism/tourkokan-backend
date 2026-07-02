@@ -39,6 +39,16 @@ use App\Http\Controllers\User\V2\{
     RatingController,
     RolesController,
     RouteController,
+    EventController,
+    EventTypeController,
+    EventGalleryController,
+    SiteGalleryController,
+    EventInteractionController,
+    NotificationController,
+    HealthCheckController,
+    MessageController,
+    UserRoleRequestController,
+    RouteStopsController,
 };
 
 /*
@@ -182,18 +192,27 @@ Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2'], function ($rou
     Route::get('roleDD', [RolesController::class, 'roleDD']);
     Route::post('addGuestQuery', [ContactController::class, 'addQuery']);
     Route::post('deleteMyAccount', [AuthController::class, 'deleteMyAccount']);
+    Route::post('eventTypeDD', [EventTypeController::class, 'index']);
+    Route::get('advertisingPackages', function () {
+        $packages = \App\Models\BannerPackage::where('is_active', true)->orderBy('price')->get();
+        return response()->json(['success' => true, 'data' => $packages]);
+    });
 });
 
-Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2/auth'], function ($router) {
+Route::group(['middleware' => ['premiddleware', 'throttle:auth'], 'prefix' => 'v2/auth'], function ($router) {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('refresh', [AuthController::class, 'refresh']);
-    Route::post('sendOtp', [AuthController::class, 'sendOtp']);
-    Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
     Route::post('updateEmail', [AuthController::class, 'updateEmail']);
     Route::post('isVerifiedEmail', [AuthController::class, 'isVerifiedEmail']);
     Route::post('deleteMyAccount', [AuthController::class, 'deleteMyAccount']); // As per need make changes not tested
     Route::post('googleAuth', [AuthController::class, 'googleAuth']);
+
+    // OTP: stricter limit — 3/min per IP to prevent SMS abuse
+    Route::middleware('throttle:otp')->group(function () {
+        Route::post('sendOtp', [AuthController::class, 'sendOtp']);
+        Route::post('verifyOtp', [AuthController::class, 'verifyOtp']);
+    });
 });
 
 Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], function ($router) {
@@ -208,6 +227,7 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
 
     Route::post('listroutes', [RouteController::class, 'listroutes']);
     Route::post('routes', [RouteController::class, 'routes']);
+    Route::post('getRouteStops', [RouteStopsController::class, 'getRouteStops']);
     Route::post('downloadRoute', [RouteController::class, 'downloadRoute']);
 
     Route::post('favourites', [FavouriteController::class, 'index']);
@@ -223,18 +243,79 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('getCategory', [CategoryController::class, 'getCategory']);
 
     Route::post('ratings', [RatingController::class, 'index']);
-    Route::post('addUpdateRating', [RatingController::class, 'addUpdateRating']);
-    // Route::put('rating/{id}', [RatingController::class, 'update']);
-    Route::delete('rating/{id}', [RatingController::class, 'destroy']);
+    Route::middleware('throttle:writes')->group(function () {
+        Route::post('addUpdateRating', [RatingController::class, 'addUpdateRating']);
+        Route::delete('rating/{id}', [RatingController::class, 'destroy']);
+    });
 
     Route::post('comments', [CommentController::class, 'index']);
-    Route::post('comment', [CommentController::class, 'store']);
     Route::post('getComment', [CommentController::class, 'getComment']);
-    Route::post('updateComment', [CommentController::class, 'updateComment']);
-    Route::post('deleteComment', [CommentController::class, 'deleteComment']);
+    Route::middleware('throttle:writes')->group(function () {
+        Route::post('comment', [CommentController::class, 'store']);
+        Route::post('updateComment', [CommentController::class, 'updateComment']);
+        Route::post('deleteComment', [CommentController::class, 'deleteComment']);
+    });
 
     Route::post('getGallery', [GalleryController::class, 'getGallery']);
+
+    // ── Events (User) ──────────────────────────────────────────────
+    Route::post('listEvents', [EventController::class, 'index']);
+    Route::post('myEvents', [EventController::class, 'myEvents']);
+    Route::get('events/{slug}', [EventController::class, 'show']);   // GET kept for SEO
+
+    Route::middleware(['vendor', 'throttle:writes'])->group(function () {
+        Route::post('createEvent', [EventController::class, 'store']);
+        Route::post('updateEvent', [EventController::class, 'update']);
+        Route::post('deleteEvent', [EventController::class, 'destroy']);
+        Route::post('cancelEvent', [EventController::class, 'cancel']);
+    });
+
+    // Event Gallery (completed events only)
+    Route::post('getEventGallery', [EventGalleryController::class, 'index']);
+    Route::post('uploadEventGallery', [EventGalleryController::class, 'upload'])->middleware('throttle:uploads');
+    Route::post('deleteEventGallery', [EventGalleryController::class, 'destroy'])->middleware('throttle:writes');
+
+    // Event Interactions
+    Route::post('likeEvent', [EventInteractionController::class, 'like']);
+    Route::post('goingEvent', [EventInteractionController::class, 'going']);
+    Route::post('interestedEvent', [EventInteractionController::class, 'interested']);
+    Route::post('favouriteEvent', [EventInteractionController::class, 'favourite']);
+    Route::post('shareEvent', [EventInteractionController::class, 'share']);
+
+    // ── Push Notifications ─────────────────────────────────────────
+    Route::post('registerPushToken', [NotificationController::class, 'registerToken']);
+    Route::post('unregisterPushToken', [NotificationController::class, 'unregisterToken']);
+    Route::post('getDevices', [NotificationController::class, 'getDevices']);
+    Route::post('testNotification', [NotificationController::class, 'testNotification']);
+
+    // ── Health Check (auth required — not in admin panel) ──────────
+    Route::get('healthcheck', [HealthCheckController::class, 'check']);
+
+    // ── User Inbox (admin → user messages) ─────────────────────────
+    Route::post('myMessages', [MessageController::class, 'inbox']);
+    Route::post('readMessage', [MessageController::class, 'markRead']);
+    Route::post('unreadMessageCount', [MessageController::class, 'unreadCount']);
+
+    // ── Site Gallery (approved sites only) ────────────────────────────
+    Route::post('getSiteGallery', [SiteGalleryController::class, 'index']);
+    Route::post('uploadSiteGallery', [SiteGalleryController::class, 'upload'])->middleware('throttle:uploads');
+    Route::post('deleteSiteGallery', [SiteGalleryController::class, 'destroy'])->middleware('throttle:writes');
+
+    // ── Site Onboarding (user-submitted places) ─────────────────────
+    Route::post('parseMapUrl', [SiteController::class, 'parseMapUrl']);
+    Route::post('mySubmissions', [SiteController::class, 'mySubmissions']);
+
+    Route::middleware(['vendor', 'throttle:writes'])->group(function () {
+        Route::post('addSite', [SiteController::class, 'submitSite']);
+        Route::post('updateMySubmission', [SiteController::class, 'updateSubmission']);
+        Route::post('deleteMySubmission', [SiteController::class, 'deleteSubmission']);
+    });
+
+    // ── Role Requests ───────────────────────────────────────────────
+    Route::post('requestRole', [UserRoleRequestController::class, 'store']);
+    Route::get('myRoleRequests', [UserRoleRequestController::class, 'index']);
 });
+
 use Illuminate\Support\Facades\Mail;
 
 Route::get('/send-test-email', function () {

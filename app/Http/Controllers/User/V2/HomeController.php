@@ -83,7 +83,7 @@ class HomeController extends BaseController
         })
         ->orderBy('id', 'desc')
         ->latest()
-        ->paginate(15); //response with pagination
+        ->paginateSafe(); //response with pagination
 
         Log::info("Records fetched");
 

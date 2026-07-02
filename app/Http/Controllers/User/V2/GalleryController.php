@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User\V2;
 
 use App\Models\Gallery;
+use App\Models\Site;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\BaseController;
@@ -10,108 +11,56 @@ use App\Http\Controllers\BaseController;
 class GalleryController extends BaseController
 {
     /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
+     * Flat paginated gallery with optional search (by image title or site name)
+     * and optional category filter. Both filters are independent and combinable.
      */
     public function getGallery(Request $request)
     {
-        $user = auth()->user();
-
         $validator = Validator::make($request->all(), [
-            'search' => 'sometimes|nullable|string|alpha|max:255',
-            'category' => 'nullable|exists:categories,code'
+            'search'   => 'sometimes|nullable|string|max:255',
+            'category' => 'sometimes|nullable|exists:categories,code',
+            'site_id'  => 'sometimes|nullable|exists:sites,id',
+            'per_page' => 'sometimes|nullable|integer|min:1|max:30',
         ]);
 
         if ($validator->fails()) {
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $search = $request->input('search');
+        $search   = $request->input('search');
         $category = $request->input('category');
+        $siteId   = $request->input('site_id');
 
         $gallery = Gallery::with([
-            'galleryable:id,name,parent_id',
+            'galleryable:id,name,mr_name,parent_id',
             'galleryable.categories:id,name,code,parent_id'
-        ]);
+        ])->where('status', true);
 
-        if ($request->has('search') && $request->has('category') && !empty($category)) {
-            $gallery = $gallery->whereHas('galleryable.categories', function ($query) use ($category) {
-                $query->where('code', $category);
-            })
-                ->where('title', 'like',  '%' . $search . '%');
-        } elseif ($request->has('search')) {
-            $gallery = $gallery->where('title', 'like', '%' . $search . '%');
+        if (!empty($siteId)) {
+            $gallery->where('galleryable_type', Site::class)
+                    ->where('galleryable_id', $siteId);
         }
 
-        $gallery = $gallery->paginate(isValidReturn($request, 'per_page', 10));
+        if (!empty($category)) {
+            $gallery->whereHas('galleryable.categories', function ($query) use ($category) {
+                $query->where('code', $category);
+            });
+        }
 
-        return $this->sendResponse($gallery, 'Gallery images successfully Retrieved...!');
+        if (!empty($search)) {
+            $gallery->where(function ($query) use ($search) {
+                $query->where('title', 'like', '%' . $search . '%')
+                      ->orWhereHas('galleryable', function ($query) use ($search) {
+                          $query->where('name', 'like', '%' . $search . '%')
+                                ->orWhere('mr_name', 'like', '%' . $search . '%');
+                      });
+            });
+        }
+
+        $gallery = $gallery->latest()->paginateSafe();
+
+        return $this->sendResponse($gallery, 'Gallery images successfully retrieved.');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Gallery  $gallery
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Gallery $gallery)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Gallery  $gallery
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Gallery $gallery)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Gallery  $gallery
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Gallery $gallery)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Gallery  $gallery
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Gallery $gallery)
-    {
-        //
-    }
 }

@@ -1,57 +1,55 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Container from 'react-bootstrap/Container';
 import Navbar from 'react-bootstrap/Navbar';
-import { Form, Button, Nav, Modal } from 'react-bootstrap';
-import "./styles.css"
+import { Button, Nav } from 'react-bootstrap';
+import "./styles.css";
 
 function NavigationBar() {
-    const [show, setShow] = useState(false);
-
-    const handleClose = () => setShow(false);
-    const handleShow = () => setShow(true);
-
     return (
-        <>
-            <Navbar bg="light" expand="lg" className="bg-body-tertiary">
-                <Container>
-                    <Navbar.Brand href="#home" style={{ display: "flex", alignItems: "center" }}>
-                        <img
-                            alt=""
-                            src="/assets/corousel/logo.png"
-                            width="70"
-                            height="70"
-                            className="d-inline-block align-top"
-                        />{' '}
-                        Tourkokan
-                    </Navbar.Brand>
-                    <Navbar.Toggle aria-controls="basic-navbar-nav" />
-                    <Navbar.Collapse id="basic-navbar-nav">
-                        <Nav className="me-auto">
-                            <Nav.Link href="/">Home</Nav.Link>
-                            <Nav.Link href="/#About">About Us</Nav.Link>
-                            <Nav.Link href="/#Contact">Contact Us</Nav.Link>
-                        </Nav>
-                        <Form className="d-flex">
-                            <Button variant="outline-primary" onClick={handleShow}>Download</Button>
-                        </Form>
-                    </Navbar.Collapse>
-                </Container>
-            </Navbar>
-
-            <Modal show={show} onHide={handleClose}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Application Under Deployment Process...!</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <p>The application is currently under deployment. Please stay tuned for updates!</p>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={handleClose}>
-                        Close
-                    </Button>
-                </Modal.Footer>
-            </Modal>
-        </>
+        <Navbar fixed="top" bg="light" expand="lg" className="bg-body-tertiary shadow-sm">
+            <Container>
+                <Navbar.Brand href="/" style={{ display: "flex", alignItems: "center" }}>
+                    <img
+                        alt="TourKokan"
+                        src="/logo.png"
+                        height="60"
+                        className="d-inline-block align-top"
+                    />
+                </Navbar.Brand>
+                <Navbar.Toggle aria-controls="basic-navbar-nav" />
+                <Navbar.Collapse id="basic-navbar-nav">
+                    <Nav className="mx-auto justify-content-center custom-nav text-center">
+                        <Nav.Link href="/" className="mx-2">Home</Nav.Link>
+                        <Nav.Link href="/#About" className="mx-2">About Us</Nav.Link>
+                        <Nav.Link href="/#Contact" className="mx-2">Contact Us</Nav.Link>
+                    </Nav>
+                    <div className="d-flex justify-content-center mt-2 mt-lg-0">
+                        <a
+                            href="https://play.google.com/store/apps/details?id=com.tourkokan&pcampaignid=web_share"
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                backgroundColor: "transparent",
+                                borderRadius: "8px",
+                                padding: "8px 16px",
+                                textDecoration: "none",
+                                border: "1px solid #aaa",
+                                minWidth: "150px",
+                            }}
+                        >
+                            <img src="/playstore.webp" alt="Google Play" style={{ width: "28px", height: "28px" }} />
+                            <div style={{ lineHeight: 1.2 }}>
+                                <div style={{ fontSize: "10px", color: "#555", letterSpacing: "0.5px" }}>GET IT ON</div>
+                                <div style={{ fontSize: "16px", fontWeight: "600", color: "#000" }}>Google Play</div>
+                            </div>
+                        </a>
+                    </div>
+                </Navbar.Collapse>
+            </Container>
+        </Navbar>
     );
 }
 

@@ -67,6 +67,7 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
 1. composer install --ignore-platform-reqs
+   - On cPanel (PHP 8.3): `/opt/cpanel/composer/bin/composer install --ignore-platform-req=php --prefer-dist --no-interaction`
 2. php artisan key:generate
 3. php artisan migrate
 4. chmod -R 775 storage

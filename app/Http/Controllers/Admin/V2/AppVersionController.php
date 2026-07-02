@@ -21,7 +21,7 @@ class AppVersionController extends BaseController
     {
         try {
             $app_version = AppVersion::latest()
-                ->paginate(isValidReturn($request->all(), 'per_page', 15));
+                ->paginateSafe();
 
             if (!$app_version)
                 return $this->sendError('Empty', [], 404);

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin\V2;
 
 use App\Models\Category;
+use App\Rules\ImageGuideline;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use App\Http\Controllers\BaseController as BaseController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -40,11 +42,12 @@ class CategoryController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $page = $request->get('page', 1); // Get the current page from the request
-        $cacheKey = 'categories_page_' . $page; // Create a unique cache key for each page
-
         $categories = Category::select(isValidReturn(config('grid.categories.' . $request->apitype), 'columns', '*'))
             ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area', 'destination']);
+
+        if ($request->apitype === 'list') {
+            $categories = $categories->with(['subCategories:id,name,mr_name,code,parent_id,icon,status,is_hot_category']);
+        }
 
         if ($request->parent_id) {
             $categories = $categories->where('parent_id', $request->parent_id);
@@ -56,7 +59,7 @@ class CategoryController extends BaseController
             $categories = $categories->whereStatus($request->status);
         }
 
-        $categories = $categories->paginate($request->per_page);
+        $categories = $categories->paginateSafe();
 
         return $this->sendResponse($categories, 'Categories successfully Retrieved...!');
     }
@@ -77,7 +80,7 @@ class CategoryController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $subCategories = Category::with(['subCategories:id,name,parent_id,icon,is_hot_category'])
+        $subCategories = Category::with(['allSubCategories:id,name,parent_id,icon,status,is_hot_category'])
             ->find($request->id);
 
         if (!$subCategories) {
@@ -96,11 +99,11 @@ class CategoryController extends BaseController
     public function addCategory(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|unique:categories,name|string|between:2,100',
-            'parent_id' => 'sometimes|string|exists:categories,id',
+            'name' => ['required', 'string', 'between:2,100', Rule::unique('categories', 'name')->whereNull('deleted_at')],
+            'parent_id' => 'sometimes|integer|exists:categories,id',
             'description' => 'required|string',
-            'icon' => 'nullable|mimes:jpeg,jpg,png|max:512',
-            'status' => 'boolean:true,false',
+            'icon' => ['nullable', 'mimes:jpeg,jpg,png,webp', new ImageGuideline('icon')],
+            'status' => 'boolean',
             'meta_data' => 'nullable|json'
         ]);
 
@@ -137,11 +140,11 @@ class CategoryController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:categories,id',
-            'name' => 'sometimes|string|between:2,100',
-            'parent_id' => 'sometimes|string|exists:categories,id',
+            'name' => ['sometimes', 'string', 'between:2,100', Rule::unique('categories', 'name')->ignore($request->id)->whereNull('deleted_at')],
+            'parent_id' => 'sometimes|integer|exists:categories,id',
             'description' => 'sometimes|string',
-            'icon' => 'sometimes|nullable|mimes:jpeg,jpg,png|max:512',
-            'status' => 'sometimes|boolean:true,false',
+            'icon' => ['sometimes', 'nullable', 'mimes:jpeg,jpg,png,webp', new ImageGuideline('icon')],
+            'status' => 'sometimes|boolean',
             'meta_data' => 'sometimes|nullable|json'
         ]);
 
@@ -159,12 +162,10 @@ class CategoryController extends BaseController
 
         foreach ($fileFields as $field) {
             if ($image = $request->file($field)) {
-                $currentFilePath = $category->$field;
-
-                if (Storage::exists($currentFilePath)) {
-                    Storage::delete($currentFilePath);
+                $rawPath = $category->getRawOriginal($field);
+                if ($rawPath && Storage::exists($rawPath)) {
+                    Storage::delete($rawPath);
                 }
-
                 $input[$field] = uploadFile($image, $uploadPath)['path'];
             }
         }
@@ -175,7 +176,9 @@ class CategoryController extends BaseController
 
         $category->update($input);
 
-        return $this->sendResponse($category, 'Category updated successfully...!');
+        Cache::forget('subCategories_' . $request->id);
+
+        return $this->sendResponse($category->refresh(), 'Category updated successfully...!');
     }
 
 
@@ -201,11 +204,14 @@ class CategoryController extends BaseController
             return $this->sendError('Empty', [], 404);
         }
 
-        if (Storage::exists($category->icon)) {
-            Storage::delete($category->icon);
+        $rawIcon = $category->getRawOriginal('icon');
+        if ($rawIcon && Storage::exists($rawIcon)) {
+            Storage::delete($rawIcon);
         }
 
-        $category->delete($request->id);
+        Cache::forget('subCategories_' . $request->id);
+
+        $category->delete();
 
         return $this->sendResponse($category, 'Category deleted successfully...!');
     }

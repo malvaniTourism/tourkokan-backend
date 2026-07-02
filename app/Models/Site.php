@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Traits\Hashidable;
+use App\Traits\HasStorageFiles;
 
 class Site extends Model
 {
-    use HasFactory, Hashidable, Notifiable;
+    use HasFactory, Hashidable, Notifiable, HasStorageFiles;
+
+    protected array $fileFields = ['logo', 'icon', 'image'];
 
     /**
      * The attributes that are mass assignable.
@@ -39,6 +42,8 @@ class Site extends Model
         'rules',
         'social_media',
         'meta_data',
+        'submission_status',
+        'rejection_reason',
     ];
 
     /**
@@ -66,7 +71,7 @@ class Site extends Model
 
     public function getNameAttribute($value)
     {
-        $language = config('language');
+        $language = auth()->user()?->language ?? 'en';
 
         // return $language === 'en' ? $value :  ($this->mr_name == "" ? $value :  $this->mr_name);
         return empty($language) || $language === 'en' ? $value : ($this->mr_name == "" ? $value : $this->mr_name);
@@ -80,7 +85,7 @@ class Site extends Model
      */
     public function getTagLineAttribute($value)
     {
-        $language = config('language');
+        $language = auth()->user()?->language ?? 'en';
         return empty($language) || $language === 'en' ? $value : ($this->mr_tag_line == "" ? $value : $this->mr_tag_line);
     }
 
@@ -92,7 +97,7 @@ class Site extends Model
      */
     public function getDescriptionAttribute($value)
     {
-        $language = config('language');
+        $language = auth()->user()?->language ?? 'en';
         return empty($language) || $language === 'en' ? $value : ($this->mr_description == "" ? $value : $this->mr_description);
     }
 
@@ -134,9 +139,14 @@ class Site extends Model
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'user_id');
+    }
+
     public function site()
     {
-        return $this->belongsTo(Site::class);
+        return $this->belongsTo(Site::class, 'parent_id');
     }
 
     /**
@@ -181,7 +191,7 @@ class Site extends Model
      */
     public function comment()
     {
-        return $this->morphMany(Comment::class, 'commentable')->whereNull('parent_id');
+        return $this->morphMany(Comment::class, 'commentable')->whereNull('parent_id')->where('status', true);
     }
 
     /**
@@ -197,7 +207,7 @@ class Site extends Model
      */
     public function rate()
     {
-        return $this->morphOne(Rating::class, 'rateable')->where('user_id', config('user_id'));
+        return $this->morphOne(Rating::class, 'rateable')->where('user_id', auth()->id());
     }
 
     /**

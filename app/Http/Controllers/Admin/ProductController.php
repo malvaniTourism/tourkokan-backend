@@ -112,7 +112,7 @@ class ProductController extends BaseController
         $products = Product::with(['productCategory', 'productable'])
                             ->where('project_id', '=', $id)
                             ->latest()
-                            ->paginate(10);
+                            ->paginateSafe();
         
         if (is_null($products)) {
             return $this->sendError('Empty', [], 404);

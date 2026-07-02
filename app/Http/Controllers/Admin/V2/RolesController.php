@@ -22,7 +22,7 @@ class RolesController extends BaseController
     public function roleDD()
     {
         try {
-            $roles = Roles::paginate(request()->per_page);
+            $roles = Roles::paginateSafe();
 
             return $this->sendResponse($roles, 'Roles Dropdown');
         } catch (\Throwable $th) {
@@ -37,7 +37,7 @@ class RolesController extends BaseController
      */
     public function index()
     {
-        $roles = Roles::with('users')->paginate(10);
+        $roles = Roles::with('users')->paginateSafe();
         return $this->sendResponse($roles, 'Roles successfully Retrieved...!');
     }
 

@@ -29,7 +29,7 @@ class CityController extends BaseController
     {
         $cities = City::withCount(['projects', 'places', 'photos', 'comments'])
                         ->latest()                
-                        ->paginate(10);
+                        ->paginateSafe();
 
         return $this->sendResponse($cities, 'Cities successfully Retrieved...!');  
     }
@@ -113,7 +113,7 @@ class CityController extends BaseController
                     // ->with(['projects', 'places', 'photos', 'comments'])
                     ->whereId($id)
                     ->latest()
-                    ->paginate(10);
+                    ->paginateSafe();
 
         return $this->sendResponse($city, 'Cities successfully Retrieved...!');  
     }
@@ -129,7 +129,7 @@ class CityController extends BaseController
                         ->with(['projects', 'places', 'photos', 'comments'])
                         ->whereId($id)
                         ->latest()
-                        ->paginate(10);
+                        ->paginateSafe();
         
         if (is_null($cities)) {
             return $this->sendError('Empty', [], 404);

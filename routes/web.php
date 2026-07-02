@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\Route;
 //     return view('welcome');
 // });
 
-Route::get('/{path?}', function () {
-    return view('welcome');
-})->where('path', '.*');
+Route::fallback(function () {
+    return response()->json([
+        'success' => false,
+        'message' => 'Unauthorized. This is an API server.',
+    ], 403);
+});

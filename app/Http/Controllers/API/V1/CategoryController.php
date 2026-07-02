@@ -27,7 +27,7 @@ class CategoryController extends BaseController
      */
     public function index()
     {
-        $categories = Category::paginate(10);
+        $categories = Category::paginateSafe();
         return $this->sendResponse($categories, 'Categories successfully Retrieved...!');   
     }
 
@@ -205,6 +205,23 @@ class CategoryController extends BaseController
      * @return \Illuminate\Http\Response
      */
     public function destroy(Request $request, $id)
+    {
+        $categories = Category::find($id);
+
+        if (is_null($categories)) {
+            return $this->sendError('Empty', [], 404);
+        }
+
+        if(Storage::exists($categories->image_url)){
+            Storage::delete($categories->image_url);
+        }
+
+        $categories->delete($request->all());
+
+        return $this->sendResponse($categories, 'Categories deleted successfully...!');   
+    }
+
+    public function test(Request $request, $id)
     {
         $categories = Category::find($id);
 

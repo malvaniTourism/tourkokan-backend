@@ -36,18 +36,60 @@ class AuthController extends BaseController
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail', 'isVerifiedEmail', 'deleteMyAccount', 'googleAuth']]);
+        $this->middleware('auth:api', 
+        [
+            'except' => 
+            [
+                'login', 'register', 'sendOtp', 'verifyOtp', 'updateEmail', 'isVerifiedEmail', 'deleteMyAccount', 'googleAuth', 'guest-login'
+            ]
+        ]);
     }
 
     public function allUsers()
     {
-        if (in_array(config('user')->roles->code, ['superadmin', 'admin'])) {
+        if (auth()->user()->hasRole('superadmin') || auth()->user()->hasRole('admin')) {
             $user = User::with('roles')
-                ->paginate(request()->per_page);
+                ->paginateSafe();
             return $this->sendResponse($user, 'User successfully registered');
         } else {
             return $this->sendError('Unauthorized', '', 401);
         }
+    }
+
+    public function listUsers(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'apitype' => 'required|string|in:list,dropdown',
+            'search'  => 'nullable|string|max:100',
+            'per_page'=> 'nullable|integer|min:1|max:30',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        $columns = $request->apitype === 'dropdown'
+            ? ['id', 'name', 'mobile', 'email', 'profile_picture']
+            : ['id', 'name', 'mobile', 'email', 'gender', 'dob', 'profile_picture', 'isVerified', 'created_at'];
+
+        $query = User::select($columns);
+
+        if ($request->apitype === 'list') {
+            $query->with('roles:id,name,code');
+        }
+
+        if ($request->filled('search')) {
+            $hash = User::makeBlindIndex($request->search);
+            $query->where(function ($q) use ($hash) {
+                $q->where('name_hash', $hash)
+                  ->orWhere('email_hash', $hash)
+                  ->orWhere('mobile_hash', $hash);
+            });
+        }
+
+        $users = $query->latest()->paginateSafe();
+
+        return $this->sendResponse($users, 'Users retrieved successfully.');
     }
 
     /**
@@ -57,7 +99,7 @@ class AuthController extends BaseController
      */
     public function login(Request $request)
     {
-        config(['app_version' => Cache::has('app_version') ?  Cache::get('app_version')->version_number : AppVersion::latest()->first()->version_number]);
+        $request->attributes->set('app_version', Cache::has('app_version') ? Cache::get('app_version')->version_number : optional(AppVersion::latest()->first())->version_number);
 
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
@@ -74,16 +116,13 @@ class AuthController extends BaseController
 
         $user = Auth::user();
 
-        $roles = Roles::whereIn('name', ['superadmin', 'admin'])->get();
-        if (
-            $user &&
-            Str::startsWith($request->route()->getPrefix(), 'admin') &&
-            !in_array($user->roles->id, array_column($roles->toArray(), 'id'))
-        ) {
+        $isAdmin = $user->hasRole('superadmin') || $user->hasRole('admin');
+
+        if ($user && Str::startsWith($request->route()->getPrefix(), 'admin') && !$isAdmin) {
             return $this->sendError('Unauthorized', '', 401);
         }
 
-        if ($user && !$user->isVerified && !in_array($user->roles->id, array_column($roles->toArray(), 'id'))) {
+        if ($user && !$user->isVerified && !$isAdmin) {
             return $this->sendError('Please verify your email for login', '', 200);
         }
 
@@ -103,52 +142,59 @@ class AuthController extends BaseController
             // $prefix = $prefixParts[0];
 
             // there is error in validation for superadmin role return error
-            $validator = Validator::make(
-                $request->all(),
-                [
-                    // 'role_id' => [
-                    //     'required',
-                    //     'exists:roles,id',
-                    //     function ($attribute, $value, $fail) use ($prefix) {
-                    //         if ($value == Roles::where("name", "superadmin")->pluck('id')->first()) { // Change 1 to the ID of your superadmin role
-                    //             $fail('The selected :attribute is invalid. 1');
-                    //         }
+            $isGuest = $request->input('is_guest', false);
 
-                    //         if ($prefix === 'admin' && $value !== Roles::where("name", $prefix)->pluck('id')->first()) {
-                    //             $fail('The selected :attribute is invalid. 2');
-                    //         }
+            $rules = [
+                'role_code' => 'sometimes|exists:roles,code',
+                'language' => 'sometimes|required|in:mr,en',
+                'name' => 'required|string|between:2,60',
+                'email' => 'required_if:mobile,null|nullable|string|email|max:100',
+                'mobile' => 'required_if:email,null|nullable|digits:10',
+                'password' => 'sometimes|string|required_with:email|confirmed|min:6',
+                'profile_picture' => 'nullable|string',
+                'latitude' => 'sometimes|required_with:longitude',
+                'longitude' => 'sometimes|required_with:latitude',
+                'referral_code' => 'sometimes|nullable|exists:users,uid',
+            ];
 
-                    //         if ($prefix !== 'admin' && in_array($value, array_column(Roles::whereIn('name', ['superadmin', 'admin'])->get()->toArray(), 'id'))) {
-                    //             $fail('The selected :attribute is invalid. 5');
-                    //         }
-                    //     },
-                    // ],
-                    // 'project_id' => 'nullable|numeric|exists:projects,id',
-                    'role_id' => 'sometimes|exists:roles,id',
-                    'language' => 'sometimes|required|in:mr,en',
+            // Modify rules if it's a guest registration
+            if ($isGuest) {
+                // Guest only needs a name (everything else optional)
+                $rules = [
                     'name' => 'required|string|between:2,60',
-                    'email' => 'required_if:mobile,null|nullable|string|email|max:100|unique:users',
-                    'mobile' => 'required_if:email,null|nullable|string|unique:users,mobile|digits:10',
-                    'password' => 'sometimes|string|required_with:email|confirmed|min:6',
-                    // 'profile_picture' => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
-                    'profile_picture' => 'nullable|string',
+                    'email' => 'nullable|string|email|max:100',
+                    'mobile' => 'nullable|digits:10',
+                    'password' => 'sometimes|nullable|string|min:6',
                     'latitude' => 'sometimes|required_with:longitude',
                     'longitude' => 'sometimes|required_with:latitude',
-                    'referral_code' => 'sometimes|nullable|exists:users,uid',
-                ],
-                [
-                    'referral_code.exists' => 'Invalid Referral Code...!'
-                ]
-            );
+                ];
+            }
+
+            $validator = Validator::make($request->all(), $rules, [
+                'referral_code.exists' => 'Invalid Referral Code...!',
+            ]);
+
 
             if ($validator->fails()) {
-                $errors = $validator->errors();
+                return $this->sendError($validator->errors(), [], 200);
+            }
 
-                $data = [];
-                if ($errors->has('email') && $errors->get('email')[0] === 'The email has already been taken.')
-                    $data = ['isVerified' => User::where('email', $request->email)->first()->isVerified];
-
-                return $this->sendError($validator->errors(), $data, 200);
+            // Uniqueness check via blind index (email/mobile are encrypted in DB)
+            if ($request->filled('email')) {
+                $existing = User::findByEmail($request->email);
+                if ($existing) {
+                    return $this->sendError(
+                        ['email' => ['The email has already been taken.']],
+                        ['isVerified' => $existing->isVerified],
+                        200
+                    );
+                }
+            }
+            if ($request->filled('mobile')) {
+                $existing = User::findByMobile($request->mobile);
+                if ($existing) {
+                    return $this->sendError(['mobile' => ['The mobile has already been taken.']], [], 200);
+                }
             }
 
             if ($request->password == "") {
@@ -180,23 +226,20 @@ class AuthController extends BaseController
 
                 Storage::put($directory . '/' . $imageName, base64_decode($image));
 
-                $input['profile_picture'] = Storage::url($directory . '/' . $imageName);
+                $input['profile_picture'] = $directory . '/' . $imageName;
 
                 Log::info("FILE STORED" . $input['profile_picture']);
             }
 
             $input['password'] = bcrypt($password);
 
-            if (
-                Str::startsWith($request->route()->getPrefix(), 'admin') &&
-                $request->has('role_id')
-            ) {
-                $input['role_id'] = $request->role_id;
+            // Determine role to assign
+            if (Str::startsWith($request->route()->getPrefix(), 'admin') && $request->filled('role_code')) {
+                $assignRole = Roles::where('code', $request->role_code)->first();
             } else {
-                $roles = Roles::whereIn('code', ['tourist'])->first();
-
-                $input['role_id'] = $roles->id;
+                $assignRole = Roles::where('code', 'tourist')->first();
             }
+            unset($input['role_code']);
 
             #considering uid as coupon code
             $input['uid'] = Str::random(10);
@@ -208,6 +251,10 @@ class AuthController extends BaseController
             }
 
             $user = User::create($input);
+
+            if ($assignRole) {
+                $user->roles()->attach($assignRole->id);
+            }
 
             $referrer = [];
 
@@ -245,30 +292,39 @@ class AuthController extends BaseController
 
             $user->wallets()->save($newUserWallet);
 
-            $user = User::select('id', 'role_id', 'name', 'email', 'isVerified', 'profile_picture', 'gender', 'uid')->find($user->id);
+            $user = User::with('roles:id,name,code')
+                ->select('id', 'name', 'email', 'isVerified', 'profile_picture', 'gender', 'uid')
+                ->find($user->id);
 
             if ($request->has(['latitude', 'longitude'])) {
                 $locationDetails = getLocationDetails($request->latitude, $request->longitude);
 
-                if ($locationDetails && $locationDetails != 400) {
+                // getLocationDetails() may return an int status code or error string on failure
+                if (is_array($locationDetails)) {
                     $user->address()->create($locationDetails);
                 }
             }
 
-            $roles = Roles::whereIn('code', ['superadmin', 'admin'])->get();
-
             if (
                 $user &&
+                !empty($user->email) &&
                 !Str::startsWith($request->route()->getPrefix(), 'admin') &&
-                !in_array($user->roles->id, array_column($roles->toArray(), 'id'))
+                !($user->hasRole('superadmin') || $user->hasRole('admin'))
             ) {
                 Mail::to($user->email)->send(new WelcomeEmail($user, $password));
             }
 
+            if ($isGuest) {
+                $user = User::find($user->id);
+
+                $token = JWTAuth::fromUser($user);
+                return $this->createNewToken($token, 'Logged In Successfully!', $isGuest);
+            }
+
             return $this->sendResponse($user, 'User successfully registered');
         } catch (\Throwable $th) {
-            throw $th;
             Log::error($th->getMessage());
+            throw $th;
         }
     }
 
@@ -285,20 +341,33 @@ class AuthController extends BaseController
 
             // Validate the incoming request data
             $validator = Validator::make($request->all(), [
-                'email' => 'sometimes|nullable|email|unique:users,email,' . $user->id,
+                'email' => 'sometimes|nullable|email',
                 'password' => 'sometimes|nullable|string|confirmed|min:6',
                 'profile_picture' => 'sometimes|nullable|string',
                 'language' => 'sometimes|required|in:mr,en',
-                'mobile' => [
-                    'sometimes',
-                    'required',
-                    'digits:10',
-                    Rule::unique('users', 'mobile')->ignore($user->id)
-                ],
+                'mobile' => 'sometimes|required|digits:10',
+                'dob' => 'sometimes|nullable|date_format:Y-m-d',
+                'gender' => 'sometimes|nullable|string',
+                'latitude' => 'sometimes|nullable|numeric|required_with:longitude',
+                'longitude' => 'sometimes|nullable|numeric|required_with:latitude',
             ]);
 
             if ($validator->fails()) {
                 return $this->sendError($validator->errors(), '', 200);
+            }
+
+            // Uniqueness check via blind index (email/mobile are encrypted in DB)
+            if ($request->filled('email')) {
+                $existing = User::findByEmail($request->email);
+                if ($existing && $existing->id !== $user->id) {
+                    return $this->sendError(['email' => ['The email has already been taken.']], '', 200);
+                }
+            }
+            if ($request->filled('mobile')) {
+                $existing = User::findByMobile($request->mobile);
+                if ($existing && $existing->id !== $user->id) {
+                    return $this->sendError(['mobile' => ['The mobile has already been taken.']], '', 200);
+                }
             }
 
             $input = $validator->validated();
@@ -307,35 +376,36 @@ class AuthController extends BaseController
                 $input['password'] = bcrypt($request->password);
             }
 
-            if (isValidReturn($input, 'profile_picture')) {
-
-                $directory = config('constants.upload_path.profile_picture') . $request->name;
-
-                $image_64 = $request->input('profile_picture');
-
-                $extension = explode('/', explode(':', substr($image_64, 0, strpos($image_64, ';')))[1])[1];
-
-                $replace = substr($image_64, 0, strpos($image_64, ',') + 1);
-
-                $image = str_replace($replace, '', $image_64);
-
-                $image = str_replace(' ', '+', $image);
-
-                $imageName = Str::random(10) . '.' . $extension;
-
-                Storage::put($directory . '/' . $imageName, base64_decode($image));
-
-                $input['profile_picture'] = Storage::url($directory . '/' . $imageName);
-
-                Log::info("FILE STORED" . $input['profile_picture']);
+            if (isset($input['profile_picture']) && $input['profile_picture']) {
+                $rawOld = $user->getRawOriginal('profile_picture');
+                if ($rawOld && !str_starts_with($rawOld, 'http') && Storage::exists($rawOld)) {
+                    Storage::delete($rawOld);
+                }
             }
 
-            $user->update(array_filter($input));
+            $updateData = array_filter($input, fn($v) => $v !== null && $v !== '');
+            if ($request->has('dob')) $updateData['dob'] = $input['dob'];
+            if ($request->has('gender')) $updateData['gender'] = $input['gender'];
+
+            unset($updateData['latitude'], $updateData['longitude']);
+            $user->update($updateData);
+
+            if ($request->has('latitude') && $request->has('longitude')) {
+                $locationDetails = getLocationDetails($request->latitude, $request->longitude);
+
+                // getLocationDetails() may return an int status code or error string on failure
+                if (is_array($locationDetails)) {
+                    $user->address()->updateOrCreate(
+                        ['addressable_id' => $user->id, 'addressable_type' => get_class($user)],
+                        $locationDetails
+                    );
+                }
+            }
 
             return $this->sendResponse($user, 'User successfully updated');
         } catch (\Throwable $th) {
-            throw $th;
             Log::error($th->getMessage());
+            throw $th;
         }
     }
 
@@ -356,15 +426,15 @@ class AuthController extends BaseController
                 $errors = $validator->errors();
                 $data = [];
                 if ($errors->has('email') && $errors->get('email')[0] === 'The email has already been taken.')
-                    $data = ['isVerified' => User::where('email', $request->email)->first()->isVerified];
+                    $data = ['isVerified' => User::findByEmail($request->email)?->isVerified];
 
                 return $this->sendResponse($data, $validator->errors());
             }
 
             return $this->sendResponse(true, 'Please register for login', false);
         } catch (\Throwable $th) {
-            throw $th;
             Log::error($th->getMessage());
+            throw $th;
         }
     }
 
@@ -396,31 +466,36 @@ class AuthController extends BaseController
                 return $this->sendError($validator->errors(), '', 200);
             }
 
-            $whereIdEmail = array(
-                'id' => $request->id,
-                'email' => $request->email
-            );
+            $user = User::where('id', $request->id)->first();
 
-            $user = User::where($whereIdEmail)->update(['email' => $request->new_email]);
-
-            if (!$user) {
+            // Verify current email matches using blind index
+            if (!$user || $user->email_hash !== User::makeBlindIndex($request->email)) {
                 return $this->sendError('Unable to change email', '', 200);
             }
 
-            $otp =  random_int(100000, 999999);
+            $updated = $user->update([
+                'email'      => $request->new_email,
+                'email_hash' => User::makeBlindIndex($request->new_email),
+            ]);
+
+            if (!$updated) {
+                return $this->sendError('Unable to change email', '', 200);
+            }
+
+            $user = User::where('id', $request->id)->first();
+
+            $otp         = random_int(100000, 999999);
             $otpCreatedAt = Carbon::parse($user->otp_created_at);
-            $now = Carbon::now();
+            $now          = Carbon::now();
 
             if ($user->otp_created_at != null && $now->diffInMinutes($otpCreatedAt) < 5) {
                 return $this->sendError('OTP has already been sent. Please wait 5 minutes before requesting a new one.', '', 200);
             }
 
-            $updateStatus =  array(
-                'otp' => $otp,
-                'otp_created_at' =>  Carbon::now(),
-            );
-
-            $user->update($updateStatus);
+            $user->update([
+                'otp'            => $otp,
+                'otp_created_at' => Carbon::now(),
+            ]);
 
             $destination = array_key_first($request->all()) == 'email' ? 'email' : 'mobile';
 
@@ -428,8 +503,8 @@ class AuthController extends BaseController
 
             return $this->sendResponse($otpSent, 'Email successfully changed & OTP has been sent to your new email ..!');
         } catch (\Throwable $th) {
-            throw $th;
             Log::error($th->getMessage());
+            throw $th;
         }
     }
     /**
@@ -483,13 +558,17 @@ class AuthController extends BaseController
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function createNewToken($token, $message)
+    protected function createNewToken($token, $message, $isGuest = false)
     {
+        $user = JWTAuth::setToken($token)->authenticate();
+        $user->load('roles:id,name,code');
+
         $response = [
             'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => null,
-            'user' => JWTAuth::setToken($token)->authenticate()
+            'token_type'   => 'bearer',
+            'expires_in'   => null,
+            'isGuest'      => $isGuest,
+            'user'         => $user,
         ];
 
         return $this->sendResponse($response, $message);
@@ -498,17 +577,23 @@ class AuthController extends BaseController
     public function sendOtp(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'sometimes|nullable|required_without:mobile|email|exists:users,email',
-            'mobile' => 'sometimes|nullable|required_without:email|exists:users,mobile',
+            'email'  => 'sometimes|nullable|required_without:mobile|email|exists:users,email_hash,' . User::makeBlindIndex($request->email ?? ''),
+            'mobile' => 'sometimes|nullable|required_without:email',
         ]);
 
         if ($validator->fails()) {
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $otp =  random_int(100000, 999999);
+        $otp = random_int(100000, 999999);
 
-        $user = User::where(array_filter($request->all()))->first();
+        $user = $request->filled('email')
+            ? User::findByEmail($request->email)
+            : User::findByMobile($request->mobile);
+
+        if (!$user) {
+            return $this->sendError('User not found', '', 200);
+        }
 
         $otpCreatedAt = Carbon::parse($user->otp_created_at);
         $now = Carbon::now();
@@ -517,12 +602,10 @@ class AuthController extends BaseController
             return $this->sendError('OTP has already been sent. Please wait 5 minutes before requesting a new one.', '', 200);
         }
 
-        $updateStatus =  array(
-            'otp' => $otp,
-            'otp_created_at' =>  Carbon::now(),
-        );
-
-        $user->update($updateStatus);
+        $user->update([
+            'otp'            => User::hashOtp((string) $otp), // store hashed OTP
+            'otp_created_at' => Carbon::now(),
+        ]);
 
         $destination = array_key_first($request->all()) == 'email' ? 'email' : 'mobile';
 
@@ -535,18 +618,10 @@ class AuthController extends BaseController
     {
         try {
             $validator = Validator::make($request->all(), [
-                'email' => [
-                    'sometimes',
-                    'nullable',
-                    'required_without:mobile',
-                    'email',
-                    Rule::exists('users', 'email')->where(function ($query) {
-                        $query->whereNull('deleted_at');
-                    }),
-                ],
-                'mobile' => 'sometimes|nullable|required_without:email|exists:users,mobile',
-                'otp' => 'required',
-                'delete' => 'nullable|boolean'
+                'email'  => 'sometimes|nullable|required_without:mobile|email',
+                'mobile' => 'sometimes|nullable|required_without:email',
+                'otp'    => 'required',
+                'delete' => 'nullable|boolean',
             ]);
 
             if ($validator->fails()) {
@@ -554,30 +629,36 @@ class AuthController extends BaseController
             }
 
             $delete = isValidReturn($request->all(), 'delete');
-            unset($request['delete']);
 
-            $where_condition = array_filter($request->all());
-            $user = User::where($where_condition)->first();
+            // Find user by blind index
+            $user = $request->filled('email')
+                ? User::findByEmail($request->email)
+                : User::findByMobile($request->mobile);
 
-            if ($user) {
-                if ($delete) {
-                    Wallet::where('user_id', $user->id)->delete();
-
-                    $user->delete();
-                    return $this->sendResponse(null, 'Your account has been removed from our database.');
-                }
-
-                User::where($where_condition)->update([
-                    'otp' => null,
-                    'email_verified_at' => Carbon::now(),
-                    'isVerified' => true
-                ]);
-
-                $token = JWTAuth::fromUser($user);
-                return $this->createNewToken($token, 'Logged In Successfully!');
-            } else {
+            if (!$user) {
                 return $this->sendError('Invalid OTP', [], 200);
             }
+
+            // Verify hashed OTP
+            if (!User::verifyOtp((string) $request->otp, (string) $user->getRawOriginal('otp'))) {
+                return $this->sendError('Invalid OTP', [], 200);
+            }
+
+            if ($delete) {
+                Wallet::where('user_id', $user->id)->delete();
+                $user->delete();
+                return $this->sendResponse(null, 'Your account has been removed from our database.');
+            }
+
+            $user->update([
+                'otp'               => null,
+                'email_verified_at' => Carbon::now(),
+                'isVerified'        => true,
+            ]);
+
+            $token = JWTAuth::fromUser($user);
+            return $this->createNewToken($token, 'Logged In Successfully!');
+
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
             return $this->sendError('An error occurred.', [], 500);
@@ -587,21 +668,15 @@ class AuthController extends BaseController
 
     public function getAllFavourites($id)
     {
-        $favourites  = User::
-            // select(\DB::raw('favouritable_id, favouritable_id'))
-            withCount('favourites')
-            ->with('favourites')
-            ->groupBy('favourites.favouritable_id')
-            // ->groupBy('favouritable_type')
-            // ->orderBy('created_at', 'desc')
-            ->latest()
-            ->whereId($id);
+        $user = User::with('favourites')->find($id);
 
+        if (is_null($user)) {
+            return $this->sendError('User not found', [], 404);
+        }
 
-        logger($favourites->toSql());
-        // ->get();
+        $favourites = $user->favourites;
 
-        if (is_null($favourites)) {
+        if ($favourites->isEmpty()) {
             return $this->sendError('Empty', [], 404);
         }
 
@@ -634,7 +709,7 @@ class AuthController extends BaseController
                 $filter = ['email' => $request->email];
             } else {
                 logger("not yet develpped");
-                $filter = ['email' => config('user')->email];
+                $filter = ['email' => auth()->user()->email];
             }
 
             $otp =  random_int(100000, 999999);
@@ -662,13 +737,20 @@ class AuthController extends BaseController
             return $this->sendResponse($data, 'OTP successfully sent!');
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
+            return $this->sendError('Something went wrong', [], 500);
         }
     }
 
     public function googleAuth(Request $request)
     {
         $token = $request->input('token');
-    
+
+        Log::info('[googleAuth] Request received', [
+            'ip'         => $request->ip(),
+            'has_token'  => !empty($token),
+            'user_email' => $request->input('userEmail'),
+        ]);
+
         $validator = Validator::make(
             $request->all(),
             [
@@ -683,72 +765,136 @@ class AuthController extends BaseController
         );
 
         if ($validator->fails()) {
+            Log::warning('[googleAuth] Validation failed', ['errors' => $validator->errors()->toArray()]);
             return $this->sendError($validator->errors(), [], 200);
         }
 
-        $googleUser = Http::get('https://oauth2.googleapis.com/tokeninfo', [
-            'id_token' => $token,
-        ])->json();
-    
-        if (isset($googleUser['sub'])) {
-    
-            try {
-                $data = [
-                    'email' => $googleUser['email'],
-                ];
+        if (empty($token)) {
+            Log::warning('[googleAuth] No token provided in request');
+            return $this->sendError('Google token is required.', '', 200);
+        }
 
-                $where_condition = array_filter($data);
-                
-                $user = User::where($where_condition)->first();
-    
+        // Decode the token locally (claims only, never the signature) to reveal WHY
+        // Google might reject it: expired, wrong token type, or wrong audience.
+        $segments = explode('.', $token);
+        if (count($segments) !== 3) {
+            // A JWT id_token has 3 segments; an opaque access_token (ya29.*) does not
+            Log::warning('[googleAuth] Token is not a JWT id_token', [
+                'segments'     => count($segments),
+                'token_length' => strlen($token),
+                'token_prefix' => substr($token, 0, 12),
+            ]);
+        } else {
+            $claims = json_decode(base64_decode(strtr($segments[1], '-_', '+/')), true) ?? [];
+            Log::info('[googleAuth] Token claims', [
+                'iss'         => $claims['iss'] ?? null,
+                'aud'         => $claims['aud'] ?? null,
+                'azp'         => $claims['azp'] ?? null,
+                'email'       => $claims['email'] ?? null,
+                'iat'         => isset($claims['iat']) ? date('Y-m-d H:i:s', $claims['iat']) : null,
+                'exp'         => isset($claims['exp']) ? date('Y-m-d H:i:s', $claims['exp']) : null,
+                'is_expired'  => isset($claims['exp']) ? ($claims['exp'] < time()) : null,
+                'server_time' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        try {
+            $googleUser = Http::get('https://oauth2.googleapis.com/tokeninfo', [
+                'id_token' => $token,
+            ])->json() ?? [];
+        } catch (\Throwable $th) {
+            Log::error('[googleAuth] tokeninfo request failed: ' . $th->getMessage());
+            return $this->sendError('Could not verify Google token. Please try again.', '', 200);
+        }
+
+        // Google returns {error, error_description} when the token is invalid/expired
+        if (!isset($googleUser['sub'])) {
+            $reason = $googleUser['error_description'] ?? $googleUser['error'] ?? 'Token verification failed';
+            Log::warning('[googleAuth] Token rejected by Google', [
+                'reason'   => $reason,
+                'response' => $googleUser,
+            ]);
+            return $this->sendError('Google authentication failed: ' . $reason, '', 200);
+        }
+
+        Log::info('[googleAuth] Token verified by Google', [
+            'sub'   => $googleUser['sub'],
+            'email' => $googleUser['email'] ?? null,
+        ]);
+
+        try {
+                $user = User::findByEmail($googleUser['email']);
+
                 if ($user) {
-                    User::where($where_condition)->update([
+                    $user->update([
                         'email_verified_at' => Carbon::now(),
-                        'isVerified' => true,
+                        'isVerified'        => true,
                     ]);
-    
+
+                    Log::info('[googleAuth] Existing user logged in', ['user_id' => $user->id]);
+
                     $token = JWTAuth::fromUser($user);
                     return $this->createNewToken($token, 'Logged In Successfully!');
                 } else {
+                    Log::info('[googleAuth] New user — starting registration', ['email' => $googleUser['email']]);
+                    $validator = Validator::make(
+                        $request->all(),
+                        [
+                            'latitude' => 'required_with:longitude',
+                            'longitude' => 'required_with:latitude',
+                        ]
+                    );
+            
+                    if ($validator->fails()) {
+                        Log::warning('[googleAuth] Registration validation failed (lat/lng)', ['errors' => $validator->errors()->toArray()]);
+                        return $this->sendError($validator->errors(), [], 200);
+                    }
+
                     // Create a new user if not found
                     $password = Str::random(10);
                     $roles = Roles::where('code', 'tourist')->first();
-    
+
                     if (!$roles) {
+                        Log::error('[googleAuth] "tourist" role not found — cannot register user');
                         return $this->sendError('Role not found', '', 200);
                     }
     
                     $input = [
                         'name' => $googleUser['name'],
                         'email' => $googleUser['email'],
-                        'password' => bcrypt($password), // Store hashed password
-                        'role_id' => $roles->id,
+                        'password' => bcrypt($password),
                         'email_verified_at' => Carbon::now(),
                         'isVerified' => true,
-                        'profile_picture' => $googleUser['picture'],
-                        'uid' => Str::random(10), // Assuming uid as coupon code
+                        'profile_picture' => preg_replace('/=s\d+-c$/', '=s400-c', $googleUser['picture'] ?? ''),
+                        'uid' => Str::random(10),
                     ];
                     
                     $joiningBonus = BonusTypes::where(['code' => 'joining_bonus_coins'])->first();
 
                     if (!$joiningBonus) {
+                        Log::error('[googleAuth] "joining_bonus_coins" bonus type not found');
                         return $this->sendError('Something went wrong', '', 200);
                     }
-    
+
                     $user = User::create($input);
-    
+                    $user->roles()->attach($roles->id);
+
+                    Log::info('[googleAuth] New user created', ['user_id' => $user->id]);
+
                     $referrer = [];
 
                     if (isValidReturn($request, 'referral_code')) {
                         $referrer = User::where('uid', $request['referral_code'])->first();
-        
+
                         if (!$referrer) {
+                            Log::warning('[googleAuth] Invalid referral code', ['referral_code' => $request['referral_code']]);
                             return $this->sendError('Invalid Referral Code...!', '', 200);
                         }
-        
+
                         $referralBonus = BonusTypes::where(['code' => 'referral_bonus_coins'])->first();
-        
+
                         if (!$referralBonus) {
+                            Log::error('[googleAuth] "referral_bonus_coins" bonus type not found');
                             return $this->sendError('Something went wrong', '', 200);
                         }
         
@@ -773,27 +919,36 @@ class AuthController extends BaseController
         
                     $user->wallets()->save($newUserWallet);
         
-                    $user = User::select('id', 'role_id', 'name', 'email', 'isVerified', 'profile_picture', 'gender', 'uid')->find($user->id);
-        
+                    $user = User::with('roles:id,name,code')
+                        ->select('id', 'name', 'email', 'isVerified', 'profile_picture', 'gender', 'uid')
+                        ->find($user->id);
+
                     if ($request->has(['latitude', 'longitude'])) {
                         $locationDetails = getLocationDetails($request->latitude, $request->longitude);
-        
-                        if ($locationDetails && $locationDetails != 400) {
+
+                        // getLocationDetails() may return an int status code or error string on failure
+                        if (is_array($locationDetails)) {
                             $user->address()->create($locationDetails);
+                        } else {
+                            Log::warning('[googleAuth] Geocoding failed — user created without address', [
+                                'user_id' => $user->id,
+                                'result'  => $locationDetails,
+                            ]);
                         }
                     }
-                    
-                    logger($user);
 
-    
+                    Log::info('[googleAuth] Registration completed', ['user_id' => $user->id]);
+
                     $token = JWTAuth::fromUser($user);
                     return $this->createNewToken($token, 'Account Created Successfully!');
                 }
             } catch (\Throwable $th) {
-                Log::error($th->getMessage());
+                Log::error('[googleAuth] Exception during auth', [
+                    'message' => $th->getMessage(),
+                    'file'    => $th->getFile(),
+                    'line'    => $th->getLine(),
+                ]);
                 return $this->sendError('An error occurred.', [], 500);
             }
-        }
-        return $this->sendError('Unauthorized', '', 401);
     }
 }

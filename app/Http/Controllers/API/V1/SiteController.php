@@ -29,7 +29,7 @@ class SiteController extends BaseController
             }, 'is_favorite')
             ->whereHas('category', function ($query) {
                 $query->where('code', 'city');
-            })->paginate(10);
+            })->paginateSafe();
 
         return $this->sendResponse($city, 'Cities successfully Retrieved...!');
     }
@@ -97,7 +97,7 @@ class SiteController extends BaseController
         ])
             ->whereIn('bus_stop_type', ['Depo', 'Stop'])
             ->select('id', 'name', 'parent_id', 'category_id', 'icon', 'status', 'is_hot_place', 'bus_stop_type')
-            ->paginate(10);
+            ->paginateSafe();
 
         return $this->sendResponse($places, 'Stops successfully Retrieved...!');
     }
@@ -132,7 +132,7 @@ class SiteController extends BaseController
         }
 
         $places = $places->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'))
-            ->paginate();
+            ->paginateSafe();
 
         return $this->sendResponse($places, 'places successfully Retrieved...!');
     }

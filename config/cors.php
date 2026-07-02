@@ -15,11 +15,11 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'admin/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://malvanitourism.github.io'],
+    'allowed_origins' => ['*', 'https://malvanitourism.github.io', 'https://tourkokan.com', 'https://dev.tourkokan.com', "https://api-test.tourkokan.com", "https://admin.test.tourkokan.com"],
     
     'allowed_origins_patterns' => [],
 

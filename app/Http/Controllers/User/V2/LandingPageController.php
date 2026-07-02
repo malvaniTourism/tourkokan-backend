@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\AppVersion;
 use App\Models\Banner;
+use App\Models\BannerPlacement;
 use App\Models\Category;
 use App\Models\Projects;
 use App\Models\Products;
@@ -21,7 +22,11 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Gallery;
+use App\Models\AdminMessage;
 use App\Models\Contact;
+use App\Services\CategoryService;
+use App\Services\ContactService;
+use App\Services\SiteService;
 
 class LandingPageController extends BaseController
 {
@@ -30,8 +35,11 @@ class LandingPageController extends BaseController
      *
      * @return void
      */
-    public function __construct()
-    {
+    public function __construct(
+        protected CategoryService $categoryService,
+        protected ContactService $contactService,
+        protected SiteService $siteService,
+    ) {
         $this->middleware('auth:api');
     }
 
@@ -51,19 +59,28 @@ class LandingPageController extends BaseController
         }
 
         #Banners
-        $banners = Banner::latest()
-            ->limit(5)
-            ->get();
+        $banners = BannerPlacement::with(['banners' => function ($query) {
+            $query->where('is_active', true)
+                ->where('status', 'approved')
+                // ->whereDate('start_date', '<=', now())
+                // ->whereDate('end_date', '>=', now())
+                ->latest();
+        }])
+            ->whereHas('banners', function ($query) {
+                $query->where('is_active', true)
+                    ->where('status', 'approved');
+                    // ->whereDate('start_date', '<=', now())
+                    // ->whereDate('end_date', '>=', now());
+            })
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->code => $item->banners];
+            });
 
-        #categories
-        $categories = Category::with(['subCategories:id,name,mr_name,code,parent_id,icon,is_hot_category'])
-            ->select('*')
-            ->whereNotIn('code', ['country', 'state', 'city', 'district', 'village', 'area'])
-            ->whereNull('parent_id')
-            ->whereStatus(true)
-            ->latest()
-            ->limit(8)
-            ->get();
+        $categories = $this->categoryService->getPaginated(null, 1, 15, [
+            'paginate' => false,
+            'fields'   => ['id', 'name', 'code', 'icon', 'is_hot_category'],
+        ]);
 
         #Top famouse cities
         // $cities = Site::select(
@@ -87,7 +104,7 @@ class LandingPageController extends BaseController
         //             ->from('favourites')
         //             ->whereColumn('sites.id', 'favourites.favouritable_id')
         //             ->where('favourites.favouritable_type', Site::class)
-        //             ->where('favourites.user_id', config('user_id'));
+        //             ->where('favourites.user_id', auth()->id());
         //     }, 'is_favorite')
         //     ->latest()
         //     // ->limit(8)
@@ -101,8 +118,8 @@ class LandingPageController extends BaseController
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
-                    ->where('favourites.favouritable_type', Site::class)
-                    ->where('favourites.user_id', config('user_id'));
+                    ->where('favourites.favouritable_type', (new Site)->getMorphClass())
+                    ->where('favourites.user_id', auth()->id());
             }, 'is_favorite')
             ->latest()
             ->get()
@@ -116,20 +133,39 @@ class LandingPageController extends BaseController
         ]);
 
         foreach ($cities as $city) {
-            $city->setRelation('sites', $city->sites()->select('id', 'name', 'mr_name', 'parent_id')->with('categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category')->limit(5)->get());
-            $city->setRelation('gallery', $city->gallery()->limit(5)->get());
+            $city->setRelation('sites', $city->sites()->select('id', 'name', 'mr_name', 'parent_id')
+                    ->with(['categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category', 'site:id,parent_id,name,mr_name'])
+                    ->limit(5)
+                    ->get());
+            $city->setRelation('gallery', $city->gallery()
+                    ->limit(5)
+                    ->get());
 
-            $city->setRelation('comment', $city->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5)->get()->each(function ($comment) {
-                $comment->setRelation('comments', $comment->comments()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5)->get()->each(function ($reply) {
-                    $reply->setRelation('users', $reply->users()->select('id', 'name', 'email', 'profile_picture')->get());
-                }));
-                $comment->setRelation('users', $comment->users()->select('id', 'name', 'email', 'profile_picture')->get());
-            }));
+            $city->setRelation('comment', $city->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
+                    ->limit(5)
+                    ->get()
+                    ->each(function ($comment) {
+                        $comment->setRelation('comments', $comment->comments()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
+                                ->limit(5)
+                                ->get()
+                                ->each(function ($reply) {
+                                    $reply->setRelation('users', $reply->users()->select('id', 'name', 'email', 'profile_picture')->get());
+                                }
+                            )
+                        );
+
+                        $comment->setRelation('users', $comment->users()->select('id', 'name', 'email', 'profile_picture')->get());
+                    }
+                )
+            );
         }
+
+        #Top 5 Hotels, Restaurants, Resorts
+        $categorySites = $this->siteService->getTrending($request->filled('site_id') ? $request->site_id : null);
 
         #Routes
         $routes = Route::with([
-            'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time',
+            'routeStops:id,serial_no,route_id,site_id,arr_time,dept_time,total_time,delayed_time,distance',
             'routeStops.site:id,name,mr_name',
             'routeStops.site.categories:id,name,mr_name,icon',
             'sourcePlace:id,name,mr_name',
@@ -152,15 +188,18 @@ class LandingPageController extends BaseController
             'end_time',
             'total_time',
             'delayed_time',
-            DB::raw('(SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id) AS distance')
+            DB::raw('ROUND((SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id), 2) AS distance')
         )
-            ->latest()
-            ->limit(5)
-            ->get();
+        ->latest()
+        ->limit(5)
+        ->get();
 
         $blogs = Blog::latest()
             ->limit(5)
             ->get();
+
+        #Hot Sites
+        $hotSites = $this->siteService->getHotSites($request->filled('site_id') ? $request->site_id : null);
 
 
         $gallery = Gallery::with([
@@ -170,26 +209,35 @@ class LandingPageController extends BaseController
             ->limit(isValidReturn($request, 'per_page', 10))
             ->get();
 
-        $queries = Contact::where('user_id', config('user_id'))
-            ->limit(isValidReturn($request, 'per_page', 10))
-            ->get();
-        $category = Category::with('subCategories')->where('code', 'emergency')->first();
+        $queries = $this->contactService->getForUser([
+            'user_id' => auth()->id(),
+            'limit'   => isValidReturn($request, 'per_page', 10),
+            'counts'  => true,
+        ]);
+        // $category = Category::with('subCategories')->where('code', 'emergency')->first();
 
-        $ids = $category->subCategories->pluck('id');
+        // $ids = $category->subCategories->pluck('id');
 
-        $emergency = Site::whereHas('categories', function ($query) use ($ids) {
-            $query->whereIn('id', $ids);
-        })->get();
+        // $emergency = Site::whereHas('categories', function ($query) use ($ids) {
+        //     $query->whereIn('id', $ids);
+        // })->get();
 
-        $records = Cache::remember('landing_page_data' . config('user')->id . '_' . $request->site_id, 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs, $emergency) {
+        $emergency = $this->categoryService->getPaginated(
+            'emergency',
+            1
+        );
+        
+
+        $records = Cache::remember('landing_page_data' . auth()->user()->id . '_' . $request->site_id, 60, function () use ($banners, $routes, $categories, $cities, $gallery, $queries, $blogs, $emergency, $categorySites, $hotSites) {
             return array(
                 'version' => AppVersion::latest()->first(),
-                'user' => config('user')->load(['addresses']),
+                'user' => auth()->user()->load(['addresses']),
                 'banners' => $banners,
                 'routes' => $routes,
                 // 'stops' => $stops,
                 'categories' => $categories,
                 'cities' => $cities,
+                'trending' => $categorySites,
                 // 'projects' => $projects,
                 // 'products'=>$products,
                 // 'place_category' => $place_category,
@@ -197,14 +245,20 @@ class LandingPageController extends BaseController
                 'gallery' => $gallery,
                 'queries' => $queries,
                 'emergencies' => $emergency,
-                'blogs' => $blogs
+                'blogs' => $blogs,
+                'hot_sites' => $hotSites,
             );
         });
 
-        $cachedData = Cache::get('landing_page_data' . config('user')->id . '_' . $request->site_id);
+        $cachedData = Cache::get('landing_page_data' . auth()->user()->id . '_' . $request->site_id);
 
         if ($cachedData) {
             $cachedData['cities'] = $cities;
+            $cachedData['hot_sites'] = $hotSites;
+            $cachedData['trending'] = $categorySites;
+            $cachedData['unread_message_count'] = AdminMessage::where('user_id', auth()->id())
+                ->where('is_read', false)
+                ->count();
         }
 
         return $this->sendResponse($cachedData, 'Landing page data successfully Retrieved...!');

@@ -34,7 +34,7 @@ class RouteController extends BaseController
             'search' => 'nullable|string|alpha|max:255',
             'apitype' => 'required|string|max:255|in:list,dropdown',
             'with_stops' => 'sometimes|required|boolean:true,false',
-            'per_page' => 'nullable|integer|max:50|min:1'
+            'per_page' => 'nullable|integer|max:30|min:1'
         ]);
 
         if ($validator->fails()) {
@@ -154,7 +154,7 @@ class RouteController extends BaseController
         }
 
         $routes = $routes->select(isValidReturn(config('grid.listRoutes.' . $request->apitype), 'columns', '*'))
-            ->paginate(isValidReturn($request->all(), 'per_page', 15));
+            ->paginateSafe();
 
         #need to test on both query for performance
 
@@ -281,20 +281,61 @@ class RouteController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function addRoute(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'route_no'               => 'nullable|integer|min:1|unique:routes,route_no',
+            'name'                   => 'required|string|max:255',
+            'source_place_id'        => 'required|integer|exists:sites,id',
+            'destination_place_id'   => 'required|integer|exists:sites,id|different:source_place_id',
+            'bus_type_id'            => 'required|integer|exists:bus_types,id',
+            'start_time'             => 'required|date_format:H:i:s',
+            'end_time'               => 'required|date_format:H:i:s',
+            'total_time'             => 'nullable|date_format:H:i:s',
+            'delayed_time'           => 'nullable|date_format:H:i:s',
+            'distance'               => 'nullable|numeric|min:0',
+            'working_days'           => 'nullable|string|max:255',
+            'description'            => 'nullable|string',
+            'meta_data'              => 'nullable|array',
+            'status'                 => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        $routeNo = $request->filled('route_no')
+            ? $request->route_no
+            : (Route::max('route_no') ?? 0) + 1;
+
+        $route = Route::create(array_merge(
+            $request->only([
+                'name', 'source_place_id', 'destination_place_id',
+                'bus_type_id', 'start_time', 'end_time', 'total_time',
+                'delayed_time', 'distance', 'working_days', 'description', 'meta_data',
+            ]),
+            [
+                'route_no' => $routeNo,
+                'status'   => $request->boolean('status', false),
+            ]
+        ));
+
+        return $this->sendResponse($route, 'Route added successfully');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
+    public function deleteRoute(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:routes,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        Route::findOrFail($request->id)->delete();
+
+        return $this->sendResponse([], 'Route deleted successfully');
     }
 
     /**
@@ -340,15 +381,80 @@ class RouteController extends BaseController
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified Route by ID.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Route  $route
-     * @return \Illuminate\Http\Response
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, Route $route)
+    public function routesUpdate(Request $request)
     {
-        //
+        // Validate the incoming request
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:routes,id',
+            'source_place_id' => 'sometimes|required|integer|exists:sites,id',
+            'destination_place_id' => 'sometimes|required|integer|exists:sites,id',
+            'bus_type_id' => 'sometimes|required|integer|exists:bus_types,id',
+            'name' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|nullable|string',
+            'distance' => 'sometimes|required|regex:/^\d+(\.\d{1,2})?$/',
+            'meta_data' => 'sometimes|nullable|array',
+            'start_time' => 'sometimes|required|date_format:H:i:s',
+            'end_time' => 'sometimes|required|date_format:H:i:s',
+            'delayed_time' => 'sometimes|nullable|date_format:H:i:s',
+        ]);
+
+        // Return validation errors, if any
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        // Update the Route with validated data
+        $route = Route::where('id', $request->id)->update(array_filter($request->all()));
+
+        return $this->sendResponse(true, 'Route updated successfully...!');
+    }
+
+    public function massRouteStopsUpdate(Request $request)
+    {
+        // Validate the incoming request
+        $validator = Validator::make($request->all(), [
+            'route_stops' => 'required|array|min:1',
+            'route_stops.*.id' => 'required|integer|exists:route_stops,id',
+            'route_stops.*.serial_no' => 'required|integer|min:1',
+            'route_stops.*.route_id' => 'required|integer|exists:routes,id',
+            'route_stops.*.site_id' => 'required|integer|exists:sites,id',
+            'route_stops.*.arr_time' => 'required|date_format:H:i:s',
+            'route_stops.*.dept_time' => 'required|date_format:H:i:s',
+            'route_stops.*.total_time' => 'required|date_format:H:i:s',
+            'route_stops.*.delayed_time' => 'required|date_format:H:i:s',
+            'route_stops.*.distance' => 'nullable|numeric|min:0',
+        ]);
+
+        // Return validation errors, if any
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        // Prepare the data for upsert
+        $routeStopsData = $request->route_stops;
+
+        RouteStops::upsert(
+            $routeStopsData, // Data to upsert
+            ['id'],          // Unique key to check for existing rows
+            [                // Columns to update if the row exists
+                'serial_no',
+                'route_id',
+                'site_id',
+                'arr_time',
+                'dept_time',
+                'total_time',
+                'delayed_time',
+                'distance',
+            ]
+        );
+
+        return $this->sendResponse(true, 'Route stops updated successfully...!');
     }
 
     /**

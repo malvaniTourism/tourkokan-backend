@@ -28,8 +28,8 @@ class RatingController extends BaseController
         $ratings = Rating::with(['user' =>  function ($query) {
             $query->select('id', 'name', 'email', 'profile_picture');
         }])
-            ->where('user_id', config('user_id'))
-            ->paginate(10);
+            ->where('user_id', auth()->id())
+            ->paginateSafe();
 
         return $this->sendResponse($ratings, 'All Ratings successfully Retrieved...!');
     }
@@ -60,7 +60,7 @@ class RatingController extends BaseController
 
         $rateableType = "App\\Models\\" . $request->rateable_type;
 
-        $existingRating = $data->rating()->where('user_id', config('user_id'))
+        $existingRating = $data->rating()->where('user_id', auth()->id())
             ->whereHasMorph('rateable', $rateableType, function ($subquery) use ($request) {
                 $subquery->where('id', $request->rateable_id);
             })->first();
@@ -69,7 +69,7 @@ class RatingController extends BaseController
             $rating = $existingRating->update(['rate' => $request->rate]);
         } else {
             $rating = [
-                'user_id' =>  config('user_id'),
+                'user_id' =>  auth()->id(),
                 'rate' => $request->rate
             ];
 

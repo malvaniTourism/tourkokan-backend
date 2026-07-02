@@ -4,54 +4,68 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use App\Traits\Hashidable;
+use App\Traits\HasStorageFiles;
 
 class Banner extends Model
 {
-    use HasFactory, Hashidable, Notifiable;
+    use HasFactory, HasStorageFiles;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var string[]
-     */
+    protected array $fileFields = ['image', 'image_url'];
+
     protected $fillable = [
-        'id',
+        'user_id',
+        'banner_package_id',
+        'banner_placement_id',
+        'title',
+        'image_url',
+        'redirect_url',
+        'start_date',
+        'end_date',
+        'status',
+        'impressions',
+        'clicks',
+        'is_active',
         'name',
         'image',
-        'start_date',
         'duration',
         'level',
         'image_orientation',
-        'status',
+        'meta_data',
         'bannerable_type',
         'bannerable_id',
-        'meta_data'
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array
-     */
-    protected $hidden = [];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array
-     */
     protected $casts = [
-        'meta_data' => 'array'
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'is_active' => 'boolean',
     ];
 
-    /**
-     * Get all of the models that own comments.
-     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function package()
+    {
+        return $this->belongsTo(BannerPackage::class, 'banner_package_id');
+    }
+
+    public function placement()
+    {
+        return $this->belongsTo(BannerPlacement::class, 'banner_placement_id');
+    }
+
     public function bannerable()
     {
         return $this->morphTo();
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true)
+                     ->where('status', 'approved')
+                     ->whereDate('start_date', '<=', now())
+                     ->whereDate('end_date', '>=', now());
     }
 }

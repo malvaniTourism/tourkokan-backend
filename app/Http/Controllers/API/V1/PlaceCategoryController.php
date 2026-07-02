@@ -29,7 +29,7 @@ class PlaceCategoryController extends BaseController
     public function index()
     {
         $placeCategory = PlaceCategory::with(['places'])
-            ->paginate(10);
+            ->paginateSafe();
         return $this->sendResponse($placeCategory, 'Place Category successfully Retrieved...!');
     }
 
@@ -44,7 +44,7 @@ class PlaceCategoryController extends BaseController
         $places = PlaceCategory::withCount(['places'])
             ->with('places:id,place_category_id,name,city_id,parent_id,image_url', 'places.city:id,name,image_url')
             ->whereIn('name', ['Bus Stop', 'Bus Depo'])
-            ->paginate(10);
+            ->paginateSafe();
         return $this->sendResponse($places, 'Stops successfully Retrieved...!');
     }
 }

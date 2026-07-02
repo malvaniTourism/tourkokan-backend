@@ -39,7 +39,7 @@ class CityController extends BaseController
                     ->where('favourites.user_id', $user->id);
             }, 'is_favorite')
             ->latest()
-            ->paginate(10);
+            ->paginateSafe();
 
         return $this->sendResponse($cities, 'Cities successfully Retrieved...!');
     }

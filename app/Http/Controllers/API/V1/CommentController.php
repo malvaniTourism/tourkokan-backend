@@ -29,7 +29,7 @@ class CommentController extends BaseController
     public function index()
     {
         $comments = Comment::latest()                
-                        ->paginate(10);
+                        ->paginateSafe();
 
         return $this->sendResponse($comments, 'Comments successfully Retrieved...!');  
     }

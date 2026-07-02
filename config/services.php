@@ -35,4 +35,10 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('APP_URL') . env('GOOGLE_REDIRECT_PATH'),
     ],
+
+    'firebase' => [
+        'project_id' => env('FIREBASE_PROJECT_ID', 'tourkokan-658d1'),
+        'server_key' => env('FIREBASE_SERVER_KEY'),
+        'fcm_url'    => env('FIREBASE_FCM_URL', 'https://fcm.googleapis.com/fcm/send'),
+    ],
 ];

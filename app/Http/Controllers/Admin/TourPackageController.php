@@ -27,7 +27,7 @@ class TourPackageController extends BaseController
      */
     public function index()
     {
-        $tourPackage = TourPackage::paginate(10);
+        $tourPackage = TourPackage::paginateSafe();
 
         return $this->sendResponse($tourPackage, 'Tour Package successfully Retrieved...!'); 
     }

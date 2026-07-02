@@ -27,7 +27,7 @@ class ContactController extends BaseController
      */
     public function index()
     {
-        $contacts = Contact::paginate(10);
+        $contacts = Contact::paginateSafe();
 
         return $this->sendResponse($contacts, 'Contacts successfully Retrieved...!');
     }

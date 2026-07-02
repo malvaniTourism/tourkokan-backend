@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Roles;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,17 +13,18 @@ class AdminAccessMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        $roles = Roles::select('id', 'code')->whereIn('code', ['superadmin', 'admin'])->get();
         $user = Auth::user();
 
         if (
             Str::startsWith($request->route()->getPrefix(), 'admin') &&
-            in_array($user->role_id, array_column($roles->toArray(), 'id'))
+            $user->roles()->whereIn('code', ['superadmin', 'admin'])->exists()
         ) {
+            config(['app_version' => Cache::has('app_version')
+                ? Cache::get('app_version')->version_number
+                : AppVersion::latest()->first()->version_number]);
+
             return $next($request);
         }
-        config(['app_version' => Cache::has('app_version') ?  Cache::get('app_version')->version_number : AppVersion::latest()->first()->version_number]);
-
 
         return response()->json(['message' => 'Access Forbidden'], 403);
     }

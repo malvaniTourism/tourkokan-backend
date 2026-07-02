@@ -33,18 +33,20 @@ class CommentController extends BaseController
         }
 
         $comments = $data->comment()
+            ->where('status', true)
             ->with([
                 'users:id,name,email,profile_picture',
                 'comments' => function ($query) {
-                    $query->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
+                    $query->where('status', true)
+                        ->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
                         ->limit(5);
-                }, 
+                },
                 'comments.users' => function ($query) {
                     $query->select('id', 'name', 'email', 'profile_picture');
                 },
             ])
             ->latest()
-            ->paginate($request->per_page);
+            ->paginateSafe();
 
 
         return $this->sendResponse($comments, 'Comments successfully Retrieved...!');
@@ -89,7 +91,7 @@ class CommentController extends BaseController
 
         $existingComment = $data->comment()
             ->where([
-                'user_id' => config('user_id'),
+                'user_id' => auth()->id(),
                 'comment' => $request->comment
             ])
             ->whereHasMorph('commentable', $commentableType, function ($subquery) use ($request) {
@@ -100,15 +102,16 @@ class CommentController extends BaseController
             return $this->sendResponse(null, 'Same comment is not allowed');
         } else {
             $comment = [
-                'user_id' => config('user_id'),
+                'user_id' => auth()->id(),
                 'comment' => $request->comment,
-                'parent_id' => $request->parent_id
+                'parent_id' => $request->parent_id,
+                'status' => false,
             ];
 
-            $data->comment()->create(array_filter($comment));
+            $data->comment()->create(array_filter($comment, fn($v) => $v !== null));
         }
 
-        return $this->sendResponse($comment, 'comment created successfully...!');
+        return $this->sendResponse(['pending' => true], 'Comment submitted and awaiting approval.');
     }
 
     /**
@@ -128,7 +131,7 @@ class CommentController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $comment = Comment::where('user_id', config('user_id'))
+        $comment = Comment::where('user_id', auth()->id())
             ->find($request->id);
 
         return $this->sendResponse($comment, 'Comment successfully Retrieved...!');
@@ -151,11 +154,20 @@ class CommentController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $comment = Comment::where([
-            'id' => $request->id, 'user_id' => config('user_id')
-        ])->update($request->all());
+        $comment = Comment::where('id', $request->id)
+            ->where('user_id', auth()->id())
+            ->first();
 
-        return $this->sendResponse($comment, 'Comment updated successfully...!');
+        if (!$comment) {
+            return $this->sendError('Comment not found or you are not authorized to edit it.', '', 403);
+        }
+
+        $comment->update([
+            'comment' => $request->comment,
+            'status'  => false,
+        ]);
+
+        return $this->sendResponse(['pending' => true], 'Comment updated and awaiting approval.');
     }
 
     /**
@@ -173,11 +185,16 @@ class CommentController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $comment = Comment::where([
-            'id' => $request->id,
-            'user_id' => config('user_id')
-        ])->delete();
+        $comment = Comment::where('id', $request->id)
+            ->where('user_id', auth()->id())
+            ->first();
 
-        return $this->sendResponse($comment, 'Comment deleted successfully...!');
+        if (!$comment) {
+            return $this->sendError('Comment not found or you are not authorized to delete it.', '', 403);
+        }
+
+        $comment->delete();
+
+        return $this->sendResponse(null, 'Comment deleted successfully.');
     }
 }

@@ -32,7 +32,7 @@ class PlaceCategoryImport implements ToCollection, WithHeadingRow
                 }
             }
         } catch (\Throwable $th) {
-            throw $th->getMessage();
+            throw $th;
         }
     }
 }

@@ -27,7 +27,7 @@ class ProductCategoryController extends BaseController
      */
     public function index()
     {
-        $productCategory = ProductCategory::paginate(10);
+        $productCategory = ProductCategory::paginateSafe();
 
         return $this->sendResponse($productCategory, 'Product Category successfully Retrieved...!');  
     }

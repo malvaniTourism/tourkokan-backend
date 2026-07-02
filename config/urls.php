@@ -15,6 +15,8 @@ return [
         'isVerifiedEmail',
         'addGuestQuery',
         'deleteMyAccount',
-        'googleAuth'
+        'googleAuth',
+        'advertisingPackages',
+        'eventTypeDD'
     ]
 ];

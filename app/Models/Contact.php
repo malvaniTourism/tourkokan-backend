@@ -22,6 +22,8 @@ class Contact extends Model
         'email',
         'phone',
         'message',
+        'reply',
+        'admin_user_id',
         'contactable_id',
         'contactable_type',
         'status'
@@ -49,6 +51,11 @@ class Contact extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function adminUser()
+    {
+        return $this->belongsTo(User::class, 'admin_user_id');
     }
 
     /**

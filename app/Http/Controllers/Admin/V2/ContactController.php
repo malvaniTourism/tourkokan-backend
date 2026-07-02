@@ -17,14 +17,29 @@ class ContactController extends BaseController
      */
     public function getQueries()
     {
+        $counts = Contact::selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
         $contacts = Contact::with([
             'user:id,name',
+            'adminUser:id,name',
             'contactable:id,name,parent_id',
             'contactable.categories:id,name'
         ])
-            ->paginate(request()->per_page);
+            ->when(request()->status, fn($q) => $q->where('status', request()->status))
+            ->orderBy('created_at', 'DESC')
+            ->paginateSafe();
 
-        return $this->sendResponse($contacts, 'Contacts successfully Retrieved...!');
+        $response = $contacts->toArray();
+        $response['counts'] = [
+            'all'     => $counts->sum(),
+            'unread'  => $counts->get('unread', 0),
+            'read'    => $counts->get('read', 0),
+            'replied' => $counts->get('replied', 0),
+        ];
+
+        return $this->sendResponse($response, 'Contacts successfully Retrieved...!');
     }
 
     /**
@@ -55,7 +70,7 @@ class ContactController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:contacts,id',
-            'status' => 'required|string|max:255|in:read,unread',
+            'status' => 'required|string|max:255|in:read,unread,replied',
         ]);
 
         if ($validator->fails()) {
@@ -68,8 +83,34 @@ class ContactController extends BaseController
             return $this->sendError('Empty', [], 404);
         }
 
-        $contact->update($request->all());
+        $contact->update(['status' => $request->status]);
 
         return $this->sendResponse($contact, 'contacts updated successfully...!');
+    }
+
+    public function replyQuery(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:contacts,id',
+            'reply' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        $contact = Contact::find($request->id);
+
+        if (is_null($contact)) {
+            return $this->sendError('Empty', [], 404);
+        }
+
+        $contact->update([
+            'reply' => $request->reply,
+            'admin_user_id' => auth()->id(),
+            'status' => 'replied',
+        ]);
+
+        return $this->sendResponse($contact, 'Reply sent successfully...!');
     }
 }

@@ -6,48 +6,43 @@ use App\Models\Site;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\Category;
-use Illuminate\Support\Facades\Cache;
+use App\Services\SiteService;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class SiteController extends BaseController
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function listCities() //cities
+    public function __construct(protected SiteService $siteService)
+    {
+        $this->middleware('auth:api');
+    }
+
+    public function listCities()
     {
         $user = auth()->user();
 
-        $city = Site::withCount(['photos', 'comment'])
-            ->with(['photos', 'comment', 'categories:id,name,code,parent_id,icon,status,is_hot_category'])
+        $city = Site::withCount(['gallery', 'comment'])
+            ->with(['gallery', 'comment', 'categories:id,name,code,parent_id,icon,status,is_hot_category'])
             ->selectSub(function ($query) use ($user) {
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
-                    ->where('favourites.favouritable_type', Site::class)
+                    ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                     ->where('favourites.user_id', $user->id);
             }, 'is_favorite')
             ->whereHas('categories', function ($query) {
                 $query->where('code', 'city');
-            })->paginate(10);
+            })->paginateSafe();
 
         return $this->sendResponse($city, 'Cities successfully Retrieved...!');
     }
 
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Site  $Site
-     * @return \Illuminate\Http\Response
-     */
-    public function getSite(Request $request)    //city
+    public function getSite(Request $request)
     {
-        $user_id = config('user_id');
-        // there is bug in this api need to fix if this api is hit and id passed of any other category type site data will be returned.
-        // need to restrict this by adding validation or condition
+        $user_id = auth()->id();
+
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:sites,id'
         ]);
@@ -56,7 +51,7 @@ class SiteController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $city   =   Site::withCount(['sites', 'photos', 'comment'])
+        $city = Site::withCount(['sites', 'gallery', 'comment'])
             ->withAvg('rating', 'rate')
             ->with([
                 'categories:id,name,code,parent_id,icon,status,is_hot_category',
@@ -78,27 +73,33 @@ class SiteController extends BaseController
                 'comment.comments.users' => function ($query) {
                     $query->select('id', 'name', 'email', 'profile_picture');
                 },
-                'photos'
+                'gallery'
             ])
             ->selectSub(function ($query) use ($user_id) {
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
-                    ->where('favourites.favouritable_type', Site::class)
+                    ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                     ->where('favourites.user_id', $user_id);
             }, 'is_favorite')
             ->latest()
             ->limit(5)
             ->find($request->id);
 
-        return $this->sendResponse($city, 'Cities successfully Retrieved...!');
+        $city->setAttribute('trending',  $this->siteService->getTrending($request->id));
+        $city->setAttribute('hot_sites', $this->siteService->getHotSites($request->id));
+
+        $request->attributes->set('log_entity_type', 'site');
+        $request->attributes->set('log_entity_id',   $city->id);
+        $request->attributes->set('log_entity_name', $city->getRawOriginal('name'));
+        $request->attributes->set('log_meta_data', [
+            'categories'  => $city->categories->pluck('code')->toArray(),
+            'is_favorite' => (bool) $city->is_favorite,
+        ]);
+
+        return $this->sendResponse($city, 'Site successfully Retrieved...!');
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function stops()
     {
         $places = Site::with([
@@ -107,25 +108,20 @@ class SiteController extends BaseController
         ])
             ->whereIn('bus_stop_type', ['Depo', 'Stop'])
             ->select('id', 'name', 'parent_id', 'icon', 'status', 'is_hot_place', 'bus_stop_type')
-            ->paginate(10);
+            ->paginateSafe();
 
         return $this->sendResponse($places, 'Stops successfully Retrieved...!');
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function sites(Request $request)
     {
         $user = auth()->user();
 
         $validator = Validator::make($request->all(), [
-            'search' => 'sometimes|nullable|string|alpha|max:255',
-            'type' => 'sometimes|required|string|max:255|in:bus',
-            'apitype' => 'required|string|max:255|in:list,dropdown',
-            'category' => ($request->has('type') || $request->has('global')) ? 'nullable|exists:categories,code' : 'nullable|required_without:parent_id|exists:categories,code',
+            'search'    => 'sometimes|nullable|string|alpha|max:255',
+            'type'      => 'sometimes|required|string|max:255|in:bus',
+            'apitype'   => 'required|string|max:255|in:list,dropdown',
+            'category'  => ($request->has('type') || $request->has('global')) ? 'nullable|exists:categories,code' : 'nullable|required_without:parent_id|exists:categories,code',
             'parent_id' => 'nullable|required_with:parent_id|exists:sites,parent_id',
             'global'    => 'sometimes|boolean'
         ]);
@@ -135,33 +131,27 @@ class SiteController extends BaseController
         }
 
         $withArr = [
+            'site:id,parent_id,name',
             'sites' => function ($query) use ($user) {
                 $query->select(
-                    'id',
-                    'name',
-                    'mr_name',
-                    'parent_id',
-                    'image',
-                    'domain_name',
-                    'description',
-                    'tag_line',
-                    'bus_stop_type',
-                    'icon',
-                    'status',
+                    'id', 'name', 'mr_name', 'parent_id', 'image',
+                    'domain_name', 'description', 'tag_line',
+                    'bus_stop_type', 'icon', 'status',
                 )
-                    ->with(['rate:id,user_id,rate,rateable_type,rateable_id,status'])
+                    ->with(['rate:id,user_id,rate,rateable_type,rateable_id,status', 'gallery'])
                     ->where('is_hot_place', true)
                     ->selectSub(function ($query) use ($user) {
                         $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                             ->from('favourites')
                             ->whereColumn('sites.id', 'favourites.favouritable_id')
-                            ->where('favourites.favouritable_type', Site::class)
+                            ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                             ->where('favourites.user_id', $user->id);
                     }, 'is_favorite')
+                    ->orderBy('name', 'asc')
                     ->withAvg("rating", 'rate');
             },
             'sites.comment',
-            'photos',
+            'gallery',
             'comment',
             'categories:id,name,code,parent_id,icon,status,is_hot_category',
             'rate:id,user_id,rate,rateable_type,rateable_id,status',
@@ -169,32 +159,23 @@ class SiteController extends BaseController
         ];
 
         if ($request->apitype == 'dropdown') {
-            $withArr = [
-                'categories:id,name,code,parent_id,icon,status,is_hot_category'
-            ];
+            $withArr = ['categories:id,name,code,parent_id,icon,status,is_hot_category'];
         }
 
         $sites = Site::with($withArr);
 
         if (isValidReturn($request, 'category') == "emergency") {
-            // Retrieve the 'emergency' category with its sub-categories
             $category = Category::with('subCategories')->where('code', 'emergency')->first();
-
             if ($category) {
-                // Extract the IDs of all sub-categories
                 $ids = $category->subCategories->pluck('id');
-
-                // Filter sites where the categories match the extracted sub-category IDs
                 $sites = $sites->whereHas('categories', function ($query) use ($ids) {
                     $query->whereIn('id', $ids);
                 });
             } else {
-                // If no 'emergency' category is found, return an empty result
-                $sites = $sites->whereNull('id'); // Ensures no sites are returned
+                $sites = $sites->whereNull('id');
             }
         } else {
             if ($request->has('category')) {
-                // Filter sites based on the specific category code provided in the request
                 $sites = $sites->whereHas('categories', function ($query) use ($request) {
                     $query->where('code', $request->category);
                 });
@@ -202,7 +183,7 @@ class SiteController extends BaseController
         }
 
         if ($request->has('parent_id')) {
-            $sites = $sites->where('parent_id', "=", $request->parent_id);
+            $sites = $sites->where('parent_id', '=', $request->parent_id);
         }
 
         if ($request->has('global')) {
@@ -210,12 +191,11 @@ class SiteController extends BaseController
         }
 
         if ($request->has('search')) {
-            $search = $request->input('search');
-            $sites = $sites->where('name', 'like', $search . '%');
+            $sites = $sites->where('name', 'like', $request->input('search') . '%');
         }
 
         if ($request->has('type') && $request->input('type') == 'bus') {
-            $sites =  $sites->whereIn('bus_stop_type', ['Depo', 'Stop']);
+            $sites = $sites->whereIn('bus_stop_type', ['Depo', 'Stop']);
         }
 
         $sites = $sites->select(isValidReturn(config('grid.siteApiTypes.' . $request->apitype), 'columns', '*'));
@@ -225,84 +205,257 @@ class SiteController extends BaseController
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
-                    ->where('favourites.favouritable_type', Site::class)
+                    ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                     ->where('favourites.user_id', $user->id);
             }, 'is_favorite')
                 ->withAvg("rating", 'rate')
-                ->withCount([
-                    'photos',
-                    'comment'
-                ]);
+                ->withCount(['gallery', 'comment']);
         }
 
-        $sites = $sites->paginate(25);
+        $sites = $sites->paginateSafe();
 
         return $this->sendResponse($sites, 'Sites successfully Retrieved...!');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
+    // ── Site Onboarding (user submits / manages own listings) ────────────────
+
+    public function parseMapUrl(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'url' => 'required|string|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 422);
+        }
+
+        $url = $request->input('url');
+
+        if (str_contains($url, 'goo.gl') || str_contains($url, 'maps.app.goo')) {
+            try {
+                $response = Http::withOptions(['allow_redirects' => true])->get($url);
+                $resolved = (string) $response->effectiveUri();
+                if (!empty($resolved)) {
+                    $url = $resolved;
+                }
+            } catch (\Throwable $e) {
+                // fall through to regex on original URL
+            }
+        }
+
+        $patterns = [
+            '/\/maps\/search\/(-?\d+\.?\d*),\+?\s*(-?\d+\.?\d*)/',
+            '/@(-?\d+\.\d+),(-?\d+\.\d+)/',
+            '/[?&]q=(-?\d+\.\d+),\+?(-?\d+\.\d+)/',
+            '/[?&]ll=(-?\d+\.\d+),\+?(-?\d+\.\d+)/',
+            '/\/place\/[^\/]+\/@(-?\d+\.\d+),(-?\d+\.\d+)/',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $url, $matches)) {
+                return $this->sendResponse([
+                    'latitude'  => (float) $matches[1],
+                    'longitude' => (float) $matches[2],
+                ], 'Coordinates extracted successfully.');
+            }
+        }
+
+        return $this->sendError(
+            'Could not extract coordinates from this URL. Please use the map picker or enter manually.',
+            '',
+            422
+        );
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
+    public function submitSite(Request $request)
     {
-        //
+        if (is_string($request->input('categories'))) {
+            $request->merge(['categories' => json_decode($request->input('categories'), true)]);
+        }
+
+        $userId = auth()->id();
+
+        $validator = Validator::make($request->all(), [
+            'name' => [
+                'required', 'string', 'between:2,100',
+                Rule::unique('sites', 'name')->where(fn($q) => $q
+                    ->where('user_id', $userId)
+                    ->where('latitude', $request->latitude)
+                    ->where('longitude', $request->longitude)),
+            ],
+            'categories'   => 'required|array|min:1',
+            'categories.*' => 'exists:categories,id',
+            'parent_id'    => 'nullable|exists:sites,id',
+            'description'  => 'required|string|min:20',
+            'tag_line'     => 'nullable|string|max:100',
+            'domain_name'  => 'nullable|url|max:255',
+            'image'        => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
+            'logo'         => 'nullable|mimes:jpeg,jpg,png,webp|max:1024',
+            'latitude'     => 'required|numeric|between:-90,90',
+            'longitude'    => 'required|numeric|between:-180,180',
+            'pin_code'     => 'nullable|digits:6',
+            'social_media' => 'nullable|json',
+            'speciality'   => 'nullable|json',
+            'rules'        => 'nullable|json',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 422);
+        }
+
+        $input = $request->except('categories');
+        $input['user_id']           = $userId;
+        $input['status']            = false;
+        $input['submission_status'] = 'pending';
+
+        foreach (['logo', 'image'] as $field) {
+            if ($file = $request->file($field)) {
+                $input[$field] = uploadFile($file, config('constants.upload_path.site'))['path'];
+            }
+        }
+
+        $site = Site::create($input);
+        $site->categories()->attach($request->input('categories'));
+
+        return $this->sendResponse(
+            $site->load('categories:id,name,code'),
+            'Your place has been submitted and is under review. We will notify you once approved.'
+        );
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Site  $site
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Site $site)
+    public function mySubmissions(Request $request)
     {
-        //
+        $submissions = Site::where('user_id', auth()->id())
+            ->with('categories:id,name,code')
+            ->select('id', 'name', 'image', 'status', 'submission_status', 'rejection_reason', 'created_at', 'updated_at')
+            ->latest()
+            ->paginateSafe();
+
+        return $this->sendResponse($submissions, 'Submissions fetched.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Site  $site
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Site $site)
+    public function updateSubmission(Request $request)
     {
-        //
+        if (is_string($request->input('categories'))) {
+            $request->merge(['categories' => json_decode($request->input('categories'), true)]);
+        }
+
+        $siteId = $request->input('id');
+        $userId = auth()->id();
+
+        $validator = Validator::make($request->all(), [
+            'id'           => 'required|numeric|exists:sites,id',
+            'name'         => [
+                'sometimes', 'string', 'between:2,100',
+                Rule::unique('sites', 'name')
+                    ->ignore($siteId)
+                    ->where(fn($q) => $q
+                        ->where('user_id', $userId)
+                        ->where('latitude', $request->latitude)
+                        ->where('longitude', $request->longitude)),
+            ],
+            'categories'   => 'sometimes|array|min:1',
+            'categories.*' => 'exists:categories,id',
+            'parent_id'    => 'nullable|exists:sites,id',
+            'description'  => 'sometimes|string|min:20',
+            'tag_line'     => 'nullable|string|max:100',
+            'domain_name'  => 'nullable|url|max:255',
+            'image'        => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
+            'logo'         => 'nullable|mimes:jpeg,jpg,png,webp|max:1024',
+            'latitude'     => 'nullable|numeric|between:-90,90',
+            'longitude'    => 'nullable|numeric|between:-180,180',
+            'pin_code'     => 'nullable|digits:6',
+            'social_media' => 'nullable|json',
+            'speciality'   => 'nullable|json',
+            'rules'        => 'nullable|json',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 422);
+        }
+
+        $site = Site::where('id', $siteId)
+            ->where('user_id', $userId)
+            ->whereIn('submission_status', ['pending', 'rejected', 'approved'])
+            ->first();
+
+        if (!$site) {
+            return $this->sendError('Submission not found or cannot be edited.', '', 404);
+        }
+
+        $input          = $request->except(['id', 'categories']);
+        $previousStatus = $site->submission_status;
+
+        if (in_array($previousStatus, ['rejected', 'approved'])) {
+            $input['submission_status'] = 'pending';
+            $input['rejection_reason']  = null;
+
+            if ($previousStatus === 'approved') {
+                $input['status']    = false;
+                $input['meta_data'] = array_merge($site->meta_data ?? [], [
+                    'resubmission' => [
+                        'message'         => 'Site details were updated by the owner and require re-approval.',
+                        'previous_status' => $previousStatus,
+                        'updated_at'      => now()->toDateTimeString(),
+                    ],
+                ]);
+            }
+        }
+
+        foreach (['logo', 'image'] as $field) {
+            if ($file = $request->file($field)) {
+                $rawPath = $site->getRawOriginal($field);
+                if ($rawPath && Storage::exists($rawPath)) {
+                    Storage::delete($rawPath);
+                }
+                $input[$field] = uploadFile($file, config('constants.upload_path.site'))['path'];
+            }
+        }
+
+        $site->update($input);
+
+        if ($request->has('categories')) {
+            $site->categories()->sync($request->input('categories'));
+        }
+
+        return $this->sendResponse(
+            array_merge($site->load('categories:id,name,code')->toArray(), [
+                'meta_data' => $site->meta_data,
+            ]),
+            $previousStatus === 'approved'
+                ? 'Your place has been updated and sent for re-approval.'
+                : 'Submission updated. It is now under review again.'
+        );
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Site  $site
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Site $site)
+    public function deleteSubmission(Request $request)
     {
-        //
-    }
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|numeric|exists:sites,id',
+        ]);
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Site  $site
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Site $site)
-    {
-        //
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 422);
+        }
+
+        $site = Site::where('id', $request->id)
+            ->where('user_id', auth()->id())
+            ->whereIn('submission_status', ['pending', 'rejected'])
+            ->first();
+
+        if (!$site) {
+            return $this->sendError('Submission not found or cannot be deleted.', '', 404);
+        }
+
+        foreach (['logo', 'image'] as $field) {
+            $rawPath = $site->getRawOriginal($field);
+            if ($rawPath && Storage::exists($rawPath)) {
+                Storage::delete($rawPath);
+            }
+        }
+
+        $site->delete();
+
+        return $this->sendResponse(null, 'Submission deleted.');
     }
 }

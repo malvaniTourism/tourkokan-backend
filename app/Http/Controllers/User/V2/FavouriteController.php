@@ -17,8 +17,8 @@ class FavouriteController extends BaseController
      */
     public function index()
     {
-        $favourite =  Favourite::where('user_id', config('user_id'))
-            ->paginate(10);
+        $favourite =  Favourite::where('user_id', auth()->id())
+            ->paginateSafe();
 
         return $this->sendResponse($favourite, 'Favourites successfully Retrieved...!');
     }
@@ -60,7 +60,7 @@ class FavouriteController extends BaseController
 
         $favourite = $data->favourites()
             ->where([
-                'user_id' => config('user_id')
+                'user_id' => auth()->id()
             ])
             ->whereHasMorph('favouritable', $favouritableType, function ($subquery) use ($request) {
                 $subquery->where('id', $request->favouritable_id);
@@ -68,14 +68,23 @@ class FavouriteController extends BaseController
 
         if ($favourite) {
             $favourite->delete();
+
+            $request->attributes->set('log_entity_type', strtolower($request->favouritable_type));
+            $request->attributes->set('log_entity_id',   (int) $request->favouritable_id);
+            $request->attributes->set('log_meta_data', ['action' => 'remove']);
+
             return $this->sendResponse(null, 'Favourite deleted successfully...!');
         } else {
             $favourite = [
-                'user_id' => config('user_id')
+                'user_id' => auth()->id()
             ];
 
             $favourite = $data->favourites()->create(array_filter($favourite));
         }
+
+        $request->attributes->set('log_entity_type', strtolower($request->favouritable_type));
+        $request->attributes->set('log_entity_id',   (int) $request->favouritable_id);
+        $request->attributes->set('log_meta_data', ['action' => 'add']);
 
         return $this->sendResponse($favourite, 'Favourite created successfully...!');
     }
