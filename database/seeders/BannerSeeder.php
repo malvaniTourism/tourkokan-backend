@@ -195,8 +195,11 @@ class BannerSeeder extends Seeder
             );
         }
 
-        // 3. Seed placeholder "Ad Space" banners — one per sellable slot,
-        // linked to the cheapest package that can book that placement.
+        // 3. Wipe existing banners, then seed the placeholder "Ad Space" set
+        // fresh — one per sellable slot, linked to the cheapest package that
+        // can book that placement.
+        $this->deleteExistingBanners();
+
         $user = User::first();
         $starter = BannerPackage::where('name', 'Starter')->first();
         $growth = BannerPackage::where('name', 'Growth')->first();
@@ -216,6 +219,37 @@ class BannerSeeder extends Seeder
             'ROUTE_LIST_FOOTER' => [1, $starter],
         ];
 
+        // Upload each placement creative (English + Marathi) to the default
+        // disk (S3) once and store the path — storageUrl() resolves it, same
+        // as real uploads. Deterministic filenames so re-running overwrites
+        // instead of piling up. Falls back to the local public URL if the
+        // disk is unreachable; Marathi falls back to null (English shows).
+        $uploadPath = config('constants.upload_path.banner');
+        $imageRefs = [];
+        $mrImageRefs = [];
+        foreach (array_keys($slots) as $code) {
+            foreach (['' => &$imageRefs, '_mr' => &$mrImageRefs] as $suffix => &$refs) {
+                $file = strtolower($code) . $suffix . '.png';
+                $local = public_path('images/banners/' . $file);
+
+                if (!file_exists($local)) {
+                    $refs[$code] = null;
+                    continue;
+                }
+
+                $refs[$code] = url('images/banners/' . $file);
+
+                try {
+                    $remotePath = $uploadPath . '/seed_' . $file;
+                    \Storage::put($remotePath, file_get_contents($local));
+                    $refs[$code] = $remotePath;
+                } catch (\Throwable $e) {
+                    $this->command?->warn("S3 upload failed for {$file} — using local URL. ({$e->getMessage()})");
+                }
+            }
+            unset($refs);
+        }
+
         foreach ($slots as $code => [$count, $package]) {
             $placement = BannerPlacement::where('code', $code)->first();
             if (!$placement || !$package) {
@@ -233,10 +267,11 @@ class BannerSeeder extends Seeder
                 $startDate = Carbon::now();
                 $endDate = (clone $startDate)->addDays($package->duration_days);
 
-                Banner::updateOrCreate(
-                    ['name' => "Ad Space - {$code} #{$i}"],
+                Banner::create(
                     [
-                        'image' => "https://placehold.co/{$placement->width}x{$placement->height}/png?text=Advertise+Here",
+                        'name' => "Ad Space - {$code} #{$i}",
+                        'image' => $imageRefs[$code],
+                        'mr_image' => $mrImageRefs[$code],
                         'user_id' => $user ? $user->id : null,
                         'banner_package_id' => $package->id,
                         'banner_placement_id' => $placement->id,
@@ -254,6 +289,23 @@ class BannerSeeder extends Seeder
                     ]
                 );
             }
+        }
+    }
+
+    /**
+     * Delete all existing banner rows (truncate also resets the IDs) so the
+     * placeholder set is re-seeded fresh. Storage files are left untouched:
+     * seed creatives use deterministic names and get overwritten on upload,
+     * and admin-uploaded files should not be deleted by a seeder.
+     */
+    private function deleteExistingBanners(): void
+    {
+        $count = Banner::count();
+
+        Banner::truncate();
+
+        if ($count > 0) {
+            $this->command?->info("Deleted {$count} existing banner(s) before re-seeding.");
         }
     }
 }

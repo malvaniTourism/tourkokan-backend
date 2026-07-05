@@ -314,6 +314,7 @@ Content-Type: multipart/form-data
 |-------|------|----------|-------|
 | `name` | string | ✅ | Unique, 2–40 chars |
 | `image` | file | ✅ | jpeg / jpg / png / webp |
+| `mr_image` | file | ❌ | Marathi creative (same formats). Served automatically to users with Marathi language setting; falls back to `image` if absent |
 | `start_date` | string | ✅ | Format: `Y-m-d H:i:s` e.g. `2026-06-01 00:00:00` |
 | `duration` | string | ✅ | Days the banner runs. Values from `bannerDaysDD`: `1`, `3`, `5`, `7` |
 | `level` | string | ✅ | Position on screen. Values from `bannerLevelsDD`: `carousel`, `middle`, `footer` |
@@ -349,6 +350,7 @@ Content-Type: multipart/form-data
 |-------|------|----------|-------|
 | `id` | integer | ✅ | |
 | `image` | file | ❌ | Replaces old image if provided |
+| `mr_image` | file | ❌ | Marathi creative — replaces old one if provided (old file deleted from storage) |
 | `start_date` | string | ❌ | Format: `Y-m-d H:i:s` |
 | `duration` | string | ❌ | `1`, `3`, `5`, `7` |
 | `level` | string | ❌ | `carousel`, `middle`, `footer` |

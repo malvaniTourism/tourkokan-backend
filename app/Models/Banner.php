@@ -10,7 +10,7 @@ class Banner extends Model
 {
     use HasFactory, HasStorageFiles;
 
-    protected array $fileFields = ['image', 'image_url'];
+    protected array $fileFields = ['image', 'image_url', 'mr_image'];
 
     protected $fillable = [
         'user_id',
@@ -27,6 +27,7 @@ class Banner extends Model
         'is_active',
         'name',
         'image',
+        'mr_image',
         'duration',
         'level',
         'image_orientation',
@@ -40,6 +41,19 @@ class Banner extends Model
         'end_date' => 'date',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Serve the Marathi creative (if one exists) when the request language
+     * is not English — same pattern as Site::getNameAttribute. The
+     * HasStorageFiles trait converts the returned path to a full URL.
+     */
+    public function getImageAttribute($value)
+    {
+        $language = request()->attributes->get('language');
+        $mrImage = $this->getRawOriginal('mr_image');
+
+        return empty($language) || $language === 'en' ? $value : ($mrImage ?: $value);
+    }
 
     public function user()
     {

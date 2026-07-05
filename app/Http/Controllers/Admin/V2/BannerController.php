@@ -112,6 +112,7 @@ class BannerController extends BaseController
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|unique:banners|between:2,40',
             'image' => ['required', 'mimes:jpeg,jpg,png,webp', new ImageGuideline($imageType)],
+            'mr_image' => ['nullable', 'mimes:jpeg,jpg,png,webp', new ImageGuideline($imageType)],
             'start_date' => 'required|date_format:Y-m-d H:i:s',
             'duration' => 'required|in:' . implode(',', array_column(config('constants.banner_days'), 'code')),
             'level' =>  'required|in:' . implode(',', array_column(config('constants.banner_levels'), 'code')),
@@ -131,7 +132,7 @@ class BannerController extends BaseController
        
         $uploadPath = config('constants.upload_path.banner');
 
-        $fileFields = ['image'];
+        $fileFields = ['image', 'mr_image'];
 
         foreach ($fileFields as $field) {
             if ($image = $request->file($field)) {
@@ -192,6 +193,7 @@ class BannerController extends BaseController
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:banners,id',
             'image' => ['nullable', 'mimes:jpeg,jpg,png,webp', new ImageGuideline($imageType)],
+            'mr_image' => ['nullable', 'mimes:jpeg,jpg,png,webp', new ImageGuideline($imageType)],
             'start_date' => 'nullable|date_format:Y-m-d H:i:s',
             'duration' => 'nullable|in:' . implode(',', array_column(config('constants.banner_days'), 'code')),
             'level' =>  'nullable|in:' . implode(',', array_column(config('constants.banner_levels'), 'code')),
@@ -211,14 +213,16 @@ class BannerController extends BaseController
 
         $input = $request->except(['id', 'bannerable_id', 'bannerable_type']);
 
-        if ($request->hasFile('image')) {
-            $rawPath = $banner->getRawOriginal('image');
-            if ($rawPath && Storage::exists($rawPath)) {
-                Storage::delete($rawPath);
+        foreach (['image', 'mr_image'] as $field) {
+            if ($request->hasFile($field)) {
+                $rawPath = $banner->getRawOriginal($field);
+                if ($rawPath && Storage::exists($rawPath)) {
+                    Storage::delete($rawPath);
+                }
+                $input[$field] = uploadFile($request->file($field), config('constants.upload_path.banner'))['path'];
+            } else {
+                unset($input[$field]);
             }
-            $input['image'] = uploadFile($request->file('image'), config('constants.upload_path.banner'))['path'];
-        } else {
-            unset($input['image']);
         }
 
         if ($request->bannerable_id && $request->bannerable_type) {
@@ -254,9 +258,11 @@ class BannerController extends BaseController
 
         $banner = Banner::find($request->id);
 
-        $rawImage = $banner->getRawOriginal('image');
-        if ($rawImage && Storage::exists($rawImage)) {
-            Storage::delete($rawImage);
+        foreach (['image', 'mr_image'] as $field) {
+            $rawImage = $banner->getRawOriginal($field);
+            if ($rawImage && Storage::exists($rawImage)) {
+                Storage::delete($rawImage);
+            }
         }
 
         $banner->delete();
