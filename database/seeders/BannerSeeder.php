@@ -32,8 +32,10 @@ class BannerSeeder extends Seeder
                 'code' => 'HOME_HERO',
                 'description' => 'Main hero banner on homepage (Top)',
                 'screen' => 'Home',
-                'width' => 1200,
-                'height' => 600,
+                // 1.35:1 — must match config/constants.php image_rules 'hero_home';
+                // the app renders the home hero at this ratio with cover fill.
+                'width' => 1080,
+                'height' => 800,
                 'is_active' => true,
             ],
             [
