@@ -223,10 +223,25 @@ class BannerSeeder extends Seeder
 
         // Upload each placement creative (English + Marathi) to the default
         // disk (S3) once and store the path — storageUrl() resolves it, same
-        // as real uploads. Deterministic filenames so re-running overwrites
-        // instead of piling up. Falls back to the local public URL if the
-        // disk is unreachable; Marathi falls back to null (English shows).
+        // as real uploads. Filenames carry a content hash so a changed
+        // creative gets a NEW URL — mobile image caches key on the URL and
+        // would otherwise serve the stale file forever. Stale seed_* files
+        // are removed first. Falls back to the local public URL if the disk
+        // is unreachable; Marathi falls back to null (English shows).
         $uploadPath = config('constants.upload_path.banner');
+
+        try {
+            $stale = array_filter(
+                \Storage::files($uploadPath),
+                fn ($p) => str_starts_with(basename($p), 'seed_')
+            );
+            if ($stale) {
+                \Storage::delete($stale);
+            }
+        } catch (\Throwable $e) {
+            $this->command?->warn("Could not clean old seed creatives: {$e->getMessage()}");
+        }
+
         $imageRefs = [];
         $mrImageRefs = [];
         foreach (array_keys($slots) as $code) {
@@ -242,7 +257,8 @@ class BannerSeeder extends Seeder
                 $refs[$code] = url('images/banners/' . $file);
 
                 try {
-                    $remotePath = $uploadPath . '/seed_' . $file;
+                    $hash = substr(md5_file($local), 0, 8);
+                    $remotePath = $uploadPath . '/seed_' . strtolower($code) . $suffix . '_' . $hash . '.png';
                     \Storage::put($remotePath, file_get_contents($local));
                     $refs[$code] = $remotePath;
                 } catch (\Throwable $e) {
