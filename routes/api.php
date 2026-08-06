@@ -51,6 +51,7 @@ use App\Http\Controllers\User\V2\{
     RouteStopsController,
     ProductCategoryController,
     ProductController,
+    CatalogController,
 };
 
 /*
@@ -302,6 +303,21 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('getSiteGallery', [SiteGalleryController::class, 'index']);
     Route::post('uploadSiteGallery', [SiteGalleryController::class, 'upload'])->middleware('throttle:uploads');
     Route::post('deleteSiteGallery', [SiteGalleryController::class, 'destroy'])->middleware('throttle:writes');
+
+    // ── Public Catalog (what tourists browse) ───────────────────────
+    // Everything reads through Product::scopeLive — approved listing, approved and
+    // published site, inside its availability window.
+    Route::post('listProducts', [CatalogController::class, 'listProducts']);
+    Route::post('productDetail', [CatalogController::class, 'productDetail']);
+    Route::post('productsBySite', [CatalogController::class, 'productsBySite']);
+    Route::post('featuredProducts', [CatalogController::class, 'featuredProducts']);
+
+    // Engagement capture — starts on day one of the free period so there is data to
+    // price on later. See docs/VENDOR_PRODUCTS_DESIGN.md §9.
+    Route::post('recordProductView', [CatalogController::class, 'recordProductView'])
+        ->middleware('throttle:writes');
+    Route::post('recordProductLead', [CatalogController::class, 'recordProductLead'])
+        ->middleware('throttle:writes');
 
     // ── Site Onboarding (user-submitted places) ─────────────────────
     Route::post('parseMapUrl', [SiteController::class, 'parseMapUrl']);

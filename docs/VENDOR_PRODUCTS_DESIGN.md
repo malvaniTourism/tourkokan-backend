@@ -1,9 +1,9 @@
 # Vendor Product Listing — Design & Implementation Plan
 
-**Status:** Phases 1–4 implemented and tested — **a vendor can now list a product from the app** · Phase 5 (public read APIs) next
+**Status:** Phases 1–5 implemented and tested — **vendors list, tourists browse** · Phase 6 (metering rollup) next
 **Date:** 2026-08-05
 **Branch:** `feature/vendor-products`
-**Tests:** 186 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
+**Tests:** 211 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
 **Client:** Tourkokan mobile app (`tourkokan-v2`, React Native) — vendors add products from the app
 **Backend:** `tourkokan-backend` (Laravel 12)
 
@@ -140,7 +140,26 @@ its site was unpublished — and, once vendors could list against pending sites,
 gone live before the business was ever approved. Now requires the site be `approved` and
 `status = true`. Covered by `PendingSiteProductTest`.
 
-### 0.11 Legacy `Projects` naming
+### 0.11 `gte:min_price` rejected the commonest filter in the catalogue
+
+`listProducts` validated `max_price` with an unconditional `gte:min_price`. Laravel evaluates
+that rule even when `min_price` is absent, so **filtering by a maximum price alone — the
+most common filter any catalogue has — returned 422**.
+
+It hid well: this API answers 200 on failure (§0.4), so the app would have shown "no results"
+rather than an error, and the first test missed it by not asserting the envelope. Now wrapped
+in `Rule::when($request->filled('min_price'), ...)`, with tests for both the max-only filter
+and the genuinely invalid max-below-min case.
+
+Lesson applied across the catalogue tests: helper methods assert success by default.
+
+### 0.12 `Product::scopeLive` used unqualified column names
+
+`where('status', 'approved')` broke the moment a query joined `sites`, which also has
+`status` — MySQL rejected it as ambiguous. Harmless until the public catalogue joined `sites`
+for distance sorting, then fatal. All columns in the scope are now table-qualified.
+
+### 0.13 Legacy `Projects` naming
 
 `PlaceController` answered "Projects updated successfully" when updating a Place, and
 `Blog`/`Photos` carried docblocks describing Projects. Cleaned up. The only remaining
@@ -699,8 +718,8 @@ Feed the same hook into `user_activity_logs` and the analytics dashboard comes f
 | ~~**2**~~ ✅ | `sites.is_primary`, `User::sites()`, `setPrimarySite`, `mySubmissions` → `mySites` | multi-outlet vendors |
 | ~~**3**~~ ✅ | `product_categories` rebuild + `attribute_schema` + `booking_type` + validator + admin CRUD + seeder | taxonomy |
 | ~~**4**~~ ✅ | `products` + variants + media + vendor CRUD + `ProductPolicy` + admin moderation | **vendor can list from app** |
-| **5** ← next | Public reads: listProducts / getProduct / productsBySite / geo + filters; wire Comment/Rating/Favourite morphs | tourist can browse |
-| **6** | Metering: view/lead recording, rollup + prune jobs, vendor analytics | pricing data |
+| ~~**5**~~ ✅ | Public reads: listProducts / productDetail / productsBySite / featuredProducts, geo + price + category filters, view & lead capture | tourist can browse |
+| **6** ← next | Nightly rollup into product_daily_stats, 90-day prune, vendor analytics dashboard | pricing data |
 | **7** | `plans` + `vendor_subscriptions` + `CheckPlanLimit`, everyone on free/12mo | monetization ready |
 | **8** | *(~12 mo)* Payment gateway, invoices, dunning | revenue |
 | **9** | *(when needed)* `product_availability` + `bookings` — pure addition if §3 R1–R6 were followed | booking calendar |

@@ -173,10 +173,15 @@ class Product extends Model
      */
     public function scopeLive($query)
     {
-        return $query->where('status', 'approved')
-            ->whereHas('site', fn($q) => $q->where('status', true)->where('submission_status', 'approved'))
-            ->where(fn($q) => $q->whereNull('available_from')->orWhere('available_from', '<=', now()))
-            ->where(fn($q) => $q->whereNull('available_to')->orWhere('available_to', '>=', now()));
+        // Columns are table-qualified throughout: the public catalog joins `sites` for
+        // distance sorting, and both tables have `status`. Unqualified names make the query
+        // ambiguous and MySQL rejects it outright.
+        return $query->where('products.status', 'approved')
+            ->whereHas('site', fn($q) => $q
+                ->where('sites.status', true)
+                ->where('sites.submission_status', 'approved'))
+            ->where(fn($q) => $q->whereNull('products.available_from')->orWhere('products.available_from', '<=', now()))
+            ->where(fn($q) => $q->whereNull('products.available_to')->orWhere('products.available_to', '>=', now()));
     }
 
     /** Products belonging to a vendor, across all their outlets. */
