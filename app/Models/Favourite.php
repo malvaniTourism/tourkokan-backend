@@ -45,11 +45,6 @@ class Favourite extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function project()
-    {
-        return $this->belongsTo(Projects::class, 'favouritable_id');
-    }
-
     /**
      * Get all of the models that own comments.
      */

@@ -9,7 +9,6 @@ use App\Http\Controllers\BaseController as BaseController;
 use App\Models\AppVersion;
 use App\Models\Banner;
 use App\Models\Category;
-use App\Models\Projects;
 use App\Models\Products;
 use App\Models\Place;
 use App\Models\City;
@@ -44,7 +43,7 @@ class LandingPageController extends BaseController
         $user = auth()->user();
 
         #Services categories
-        $categories = Category::withCount('projects')
+        $categories = Category::query()
             ->latest()
             ->limit(8)
             ->whereStatus(1)
@@ -64,14 +63,6 @@ class LandingPageController extends BaseController
             }, 'is_favorite')
             ->latest()
             ->limit(4)
-            ->get();
-
-        # Top Projects
-        $projects = Projects::withAvg("rateable", 'rate')
-            // ->having('rateable_avg_rate', '>', 3) //this condition is working
-            ->withCount('photos')
-            ->latest()
-            ->limit(5)
             ->get();
 
         // $products = Products::withAvg("rateable", 'rate')
@@ -153,8 +144,6 @@ class LandingPageController extends BaseController
             'stops' => $stops,
             'categories' => $categories,
             'cities' => $cities,
-            'projects' => $projects,
-            // 'products'=>$products,
             'place_category' => $place_category,
             'places' => $places,
             'blogs' => $blogs

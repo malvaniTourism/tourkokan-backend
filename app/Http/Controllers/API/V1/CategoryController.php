@@ -31,25 +31,6 @@ class CategoryController extends BaseController
         return $this->sendResponse($categories, 'Categories successfully Retrieved...!');   
     }
 
-    /**
-     * Display a listing of the projects.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function getAllProjects($id)
-    {
-        $projects = Category::with('projects')
-                              ->whereId($id)
-                              ->latest()
-                              ->get();
-
-        if (is_null($projects)) {
-            return $this->sendError('Empty', [], 404);
-        }
-
-        return $this->sendResponse($projects, 'Projects successfully Retrieved...!'); 
-    }
-
     public function getAllowedProductCategories($id)
     {
         $productCategory = Category::with('allowedproductCategory', 'allowedproductCategory.productCategory')

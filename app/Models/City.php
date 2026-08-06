@@ -54,16 +54,6 @@ class City extends Model
     // }
 
     /**
-     * Get all of the projects for the City
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function projects()
-    {
-        return $this->hasMany(Projects::class, 'city_id');
-    }
-
-    /**
      * Get all of the places for the City
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany

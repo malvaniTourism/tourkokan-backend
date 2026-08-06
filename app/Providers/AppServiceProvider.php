@@ -74,9 +74,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Morph map for Banner polymorphic relation
         Relation::morphMap([
-            'place'        => \App\Models\Place::class,
-            'site'         => \App\Models\Site::class,
-            'accomodation' => \App\Models\Accomodation::class,
+            'place' => \App\Models\Place::class,
+            'site'  => \App\Models\Site::class,
         ]);
     }
 }

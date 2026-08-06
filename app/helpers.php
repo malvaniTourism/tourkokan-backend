@@ -4,8 +4,6 @@ use Illuminate\Support\Facades\DB;
 use App\Models\City;
 use App\Models\User;
 use App\Models\Place;
-use App\Models\Projects;
-use App\Models\Product;
 use App\Models\Photos;
 use App\Models\Blog;
 use App\Models\Food;
@@ -39,14 +37,6 @@ function getData($id, $model)
 
         case 'User':
             $data = User::find($id);
-            break;
-
-        case 'Projects':
-            $data = Projects::find($id);
-            break;
-
-        case 'Products':
-            $data = Product::find($id);
             break;
 
         case 'Place':

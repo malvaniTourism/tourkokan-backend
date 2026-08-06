@@ -29,7 +29,6 @@ class User extends Authenticatable implements JWTSubject
      */
     protected $fillable = [
         'language',
-        'project_id',
         'name',
         'name_hash',
         'email',
@@ -148,23 +147,17 @@ class User extends Authenticatable implements JWTSubject
 
 
     /**
-     * Get the project that owns the User
+     * Get all of the sites owned by the User.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function project()
-    {
-        return $this->belongsTo(Projects::class);
-    }
-
-    /**
-     * Get all of the projects for the User
+     * For a user holding the `vendor` role these are their business outlets — the primary
+     * location plus any branches. Ownership lives solely on `sites.user_id`; there is no
+     * separate vendor entity. See docs/VENDOR_PRODUCTS_DESIGN.md §2.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function projects()
+    public function sites()
     {
-        return $this->hasMany(Projects::class, 'user_id');
+        return $this->hasMany(Site::class, 'user_id');
     }
 
 

@@ -22,12 +22,12 @@ class DatabaseSeeder extends Seeder
         $this->call(BonusTypeSeeder::class);
         // $this->call(PlaceCategorySeeder::class);
         // $this->call(PlaceSeeder::class);
-        // $this->call(ProjectSeeder::class);
         $this->call(BannerSeeder::class);
         $this->call(SiteSeeder::class);
         $this->call(BusTypeSeeder::class);
-      
-        // $this->call(ProductCategorySeeder::class);
+
+        // ProductCategorySeeder is reinstated in Phase 3 with attribute_schema support.
+        // See docs/VENDOR_PRODUCTS_DESIGN.md §6.
         // $this->call(RouteSeeder::class);
 
 

@@ -48,12 +48,15 @@ class ProductCategory extends Model
     }
 
     /**
-     * Get all of the products for the ProductCategory
+     * Get all of the allowed site-category mappings for this ProductCategory.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function products()
+    public function allowedCategories()
     {
-        return $this->hasMany(Product::class, 'product_category_id');
+        return $this->hasMany(AllowedProductCategory::class, 'product_category_id');
     }
+
+    // NOTE: products() is reinstated in Phase 4 when the `products` table is rebuilt.
+    // See docs/VENDOR_PRODUCTS_DESIGN.md §5.2.
 }

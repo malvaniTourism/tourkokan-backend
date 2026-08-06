@@ -9,7 +9,6 @@ use App\Models\AppVersion;
 use App\Models\Banner;
 use App\Models\BannerPlacement;
 use App\Models\Category;
-use App\Models\Projects;
 use App\Models\Products;
 use App\Models\Place;
 use App\Models\City;

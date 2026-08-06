@@ -21,7 +21,6 @@ return [
         'user'              => env('APP_ENV', 'other').'/users',
         'photo'             => env('APP_ENV', 'other').'/gallery',
         'category'          => env('APP_ENV', 'other').'/categories',
-        'project'           => env('APP_ENV', 'other').'/projects',
         'product'           => env('APP_ENV', 'other').'/products',
         'places'            => env('APP_ENV', 'other').'/places',
         'city'              => env('APP_ENV', 'other').'/cities',

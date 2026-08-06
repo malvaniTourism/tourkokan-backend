@@ -45,13 +45,6 @@ class Food extends Model
     ];
 
      /**
-     * Get all of the models that own products.
-     */
-    public function products(){
-        return $this->morphOne(Product::class, 'productable'); 
-    }
-
-     /**
     * Get all of the Food's comments.
     */
     public function comments()
