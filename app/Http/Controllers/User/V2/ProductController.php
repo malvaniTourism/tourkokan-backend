@@ -426,6 +426,52 @@ class ProductController extends BaseController
         return $this->sendResponse($media->fresh(), 'Cover image updated.');
     }
 
+    /**
+     * POST /api/v2/reorderProductMedia  { id, media_ids: [3, 1, 2] }
+     *
+     * The app sends the full ordering after a drag. Positions are rewritten from the array
+     * index so the result can never end up with duplicate or missing sort values.
+     */
+    public function reorderProductMedia(Request $request)
+    {
+        if (is_string($request->input('media_ids'))) {
+            $request->merge(['media_ids' => json_decode($request->input('media_ids'), true) ?? []]);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'id'          => 'required|numeric|exists:products,id',
+            'media_ids'   => 'required|array|min:1',
+            'media_ids.*' => 'numeric|exists:galleries,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 422);
+        }
+
+        $product = Product::with('site')->find($request->id);
+
+        if (!auth()->user()->can('update', $product)) {
+            return $this->sendError('Product not found or not yours.', '', 404);
+        }
+
+        $ownIds = $product->gallery()->pluck('id')->all();
+        $sent   = array_map('intval', $request->input('media_ids'));
+
+        // Reject a partial or foreign list outright rather than reordering what matches —
+        // a silently ignored id would leave the app's view and the stored order disagreeing.
+        if (array_diff($sent, $ownIds) || count($sent) !== count($ownIds)) {
+            return $this->sendError('Send every image id for this product, and only those.', '', 422);
+        }
+
+        DB::transaction(function () use ($product, $sent) {
+            foreach ($sent as $position => $mediaId) {
+                $product->gallery()->where('id', $mediaId)->update(['sort_order' => $position + 1]);
+            }
+        });
+
+        return $this->sendResponse($product->fresh()->gallery, 'Image order updated.');
+    }
+
     // ── Variants ─────────────────────────────────────────────────────────────────
 
     /**

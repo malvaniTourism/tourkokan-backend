@@ -5,6 +5,7 @@ use App\Models\City;
 use App\Models\User;
 use App\Models\Place;
 use App\Models\Photos;
+use App\Models\Product;
 use App\Models\Blog;
 use App\Models\Food;
 use App\Models\Site;
@@ -57,6 +58,13 @@ function getData($id, $model)
 
         case 'Site':
             $data = Site::find($id);
+            break;
+
+        case 'Product':
+            // Only live listings. This resolver backs the public favourite / rating /
+            // comment endpoints, so a draft or rejected product must not be reachable
+            // through them. See docs/VENDOR_PRODUCTS_DESIGN.md §7.
+            $data = Product::live()->find($id);
             break;
 
         default:

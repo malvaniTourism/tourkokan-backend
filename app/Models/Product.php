@@ -121,14 +121,29 @@ class Product extends Model
         return $this->morphOne(Gallery::class, 'galleryable')->where('is_cover', true);
     }
 
-    public function comments()
+    /*
+     * Engagement morphs.
+     *
+     * Names are singular to match Site and the rest of the platform — the generic
+     * Comment / Rating / Favourite controllers call `$model->comment()`, `$model->rating()`
+     * and `$model->favourites()` on whatever `getData()` resolves. A model that names these
+     * differently declares the relations but is unreachable through those endpoints.
+     */
+
+    public function comment()
     {
-        return $this->morphMany(Comment::class, 'commentable')->whereNull('parent_id');
+        return $this->morphMany(Comment::class, 'commentable')->whereNull('parent_id')->where('status', true);
     }
 
-    public function ratings()
+    public function rating()
     {
         return $this->morphMany(Rating::class, 'rateable');
+    }
+
+    /** The calling user's own rating, for showing their existing score. */
+    public function rate()
+    {
+        return $this->morphOne(Rating::class, 'rateable')->where('user_id', auth()->id());
     }
 
     public function favourites()

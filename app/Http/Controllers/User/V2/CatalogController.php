@@ -94,8 +94,8 @@ class CatalogController extends BaseController
                 'variants' => fn($q) => $q->active(),
                 'gallery',
             ])
-            ->withAvg('ratings', 'rate')
-            ->withCount(['ratings', 'comments'])
+            ->withAvg('rating', 'rate')
+            ->withCount(['rating', 'comment'])
             ->when($request->filled('id'), fn($q) => $q->where('id', $request->id))
             ->when($request->filled('slug'), fn($q) => $q->where('slug', $request->slug))
             ->first();
@@ -263,8 +263,8 @@ class CatalogController extends BaseController
                 'defaultVariant:id,product_id,price,sale_price,stock',
                 'cover',
             ])
-            ->withAvg('ratings', 'rate')
-            ->withCount('ratings');
+            ->withAvg('rating', 'rate')
+            ->withCount('rating');
 
         if ($request->filled(['latitude', 'longitude'])) {
             $query->join('sites', 'sites.id', '=', 'products.site_id')

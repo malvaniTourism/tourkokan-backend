@@ -3,7 +3,7 @@
 **Status:** Phases 1–5 implemented and tested — **vendors list, tourists browse** · Phase 6 (metering rollup) next
 **Date:** 2026-08-05
 **Branch:** `feature/vendor-products`
-**Tests:** 211 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
+**Tests:** 218 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
 **Client:** Tourkokan mobile app (`tourkokan-v2`, React Native) — vendors add products from the app
 **Backend:** `tourkokan-backend` (Laravel 12)
 
@@ -159,7 +159,26 @@ Lesson applied across the catalogue tests: helper methods assert success by defa
 `status` — MySQL rejected it as ambiguous. Harmless until the public catalogue joined `sites`
 for distance sorting, then fatal. All columns in the scope are now table-qualified.
 
-### 0.13 Legacy `Projects` naming
+### 0.13 Products were unreachable through the engagement morphs
+
+`Product` declared `favourites()`, `ratings()` and `comments()`, but no user could create
+any of them, for two separate reasons:
+
+1. **`getData()` had no `Product` case.** The generic Favourite / Rating / Comment
+   controllers resolve a type string through that helper, so every attempt answered
+   *"Product Not Exist..!"*. Added, resolving through `Product::live()` so a draft or
+   rejected listing cannot be favourited or rated.
+
+2. **The relation names did not match the platform convention.** Those controllers call
+   `$model->comment()`, `$model->rating()` and `$model->favourites()` — singular for the
+   first two, as `Site` declares them. `Product` used `comments()` and `ratings()`, so the
+   calls hit `BadMethodCallException`. Renamed to match, with `rate()` added for the
+   caller's own score.
+
+The lesson generalises: **a new morph participant needs a `getData()` case and relation
+names matching `Site`**, or it declares relations the API cannot reach.
+
+### 0.14 Legacy `Projects` naming
 
 `PlaceController` answered "Projects updated successfully" when updating a Place, and
 `Blog`/`Photos` carried docblocks describing Projects. Cleaned up. The only remaining

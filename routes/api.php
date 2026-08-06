@@ -350,6 +350,7 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
 
         Route::post('deleteProductMedia', [ProductController::class, 'deleteProductMedia']);
         Route::post('setProductCover', [ProductController::class, 'setProductCover']);
+        Route::post('reorderProductMedia', [ProductController::class, 'reorderProductMedia']);
     });
 
     // Image uploads carry their own throttle, matching the site/event gallery routes.

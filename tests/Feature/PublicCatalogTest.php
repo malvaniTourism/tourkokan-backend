@@ -321,7 +321,7 @@ class PublicCatalogTest extends ApiTestCase
         $this->assertSame('Tarkarli Resort', $response->json('data.site.name'));
         $this->assertSame('room_night', $response->json('data.product_category.code'));
         $this->assertNotEmpty($response->json('data.variants'));
-        $this->assertEquals(4, $response->json('data.ratings_avg_rate'));
+        $this->assertEquals(4, $response->json('data.rating_avg_rate'));
         $this->assertFalse($response->json('data.is_favourite'));
     }
 
