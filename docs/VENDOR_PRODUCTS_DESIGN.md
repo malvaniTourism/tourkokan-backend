@@ -1,7 +1,8 @@
 # Vendor Product Listing — Design & Implementation Plan
 
-**Status:** design approved — not yet implemented
+**Status:** Phases 1–3 implemented · Phase 4 (products) next
 **Date:** 2026-08-05
+**Branch:** `feature/vendor-products`
 **Client:** Tourkokan mobile app (`tourkokan-v2`, React Native) — vendors add products from the app
 **Backend:** `tourkokan-backend` (Laravel 12)
 
@@ -448,10 +449,10 @@ Feed the same hook into `user_activity_logs` and the analytics dashboard comes f
 
 | # | Scope | Unblocks |
 |---|---|---|
-| **1** | Demolition: drop `projects` + legacy product/accom/tour tables, models, broken controllers, legacy routes | clean slate |
-| **2** | `sites.is_primary`, `User::sites()`, `setPrimarySite`, `mySubmissions` → `mySites` | multi-outlet vendors |
-| **3** | `product_categories` rebuild + `attribute_schema` + `booking_type` + validator + admin CRUD + seeder | taxonomy |
-| **4** | `products` + variants + media + vendor CRUD + `ProductPolicy` + admin moderation | **vendor can list from app** |
+| ~~**1**~~ ✅ | Demolition: drop `projects` + legacy product/accom/tour tables, models, broken controllers, legacy routes | clean slate |
+| ~~**2**~~ ✅ | `sites.is_primary`, `User::sites()`, `setPrimarySite`, `mySubmissions` → `mySites` | multi-outlet vendors |
+| ~~**3**~~ ✅ | `product_categories` rebuild + `attribute_schema` + `booking_type` + validator + admin CRUD + seeder | taxonomy |
+| **4** ← next | `products` + variants + media + vendor CRUD + `ProductPolicy` + admin moderation | **vendor can list from app** |
 | **5** | Public reads: listProducts / getProduct / productsBySite / geo + filters; wire Comment/Rating/Favourite morphs | tourist can browse |
 | **6** | Metering: view/lead recording, rollup + prune jobs, vendor analytics | pricing data |
 | **7** | `plans` + `vendor_subscriptions` + `CheckPlanLimit`, everyone on free/12mo | monetization ready |
