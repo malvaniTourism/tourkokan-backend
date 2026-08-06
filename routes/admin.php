@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\V2\EventGalleryController as AdminEventGalleryCon
 use App\Http\Controllers\Admin\V2\SiteGalleryController as AdminSiteGalleryController;
 use App\Http\Controllers\Admin\V2\UserRoleRequestController as AdminUserRoleRequestController;
 use App\Http\Controllers\Admin\V2\AnalyticsController;
+use App\Http\Controllers\Admin\V2\ProductCategoryController as AdminProductCategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -224,6 +225,17 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware', 'throttle:admin'], 
     Route::post('sendMessage', [AdminMessageController::class, 'send']);
     Route::post('listMessages', [AdminMessageController::class, 'index']);
     Route::post('deleteMessage', [AdminMessageController::class, 'destroy']);
+
+    // ── Product Taxonomy ──────────────────────────────────────────────────────
+    // A product category carries the attribute_schema that drives the vendor's
+    // Add-Product form in the app, so creating one here ships a new vertical with
+    // no migration and no app release. See docs/VENDOR_PRODUCTS_DESIGN.md §6.
+    Route::post('listProductCategories',     [AdminProductCategoryController::class, 'listProductCategories']);
+    Route::post('getProductCategory',        [AdminProductCategoryController::class, 'getProductCategory']);
+    Route::post('addProductCategory',        [AdminProductCategoryController::class, 'addProductCategory']);
+    Route::post('updateProductCategory',     [AdminProductCategoryController::class, 'updateProductCategory']);
+    Route::post('deleteProductCategory',     [AdminProductCategoryController::class, 'deleteProductCategory']);
+    Route::post('setAllowedProductCategories', [AdminProductCategoryController::class, 'setAllowedProductCategories']);
 
     // ── Analytics ─────────────────────────────────────────────────────────────
     Route::post('analytics/activityLogs',      [AnalyticsController::class, 'activityLogs']);

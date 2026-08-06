@@ -24,6 +24,7 @@ class Site extends Model
         'name',
         'parent_id',
         'user_id',
+        'is_primary',
         'bus_stop_type',
         'tag_line',
         'mr_tag_line',
@@ -67,7 +68,24 @@ class Site extends Model
         'rules' => 'array',
         'social_media' => 'array',
         'meta_data' => 'array',
+        'is_primary' => 'boolean',
     ];
+
+    /**
+     * Sites owned by a given user — a vendor's business outlets.
+     */
+    public function scopeOwnedBy($query, $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Approved and live — the only sites a vendor may attach products to.
+     */
+    public function scopeApproved($query)
+    {
+        return $query->where('submission_status', 'approved')->where('status', true);
+    }
 
     public function getNameAttribute($value)
     {

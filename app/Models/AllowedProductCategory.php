@@ -2,15 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\Hashidable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use App\Traits\Hashidable;
 
+/**
+ * Whitelist: which product categories may be listed under a given site category.
+ *
+ * This is what stops a site categorised "Hospital" from listing Alphonso mangoes, and what
+ * the app calls to populate the category picker once a vendor has chosen an outlet.
+ *
+ * See docs/VENDOR_PRODUCTS_DESIGN.md §2.5.
+ */
 class AllowedProductCategory extends Model
 {
-    use HasFactory, Hashidable, Notifiable;
+    use HasFactory, Hashidable;
 
     /**
      * The attributes that are mass assignable.
@@ -19,7 +25,9 @@ class AllowedProductCategory extends Model
      */
     protected $fillable = [
         'category_id',
-        'product_category_id'
+        'product_category_id',
+        'is_required',
+        'max_products',
     ];
 
     /**
@@ -34,10 +42,14 @@ class AllowedProductCategory extends Model
      *
      * @var array
      */
-    protected $casts = [];
+    protected $casts = [
+        'is_required'  => 'boolean',
+        'max_products' => 'integer',
+    ];
 
     /**
-     * Get the category that owns the AllowedProductCategory
+     * Get the site category that owns the AllowedProductCategory
+     * (e.g. "Hotel Rooms", "Restaurant").
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */

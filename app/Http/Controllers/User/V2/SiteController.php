@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\Category;
 use App\Services\SiteService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -325,13 +326,71 @@ class SiteController extends BaseController
 
     public function mySubmissions(Request $request)
     {
-        $submissions = Site::where('user_id', auth()->id())
+        $submissions = Site::ownedBy(auth()->id())
             ->with('categories:id,name,code')
-            ->select('id', 'name', 'image', 'status', 'submission_status', 'rejection_reason', 'created_at', 'updated_at')
+            ->select('id', 'name', 'image', 'is_primary', 'status', 'submission_status', 'rejection_reason', 'created_at', 'updated_at')
             ->latest()
             ->paginateSafe();
 
         return $this->sendResponse($submissions, 'Submissions fetched.');
+    }
+
+    /**
+     * The vendor's live business outlets — approved sites only.
+     *
+     * This is the list the app shows when a vendor picks where to add a product;
+     * products may only be attached to an approved site. Primary location first.
+     *
+     * POST /api/v2/mySites
+     */
+    public function mySites(Request $request)
+    {
+        $sites = Site::ownedBy(auth()->id())
+            ->approved()
+            ->with('categories:id,name,code')
+            ->select('id', 'name', 'image', 'logo', 'is_primary', 'parent_id', 'latitude', 'longitude', 'pin_code', 'created_at')
+            ->orderByDesc('is_primary')
+            ->latest()
+            ->paginateSafe();
+
+        return $this->sendResponse($sites, 'Sites fetched.');
+    }
+
+    /**
+     * Mark one approved site as the vendor's primary business location.
+     *
+     * At most one primary per user, enforced here in a transaction — MySQL cannot express
+     * "unique where is_primary = true" as a partial index.
+     *
+     * POST /api/v2/setPrimarySite
+     */
+    public function setPrimarySite(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|numeric|exists:sites,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 422);
+        }
+
+        $userId = auth()->id();
+
+        $site = Site::ownedBy($userId)->approved()->find($request->id);
+
+        if (!$site) {
+            return $this->sendError('Site not found, not yours, or not yet approved.', '', 404);
+        }
+
+        DB::transaction(function () use ($userId, $site) {
+            Site::ownedBy($userId)->where('is_primary', true)->update(['is_primary' => false]);
+            $site->update(['is_primary' => true]);
+        });
+
+        return $this->sendResponse(
+            $site->fresh()->only(['id', 'name', 'is_primary']),
+            'Primary business location updated.'
+        );
     }
 
     public function updateSubmission(Request $request)

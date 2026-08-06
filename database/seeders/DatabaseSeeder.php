@@ -26,8 +26,7 @@ class DatabaseSeeder extends Seeder
         $this->call(SiteSeeder::class);
         $this->call(BusTypeSeeder::class);
 
-        // ProductCategorySeeder is reinstated in Phase 3 with attribute_schema support.
-        // See docs/VENDOR_PRODUCTS_DESIGN.md §6.
+        $this->call(ProductCategorySeeder::class);
         // $this->call(RouteSeeder::class);
 
 

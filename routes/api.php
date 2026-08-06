@@ -49,6 +49,7 @@ use App\Http\Controllers\User\V2\{
     MessageController,
     UserRoleRequestController,
     RouteStopsController,
+    ProductCategoryController,
 };
 
 /*
@@ -309,6 +310,14 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
         Route::post('addSite', [SiteController::class, 'submitSite']);
         Route::post('updateMySubmission', [SiteController::class, 'updateSubmission']);
         Route::post('deleteMySubmission', [SiteController::class, 'deleteSubmission']);
+
+        // ── Vendor business outlets ─────────────────────────────────
+        Route::post('mySites', [SiteController::class, 'mySites']);
+        Route::post('setPrimarySite', [SiteController::class, 'setPrimarySite']);
+
+        // ── Product taxonomy lookups (drive the app's Add-Product form) ──
+        Route::post('allowedProductCategories', [ProductCategoryController::class, 'allowedProductCategories']);
+        Route::post('categoryAttributeSchema', [ProductCategoryController::class, 'categoryAttributeSchema']);
     });
 
     // ── Role Requests ───────────────────────────────────────────────

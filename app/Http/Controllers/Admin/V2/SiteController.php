@@ -356,7 +356,14 @@ class SiteController extends BaseController
             'rejection_reason'  => null,
         ]);
 
-        return $this->sendResponse($site, 'Site approved and is now live.');
+        // A vendor's first approved site becomes their primary business location, so they
+        // never have to set it manually. Subsequent sites are branches until changed via
+        // setPrimarySite. See docs/VENDOR_PRODUCTS_DESIGN.md §2.3.
+        if ($site->user_id && !Site::ownedBy($site->user_id)->where('is_primary', true)->exists()) {
+            $site->update(['is_primary' => true]);
+        }
+
+        return $this->sendResponse($site->fresh(), 'Site approved and is now live.');
     }
 
     /**
