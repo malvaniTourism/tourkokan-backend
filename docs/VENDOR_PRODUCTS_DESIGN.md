@@ -3,7 +3,7 @@
 **Status:** Phases 1–4 implemented and tested — **a vendor can now list a product from the app** · Phase 5 (public read APIs) next
 **Date:** 2026-08-05
 **Branch:** `feature/vendor-products`
-**Tests:** 177 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
+**Tests:** 186 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
 **Client:** Tourkokan mobile app (`tourkokan-v2`, React Native) — vendors add products from the app
 **Backend:** `tourkokan-backend` (Laravel 12)
 
@@ -15,6 +15,7 @@
 1. [What already exists](#1-what-already-exists--do-not-rebuild)
 2. [Core model decisions](#2-core-model-decisions)
 3. [Booking-ready design](#3-booking-ready-design--read-before-writing-any-pricing-code)
+3b. [Commerce-ready design](#3b-commerce-ready-design--read-before-touching-pricing-or-orders)
 4. [Phase 1 — Remove `projects`](#4-phase-1--remove-projects-entirely)
 5. [Schema](#5-schema)
 6. [Attribute-schema engine](#6-attribute-schema-engine--app-driven-forms)
@@ -356,6 +357,76 @@ So a future developer cannot miss it, the same reference is planted in four plac
 | `..._create_products_table.php` | header comment: `BOOKING-READY: see docs/VENDOR_PRODUCTS_DESIGN.md §3 (R1–R6)` |
 | `app/Models/Product.php` | docblock on `price()` accessor citing R1 |
 | `app/Models/ProductCategory.php` | docblock on `booking_type` cast citing R2 |
+
+---
+
+## 3b. Commerce-ready design — READ BEFORE TOUCHING PRICING OR ORDERS
+
+> **Selling through the platform is NOT built** — no cart, orders, payments, delivery or
+> payouts. This section exists so that building it later is an *addition*, never a rewrite.
+> Same contract as §3 does for booking.
+
+**Target shape once commerce lands:**
+
+```
+product_variants          ← the unit of sale (already exists)
+     └── cart_items       ← FUTURE
+     └── order_items      ← FUTURE: snapshots price + tax at purchase
+          └── orders      ← FUTURE
+               ├── payments   ← FUTURE
+               ├── shipments  ← FUTURE
+               └── payouts    ← FUTURE: settles to product → site → user_id
+```
+
+### What is already safe
+
+Cart, orders, payments, refunds, coupons, delivery, commission and stock reservation are all
+**pure additions** — new tables keyed on `product_variants.id`. None of them forces a change
+to anything that exists today.
+
+### The five rules
+
+**C1 — `product_variants` is the unit of sale. Order lines reference a variant, never a product.**
+Every product has at least one variant, auto-created (R1). Had price lived only on
+`products`, every historical order line would turn ambiguous the day that product gained
+variants. This is the one that would have been a genuine rewrite, and it is already right.
+
+**C2 — Order lines snapshot price and tax at purchase time. Never recompute from the live catalog.**
+A vendor editing their price must not silently rewrite what a customer already paid. When
+`order_items` is built it carries its own `unit_price`, `tax_rate` and `tax_amount` copies.
+
+**C3 — Tax is recorded on the product from day one.**
+`hsn_code`, `tax_rate`, `price_includes_tax` ship now, before any order exists, because C2
+means order lines snapshot the rate and **history cannot be back-filled with a rate that was
+never recorded**. `tax_rate` is constrained to the GST slabs (0/5/12/18/28) — a free-text
+rate becomes a tax liability the moment orders start copying it. Vendors fill these in while
+listing, so the data is already there when commerce switches on.
+
+**C4 — `fulfilment_type` ships now, defaulting to `enquiry`, and is not vendor-writable.**
+```
+enquiry   customer calls / WhatsApps the vendor   (everything, today)
+order     bought through the platform             ← needs the commerce layer
+booking   reserved for a date or slot             ← needs the availability calendar
+```
+Introducing this after launch would mean backfilling every listing with a guess about what
+the vendor meant. Turning commerce on becomes a value change, not a migration. Absent from
+the vendor payload alongside `status`, `is_featured` and `is_bookable` — enabling commerce
+is a platform decision, not a field a vendor can post.
+
+**C5 — The seller stays derivable in one hop: `product → site → user_id`.**
+Commission and settlement attach there. Never add a second seller column to the catalog —
+two ownership columns that can disagree turn split payouts into a correctness problem.
+Orders *will* snapshot the seller for the payout record; that is a different concern from
+catalog ownership.
+
+### Still to build, and genuinely additive
+
+Cart · orders · payments · refunds · invoices · coupons · shipping addresses · delivery and
+serviceability (radius / pincode list) · vendor payout and bank details (currently parked in
+`sites.meta_data`) · stock reservation. `product_variants.stock` is an availability figure,
+not a ledger — reservation belongs in the commerce layer.
+
+Regression cover: `tests/Feature/CommerceReadinessTest.php`.
 
 ---
 

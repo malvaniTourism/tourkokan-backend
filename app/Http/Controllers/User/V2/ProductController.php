@@ -440,9 +440,11 @@ class ProductController extends BaseController
             'sku'        => 'nullable|string|max:60',
             'price'      => 'required|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0|lte:price',
-            'stock'      => 'nullable|integer|min:0',
-            'is_default' => 'nullable|boolean',
-            'sort_order' => 'nullable|integer|min:0',
+            'stock'         => 'nullable|integer|min:0',
+            'min_order_qty' => 'nullable|integer|min:1',
+            'max_order_qty' => 'nullable|integer|min:1|gte:min_order_qty',
+            'is_default'    => 'nullable|boolean',
+            'sort_order'    => 'nullable|integer|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -455,7 +457,10 @@ class ProductController extends BaseController
             return $this->sendError('Product not found or not yours.', '', 404);
         }
 
-        $data = $request->only(['name', 'sku', 'price', 'sale_price', 'stock', 'sort_order']);
+        $data = $request->only([
+            'name', 'sku', 'price', 'sale_price', 'stock',
+            'min_order_qty', 'max_order_qty', 'sort_order',
+        ]);
 
         $variant = DB::transaction(function () use ($request, $product, $data) {
             if ($request->filled('variant_id')) {
@@ -541,6 +546,13 @@ class ProductController extends BaseController
             'base_price'     => 'nullable|numeric|min:0',
             'sale_price'     => 'nullable|numeric|min:0|lte:base_price',
             'unit'           => ['nullable', 'string', 'in:' . implode(',', Product::UNITS)],
+
+            // C3 — collected from the day a listing is created, so the data is already
+            // there when commerce switches on. Constrained to the GST slabs; a free-text
+            // rate becomes a tax liability the moment orders start snapshotting it.
+            'hsn_code'           => 'nullable|string|max:12|regex:/^[0-9]+$/',
+            'tax_rate'           => ['nullable', 'numeric', 'in:' . implode(',', Product::TAX_RATES)],
+            'price_includes_tax' => 'nullable|boolean',
             'available_from' => 'nullable|date',
             'available_to'   => 'nullable|date|after_or_equal:available_from',
             'sort_order'     => 'nullable|integer|min:0',
@@ -550,14 +562,17 @@ class ProductController extends BaseController
     /**
      * Writable columns only.
      *
-     * `status`, `is_featured` and `is_bookable` are deliberately absent — a vendor must not
-     * be able to approve, feature, or make their own listing bookable by posting a field.
+     * `status`, `is_featured`, `is_bookable` and `fulfilment_type` are deliberately absent —
+     * a vendor must not be able to approve, feature, or make their own listing bookable or
+     * orderable by posting a field. `fulfilment_type` opens up when the commerce layer
+     * exists; until then every listing is enquiry-only (C4, design doc §3b).
      */
     private function payload(Request $request): array
     {
         return $request->only([
             'mr_name', 'description', 'mr_description',
             'base_price', 'sale_price', 'unit',
+            'hsn_code', 'tax_rate', 'price_includes_tax',
             'available_from', 'available_to', 'sort_order',
         ]);
     }

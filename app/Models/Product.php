@@ -29,6 +29,25 @@ class Product extends Model
         'per_hour', 'per_piece', 'per_package',
     ];
 
+    /**
+     * How a listing is transacted.
+     *
+     *   enquiry  the customer calls / WhatsApps the vendor (everything, today)
+     *   order    bought through the platform          ← needs the commerce layer
+     *   booking  reserved for a date or slot          ← needs the availability calendar
+     *
+     * C4 — shipped now defaulting to `enquiry` and deliberately absent from the
+     * vendor-writable payload, so enabling commerce later is a value change rather than a
+     * migration plus a backfill guess. See docs/VENDOR_PRODUCTS_DESIGN.md §3b.
+     */
+    public const FULFILMENT_TYPES = ['enquiry', 'order', 'booking'];
+
+    /**
+     * GST slabs. C3 — recorded per product before the first order exists, because order
+     * lines snapshot the rate at purchase and history cannot be back-filled.
+     */
+    public const TAX_RATES = [0, 5, 12, 18, 28];
+
     protected $fillable = [
         'site_id',
         'product_category_id',
@@ -41,8 +60,12 @@ class Product extends Model
         'base_price',
         'sale_price',
         'currency',
+        'hsn_code',
+        'tax_rate',
+        'price_includes_tax',
         'unit',
         'is_bookable',
+        'fulfilment_type',
         'status',
         'rejection_reason',
         'is_featured',
@@ -55,6 +78,8 @@ class Product extends Model
         'attributes'     => 'array',
         'base_price'     => 'decimal:2',
         'sale_price'     => 'decimal:2',
+        'tax_rate'       => 'decimal:2',
+        'price_includes_tax' => 'boolean',
         'is_bookable'    => 'boolean',
         'is_featured'    => 'boolean',
         'available_from' => 'date',
