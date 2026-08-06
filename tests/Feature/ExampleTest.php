@@ -2,20 +2,19 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
     /**
-     * A basic test example.
+     * The application boots and serves a response.
      *
-     * @return void
+     * `/` is an authenticated surface in this app and answers 403 to an anonymous request,
+     * so the stock "expect 200" assertion never held here. What is worth asserting is that
+     * the framework boots and routing resolves at all.
      */
-    public function test_example()
+    public function test_the_application_boots_and_routes_resolve(): void
     {
-        $response = $this->get('/');
-
-        $response->assertStatus(200);
+        $this->get('/')->assertStatus(403);
     }
 }
