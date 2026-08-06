@@ -1,9 +1,9 @@
 # Vendor Product Listing — Design & Implementation Plan
 
-**Status:** Phases 1–6 implemented and tested — **vendors list, tourists browse, engagement is metered** · Phase 7 (plans + limits) next
+**Status:** Phases 1–7 complete and tested — **the backend plan is finished**. Remaining work is the app UI, and commerce when you want it (§3b).
 **Date:** 2026-08-05
 **Branch:** `feature/vendor-products`
-**Tests:** 242 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
+**Tests:** 260 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
 **Client:** Tourkokan mobile app (`tourkokan-v2`, React Native) — vendors add products from the app
 **Backend:** `tourkokan-backend` (Laravel 12)
 
@@ -705,9 +705,31 @@ Profile → "Become a Vendor" → requestRole          [exists]
 Free for 12 months, then metered. **Build the meter now** — launching free without metering
 leaves no data to price on.
 
-**Launch config:** every vendor auto-enrolled on `free`, `ends_at = onboarded_at + 12 months`,
-generous limits. `CheckPlanLimit` middleware reads `plans.limits` and enforces from day one.
-Going paid = insert new plan rows; **zero code change**.
+**Launch config — implemented.** Approving the `vendor` role enrols the user on `free` with
+`ends_at = +12 months`. Quotas live in `plans.limits` (JSON, so a new quota is a seeder
+change rather than a migration) and are enforced declaratively:
+
+```php
+Route::post('addProduct', ...)->middleware('plan.limit:max_products');
+Route::post('addSite', ...)->middleware('plan.limit:max_sites');
+Route::post('uploadProductMedia', ...)->middleware('plan.limit:max_images_per_product');
+```
+
+Three deliberate properties:
+
+- **Missing plan degrades, never denies.** A vendor with no subscription — or a lapsed one —
+  falls back to `free` rather than being locked out. Same for a plan that predates a new
+  limit key: an absent key means unlimited.
+- **Unknown limit keys are refused** when a plan is created or edited. A typo would
+  otherwise silently stop being enforced, which is the worst failure mode a quota has.
+- **Going paid is a data change.** Paid tiers ship seeded but `is_active = false`, so they
+  are neither advertised nor assignable until pricing is settled — and real pricing waits on
+  the lead data the metering pipeline is now collecting. `assignPlan` moves a vendor across
+  and closes the previous subscription rather than leaving two live.
+
+Free-tier limits are set high enough (5 sites, 100 products, 10 images) that a genuine
+vendor never meets them. The point is that the ceiling exists and is measured, not that
+anyone is stopped.
 
 **Bill on leads, not views.** Vendors don't feel an impression; they feel a phone call.
 
@@ -755,7 +777,7 @@ vendor sees survives the prune.
 | ~~**4**~~ ✅ | `products` + variants + media + vendor CRUD + `ProductPolicy` + admin moderation | **vendor can list from app** |
 | ~~**5**~~ ✅ | Public reads: listProducts / productDetail / productsBySite / featuredProducts, geo + price + category filters, view & lead capture | tourist can browse |
 | ~~**6**~~ ✅ | Nightly rollup into product_daily_stats, guarded 90-day prune, myUsageStats / productAnalytics / myLeads | pricing data |
-| **7** ← next | `plans` + `vendor_subscriptions` + `CheckPlanLimit`, everyone on free/12mo | monetization ready |
+| ~~**7**~~ ✅ | `plans` + `vendor_subscriptions` + `plan.limit` middleware, everyone auto-enrolled on free/12mo | monetization ready |
 | **8** | *(~12 mo)* Payment gateway, invoices, dunning | revenue |
 | **9** | *(when needed)* `product_availability` + `bookings` — pure addition if §3 R1–R6 were followed | booking calendar |
 

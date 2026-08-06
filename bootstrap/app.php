@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'guest'         => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'admin'         => \App\Http\Middleware\AdminAccessMiddleware::class,
             'vendor'        => \App\Http\Middleware\VendorMiddleware::class,
+            'plan.limit'    => \App\Http\Middleware\CheckPlanLimit::class,
             'premiddleware' => \App\Http\Middleware\PreMiddleware::class,
             'throttle'      => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         ]);

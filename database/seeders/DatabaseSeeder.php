@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
         $this->call(SiteSeeder::class);
         $this->call(BusTypeSeeder::class);
 
+        $this->call(PlanSeeder::class);
         $this->call(ProductCategorySeeder::class);
         // Must run after ProductCategorySeeder — it links to categories that seeder creates.
         $this->call(VendorCategorySeeder::class);

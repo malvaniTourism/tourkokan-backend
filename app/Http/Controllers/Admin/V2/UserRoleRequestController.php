@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\V2;
 
 use App\Http\Controllers\BaseController;
 use App\Models\UserRoleRequest;
+use App\Services\PlanService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -59,6 +60,13 @@ class UserRoleRequestController extends BaseController
         // Attach role if user doesn't already have it
         if (!$roleRequest->user->hasRole($roleRequest->role->code ?? '')) {
             $roleRequest->user->roles()->attach($roleRequest->role_id);
+        }
+
+        // A new vendor starts on the free plan straight away, so quota checks always find a
+        // subscription rather than falling back. Idempotent.
+        // See docs/VENDOR_PRODUCTS_DESIGN.md §9.
+        if (($roleRequest->role->code ?? '') === 'vendor') {
+            app(PlanService::class)->enrolOnFree($roleRequest->user);
         }
 
         $roleRequest->update([

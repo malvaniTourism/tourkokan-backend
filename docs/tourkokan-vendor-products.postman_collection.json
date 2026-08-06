@@ -1158,6 +1158,83 @@
       ]
     },
     {
+      "name": "4b. Vendor — plan & quota",
+      "item": [
+        {
+          "name": "My subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/mySubscription",
+              "host": [
+                "{{base_url}}/api/v2/mySubscription"
+              ]
+            },
+            "description": "Current plan, end date, and live usage against every quota.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List plans (upgrade screen)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/listPlans",
+              "host": [
+                "{{base_url}}/api/v2/listPlans"
+              ]
+            },
+            "description": "Active plans only — paid tiers stay hidden until pricing is settled.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "5. Public — browse",
       "item": [
         {
@@ -2220,6 +2297,227 @@
           }
         }
       ]
+    },
+    {
+      "name": "9. Admin — plans & subscriptions",
+      "item": [
+        {
+          "name": "List plans",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/listPlans",
+              "host": [
+                "{{base_url}}/admin/v2/listPlans"
+              ]
+            },
+            "description": "Includes inactive tiers and active subscriber counts.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Add plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/addPlan",
+              "host": [
+                "{{base_url}}/admin/v2/addPlan"
+              ]
+            },
+            "description": "Unknown limit keys are refused — a typo would silently stop being enforced.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"pro_test\",\n  \"name\": \"Pro\",\n  \"price\": 999,\n  \"billing_period\": \"monthly\",\n  \"is_active\": false,\n  \"limits\": {\n    \"max_sites\": 20,\n    \"max_products\": 1000,\n    \"max_images_per_product\": 20,\n    \"featured_slots\": 5\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/updatePlan",
+              "host": [
+                "{{base_url}}/admin/v2/updatePlan"
+              ]
+            },
+            "description": "Activating a tier is how going paid happens.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{plan_id}}\",\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List subscriptions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/listSubscriptions",
+              "host": [
+                "{{base_url}}/admin/v2/listSubscriptions"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"\",\n  \"plan_id\": \"\",\n  \"expiring_soon\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Assign plan to a vendor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/assignPlan",
+              "host": [
+                "{{base_url}}/admin/v2/assignPlan"
+              ]
+            },
+            "description": "Closes the previous subscription rather than leaving two active.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{vendor_user_id}}\",\n  \"plan_id\": \"{{plan_id}}\",\n  \"months\": 12\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Vendor usage report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/vendorUsageReport",
+              "host": [
+                "{{base_url}}/admin/v2/vendorUsageReport"
+              ]
+            },
+            "description": "Answers 'why can this vendor not add more?'",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{vendor_user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ],
   "variable": [
@@ -2277,6 +2575,14 @@
     },
     {
       "key": "role_request_id",
+      "value": ""
+    },
+    {
+      "key": "plan_id",
+      "value": ""
+    },
+    {
+      "key": "vendor_user_id",
       "value": ""
     }
   ]

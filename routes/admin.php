@@ -29,6 +29,7 @@ use App\Http\Controllers\Admin\V2\UserRoleRequestController as AdminUserRoleRequ
 use App\Http\Controllers\Admin\V2\AnalyticsController;
 use App\Http\Controllers\Admin\V2\ProductCategoryController as AdminProductCategoryController;
 use App\Http\Controllers\Admin\V2\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\V2\PlanController as AdminPlanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -251,6 +252,15 @@ Route::group(['middleware' => ['auth:api', 'premiddleware', 'admin', 'throttle:a
     Route::post('approveProduct',   [AdminProductController::class, 'approveProduct']);
     Route::post('rejectProduct',    [AdminProductController::class, 'rejectProduct']);
     Route::post('featureProduct',   [AdminProductController::class, 'featureProduct']);
+
+    // ── Plans & Subscriptions ─────────────────────────────────────────────────
+    // Going paid is a data change: activate a tier, assign vendors onto it.
+    Route::post('listPlans',          [AdminPlanController::class, 'listPlans']);
+    Route::post('addPlan',            [AdminPlanController::class, 'addPlan']);
+    Route::post('updatePlan',         [AdminPlanController::class, 'updatePlan']);
+    Route::post('listSubscriptions',  [AdminPlanController::class, 'listSubscriptions']);
+    Route::post('assignPlan',         [AdminPlanController::class, 'assignPlan']);
+    Route::post('vendorUsageReport',  [AdminPlanController::class, 'vendorUsageReport']);
 
     // ── Analytics ─────────────────────────────────────────────────────────────
     Route::post('analytics/activityLogs',      [AnalyticsController::class, 'activityLogs']);

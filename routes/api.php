@@ -53,6 +53,7 @@ use App\Http\Controllers\User\V2\{
     ProductController,
     CatalogController,
     VendorAnalyticsController,
+    SubscriptionController,
 };
 
 /*
@@ -325,7 +326,8 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('mySubmissions', [SiteController::class, 'mySubmissions']);
 
     Route::middleware(['vendor', 'throttle:writes'])->group(function () {
-        Route::post('addSite', [SiteController::class, 'submitSite']);
+        Route::post('addSite', [SiteController::class, 'submitSite'])
+            ->middleware('plan.limit:max_sites');
         Route::post('updateMySubmission', [SiteController::class, 'updateSubmission']);
         Route::post('deleteMySubmission', [SiteController::class, 'deleteSubmission']);
 
@@ -340,7 +342,8 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
         // ── Vendor catalog ──────────────────────────────────────────────
         Route::post('myProducts', [ProductController::class, 'myProducts']);
         Route::post('getProduct', [ProductController::class, 'getProduct']);
-        Route::post('addProduct', [ProductController::class, 'addProduct']);
+        Route::post('addProduct', [ProductController::class, 'addProduct'])
+            ->middleware('plan.limit:max_products');
         Route::post('updateProduct', [ProductController::class, 'updateProduct']);
         Route::post('deleteProduct', [ProductController::class, 'deleteProduct']);
         Route::post('submitProductForReview', [ProductController::class, 'submitProductForReview']);
@@ -358,11 +361,16 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
         Route::post('myUsageStats', [VendorAnalyticsController::class, 'myUsageStats']);
         Route::post('productAnalytics', [VendorAnalyticsController::class, 'productAnalytics']);
         Route::post('myLeads', [VendorAnalyticsController::class, 'myLeads']);
+
+        // ── Plan & quota ────────────────────────────────────────────────
+        Route::post('mySubscription', [SubscriptionController::class, 'mySubscription']);
+        Route::post('listPlans', [SubscriptionController::class, 'listPlans']);
     });
 
     // Image uploads carry their own throttle, matching the site/event gallery routes.
     Route::middleware(['vendor', 'throttle:uploads'])->group(function () {
-        Route::post('uploadProductMedia', [ProductController::class, 'uploadProductMedia']);
+        Route::post('uploadProductMedia', [ProductController::class, 'uploadProductMedia'])
+            ->middleware('plan.limit:max_images_per_product');
     });
 
     // ── Role Requests ───────────────────────────────────────────────
