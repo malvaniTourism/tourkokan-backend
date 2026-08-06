@@ -4,9 +4,10 @@ For the app developer building the vendor and catalog screens in `tourkokan-v2`
 (React Native) and, later, the web frontend.
 
 **Base URLs** — user API `{API_PATH}/api/v2`, admin API `{API_PATH_ADMIN}/admin/v2`
+**Postman** — `docs/tourkokan-vendor-products.postman_collection.json` (65 requests, import and go)
 **Auth** — JWT, `Authorization: Bearer <token>` on every request below
 **Method** — every endpoint is `POST`, including reads (platform convention)
-**Backend status** — implemented and covered by 218 tests. Design rationale lives in
+**Backend status** — implemented and covered by 260 tests. Design rationale lives in
 `docs/VENDOR_PRODUCTS_DESIGN.md`; this file is the wire format.
 
 ---
@@ -277,6 +278,80 @@ Setting `is_default: true` clears the flag on the others.
 
 ---
 
+## 5b. Vendor analytics and plan
+
+### Analytics
+
+| Endpoint | Payload | Returns |
+|---|---|---|
+| `myUsageStats` | `from?`, `to?` (YYYY-MM-DD, default last 30 days, max 365) | account totals |
+| `productAnalytics` | `id`, `from?`, `to?` | one listing plus a daily series |
+| `myLeads` | `product_id?`, `lead_type?`, `page?` | the actual enquiries, newest first |
+
+`myUsageStats` returns:
+```json
+{
+  "from": "2026-07-08", "to": "2026-08-06",
+  "listings": { "total": 12, "live": 9, "draft": 1, "pending": 2, "rejected": 0, "paused": 0 },
+  "views":    { "total": 840, "unique": 612 },
+  "leads":    { "total": 47, "call": 21, "whatsapp": 18, "directions": 6, "enquiry": 2 },
+  "conversion_rate": 5.6
+}
+```
+
+> **These read `product_daily_stats`, not live counters.** The rollup runs nightly at 00:45,
+> so **today's activity is not included** and a fresh install shows zeros until
+> `php artisan products:rollup-stats` has run at least once. Say "updated daily" in the UI
+> rather than implying real time.
+
+`productAnalytics.daily` is an array of `{date, views, unique_views, leads, leads_call,
+leads_whatsapp, leads_directions, leads_enquiry}`. **Days with no activity are absent, not
+zero-filled** — zero-fill client-side if the chart needs a continuous axis.
+
+`unique_views` counts distinct sessions. Show it alongside `views`, not instead of it.
+
+Frame leads as the headline number and views as supporting context — leads are what the
+vendor is being delivered, and eventually what they pay for.
+
+### Plan and quota
+
+| Endpoint | Payload | Returns |
+|---|---|---|
+| `mySubscription` | — | current plan, end date, and live usage against every quota |
+| `listPlans` | — | active plans, for an upgrade screen |
+
+```json
+{
+  "plan": { "code": "free", "name": "Free", "price": "0.00", "billing_period": "free" },
+  "subscription": { "starts_at": "…", "ends_at": "…", "days_remaining": 284, "status": "active" },
+  "usage": {
+    "max_sites":              { "limit": 5,   "used": 2,  "remaining": 3,  "exceeded": false },
+    "max_products":           { "limit": 100, "used": 12, "remaining": 88, "exceeded": false },
+    "max_images_per_product": { "limit": 10 },
+    "featured_slots":         { "limit": 0,   "used": 0,  "remaining": 0,  "exceeded": true }
+  }
+}
+```
+
+`limit: null` means **unlimited** — render it as "Unlimited", not as zero.
+
+**Quota refusals arrive on the create endpoints**, not here. `addProduct`, `addSite` and
+`uploadProductMedia` answer `success: false` with a human message and a `data.limit` block:
+
+```json
+{
+  "success": false,
+  "message": "Your Free plan allows 100 products and you have 100. Upgrade to add more.",
+  "data": { "limit": { "limit": 100, "used": 100, "remaining": 0, "exceeded": true } }
+}
+```
+
+Show `message` directly — it already names the plan and the number. Listing is free for the
+launch year with limits set high enough that a real vendor will not meet them, so treat this
+as a rare path, not a common one.
+
+---
+
 ## 6. Public catalog (any logged-in user)
 
 Only listings that are approved, on an approved and published site, and inside their
@@ -365,12 +440,29 @@ approveProduct    rejectProduct { id, rejection_reason }   featureProduct { id, 
 
 listProductCategories  getProductCategory  addProductCategory
 updateProductCategory  deleteProductCategory  setAllowedProductCategories
+
+listPlans   addPlan   updatePlan
+listSubscriptions   assignPlan   vendorUsageReport
 ```
 
 Creating a product category with an `attribute_schema` is what ships a new vendor vertical —
 no migration and no app release. Attribute keys must be `snake_case`, `enum`/`multi` must
 declare `options`, and keys such as `price` or `stock` are refused: anything varying by date
 belongs to pricing, not attributes.
+
+**Plans.** Quotas live in `plans.limits` as `{key: int|null}`; `null` means unlimited, and an
+absent key is treated as unlimited too, so an older plan never becomes retroactively
+restrictive. Valid keys are `max_sites`, `max_products`, `max_images_per_product`,
+`featured_slots` — anything else is refused, because a typo would silently stop being
+enforced.
+
+Paid tiers ship seeded but inactive, so they are neither advertised by the user-facing
+`listPlans` nor assignable. **Going paid is a data change**: activate the tier, then
+`assignPlan {user_id, plan_id, months?}`, which closes the vendor's previous subscription
+rather than leaving two live.
+
+`vendorUsageReport {user_id}` answers "why can this vendor not add more?" — their plan,
+subscription dates, and usage against every quota.
 
 ---
 
@@ -388,3 +480,6 @@ belongs to pricing, not attributes.
 - [ ] `reorderProductMedia` needs the complete id list
 - [ ] Fire `recordProductView` on detail open and `recordProductLead` on every contact tap
 - [ ] Tell users their comment awaits moderation
+- [ ] Analytics are "updated daily", not real time — today is not included
+- [ ] `limit: null` renders as "Unlimited", never as 0
+- [ ] Show the quota refusal `message` directly; it already names the plan and the number
