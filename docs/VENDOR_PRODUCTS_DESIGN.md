@@ -1,9 +1,9 @@
 # Vendor Product Listing — Design & Implementation Plan
 
-**Status:** Phases 1–5 implemented and tested — **vendors list, tourists browse** · Phase 6 (metering rollup) next
+**Status:** Phases 1–6 implemented and tested — **vendors list, tourists browse, engagement is metered** · Phase 7 (plans + limits) next
 **Date:** 2026-08-05
 **Branch:** `feature/vendor-products`
-**Tests:** 218 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
+**Tests:** 242 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
 **Client:** Tourkokan mobile app (`tourkokan-v2`, React Native) — vendors add products from the app
 **Backend:** `tourkokan-backend` (Laravel 12)
 
@@ -717,15 +717,31 @@ Going paid = insert new plan rows; **zero code change**.
 | **leads** | call / WhatsApp / directions / enquiry tap | **yes** |
 | listings | active approved products | yes — flat tier |
 
-**Metering pipeline**
+**Metering pipeline** — implemented
 ```
 recordProductView / recordProductLead
-        → queued job → product_view_events / product_leads   (raw, 90d TTL)
-                     → atomic increment products.views_count / leads_count
-nightly ProductStatsRollup  → product_daily_stats            (permanent)
-nightly ProductStatsPrune   → delete raw older than 90d
+        → product_view_events / product_leads       (raw)
+        → increment products.views_count / leads_count   (denormalised, for display)
+
+products:rollup-stats        daily 00:45   → product_daily_stats   (permanent)
+products:prune-view-events   weekly Mon 02:00 → discards raw views older than 90 days
 ```
-Feed the same hook into `user_activity_logs` and the analytics dashboard comes free.
+
+Two properties that matter more than they look:
+
+**The rollup is idempotent.** It upserts on `(product_id, date)`, so replaying a missed night
+overwrites rather than accumulates. Billing is built on these numbers — a partially applied
+rollup that silently inflates them is worse than one that never ran. `--date` and `--days`
+exist so a failed night can be replayed deliberately.
+
+**The prune refuses to delete a day it cannot see a rollup for**, unless `--force`. A failed
+nightly job must not also cost you the underlying data. Leads are never pruned at all: they
+are the billable record, and they are low volume.
+
+Vendor-facing: `myUsageStats` (account summary with a views→leads conversion rate),
+`productAnalytics` (daily series for charting), `myLeads` (the actual enquiries — counts
+alone are not actionable). All read `product_daily_stats`, never the raw log, so what a
+vendor sees survives the prune.
 
 ---
 
@@ -738,8 +754,8 @@ Feed the same hook into `user_activity_logs` and the analytics dashboard comes f
 | ~~**3**~~ ✅ | `product_categories` rebuild + `attribute_schema` + `booking_type` + validator + admin CRUD + seeder | taxonomy |
 | ~~**4**~~ ✅ | `products` + variants + media + vendor CRUD + `ProductPolicy` + admin moderation | **vendor can list from app** |
 | ~~**5**~~ ✅ | Public reads: listProducts / productDetail / productsBySite / featuredProducts, geo + price + category filters, view & lead capture | tourist can browse |
-| **6** ← next | Nightly rollup into product_daily_stats, 90-day prune, vendor analytics dashboard | pricing data |
-| **7** | `plans` + `vendor_subscriptions` + `CheckPlanLimit`, everyone on free/12mo | monetization ready |
+| ~~**6**~~ ✅ | Nightly rollup into product_daily_stats, guarded 90-day prune, myUsageStats / productAnalytics / myLeads | pricing data |
+| **7** ← next | `plans` + `vendor_subscriptions` + `CheckPlanLimit`, everyone on free/12mo | monetization ready |
 | **8** | *(~12 mo)* Payment gateway, invoices, dunning | revenue |
 | **9** | *(when needed)* `product_availability` + `bookings` — pure addition if §3 R1–R6 were followed | booking calendar |
 

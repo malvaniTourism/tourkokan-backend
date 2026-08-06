@@ -52,6 +52,7 @@ use App\Http\Controllers\User\V2\{
     ProductCategoryController,
     ProductController,
     CatalogController,
+    VendorAnalyticsController,
 };
 
 /*
@@ -351,6 +352,12 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
         Route::post('deleteProductMedia', [ProductController::class, 'deleteProductMedia']);
         Route::post('setProductCover', [ProductController::class, 'setProductCover']);
         Route::post('reorderProductMedia', [ProductController::class, 'reorderProductMedia']);
+
+        // ── Vendor analytics ────────────────────────────────────────────
+        // Reads product_daily_stats, not the raw log, so history survives the 90-day prune.
+        Route::post('myUsageStats', [VendorAnalyticsController::class, 'myUsageStats']);
+        Route::post('productAnalytics', [VendorAnalyticsController::class, 'productAnalytics']);
+        Route::post('myLeads', [VendorAnalyticsController::class, 'myLeads']);
     });
 
     // Image uploads carry their own throttle, matching the site/event gallery routes.
