@@ -1,0 +1,2283 @@
+{
+  "info": {
+    "name": "Tourkokan — Vendor Products",
+    "description": "Vendor catalog, public browse, and admin moderation.\n\nSETUP\n1. Set {{base_url}} (e.g. http://localhost:8000)\n2. Run '0. Auth → Login' — the token is saved automatically\n3. Work through folder 2 in order; ids chain via collection variables\n\nGOTCHAS\n• This API answers HTTP 200 on failure — always read `success`, not the status code\n• Paginated rows are at data.data; per_page caps at 30\n• `message` is a string for business errors, an object of field→errors for validation\n• Analytics read product_daily_stats — run `php artisan products:rollup-stats` first\n\nFull contract: docs/vendor-products-api.md",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Auth — get a token first",
+      "item": [
+        {
+          "name": "Login (vendor / tourist)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/auth/login",
+              "host": [
+                "{{base_url}}/api/v2/auth/login"
+              ]
+            },
+            "description": "Saves data.token into {{token}} automatically.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{vendor_email}}\",\n  \"password\": \"{{vendor_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data.token) {",
+                  "  pm.collectionVariables.set('token', r.data.token);",
+                  "  pm.test('token saved', () => true);",
+                  "} else {",
+                  "  pm.test('login failed: ' + JSON.stringify(r.message), () => false);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/auth/login",
+              "host": [
+                "{{base_url}}/admin/v2/auth/login"
+              ]
+            },
+            "description": "Saves data.token into {{admin_token}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data.token) {",
+                  "  pm.collectionVariables.set('admin_token', r.data.token);",
+                  "  pm.test('admin token saved', () => true);",
+                  "} else {",
+                  "  pm.test('admin login failed: ' + JSON.stringify(r.message), () => false);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/auth/register",
+              "host": [
+                "{{base_url}}/api/v2/auth/register"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Vendor\",\n  \"email\": \"vendor@example.com\",\n  \"mobile\": \"9999999999\",\n  \"password\": \"secret123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Request vendor role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/requestRole",
+              "host": [
+                "{{base_url}}/api/v2/requestRole"
+              ]
+            },
+            "description": "Admin must approve via /admin/v2/approveRoleRequest before vendor endpoints unlock.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role_code\": \"vendor\",\n  \"reason\": \"I run a resort in Tarkarli and want to list my rooms.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "My role requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/myRoleRequests",
+              "host": [
+                "{{base_url}}/api/v2/myRoleRequests"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Vendor — business outlets",
+      "item": [
+        {
+          "name": "Add site (business)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/addSite",
+              "host": [
+                "{{base_url}}/api/v2/addSite"
+              ]
+            },
+            "description": "Multipart. categories[] are SITE category ids (e.g. Hotel Rooms, Carpenter, Grocery Store).",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Sagar Resort Tarkarli",
+                  "type": "text",
+                  "description": ""
+                },
+                {
+                  "key": "description",
+                  "value": "A sea-facing resort in Tarkarli with AC and non-AC rooms.",
+                  "type": "text",
+                  "description": ""
+                },
+                {
+                  "key": "categories[0]",
+                  "value": "{{site_category_id}}",
+                  "type": "text",
+                  "description": "site category id"
+                },
+                {
+                  "key": "latitude",
+                  "value": "16.0512",
+                  "type": "text",
+                  "description": ""
+                },
+                {
+                  "key": "longitude",
+                  "value": "73.4680",
+                  "type": "text",
+                  "description": ""
+                },
+                {
+                  "key": "pin_code",
+                  "value": "416606",
+                  "type": "text",
+                  "description": ""
+                },
+                {
+                  "key": "tag_line",
+                  "value": "Sea view stays",
+                  "type": "text",
+                  "description": ""
+                },
+                {
+                  "key": "image",
+                  "value": "",
+                  "type": "file",
+                  "description": ""
+                },
+                {
+                  "key": "logo",
+                  "value": "",
+                  "type": "file",
+                  "description": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "My submissions (all statuses)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/mySubmissions",
+              "host": [
+                "{{base_url}}/api/v2/mySubmissions"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "My sites (outlet picker)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/mySites",
+              "host": [
+                "{{base_url}}/api/v2/mySites"
+              ]
+            },
+            "description": "Approved AND pending outlets. Rejected are excluded. Badge pending as 'under review'.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Set primary site",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/setPrimarySite",
+              "host": [
+                "{{base_url}}/api/v2/setPrimarySite"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{site_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Vendor — add a product (run in order)",
+      "item": [
+        {
+          "name": "① Allowed product categories",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/allowedProductCategories",
+              "host": [
+                "{{base_url}}/api/v2/allowedProductCategories"
+              ]
+            },
+            "description": "What this outlet may sell. Saves the first id into {{product_category_id}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"site_id\": \"{{site_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data.length) {",
+                  "  pm.collectionVariables.set('product_category_id', r.data[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "② Category attribute schema",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/categoryAttributeSchema",
+              "host": [
+                "{{base_url}}/api/v2/categoryAttributeSchema"
+              ]
+            },
+            "description": "Render the Add-Product form from data.attribute_schema. This is what lets a new vertical ship with no app release.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_category_id\": \"{{product_category_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "③ Add product (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/addProduct",
+              "host": [
+                "{{base_url}}/api/v2/addProduct"
+              ]
+            },
+            "description": "Returns a DRAFT. attributes must match the schema from step ②. Saves data.id into {{product_id}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"site_id\": \"{{site_id}}\",\n  \"product_category_id\": \"{{product_category_id}}\",\n  \"name\": \"Deluxe Sea View Room\",\n  \"description\": \"Sea-facing room with a private balcony.\",\n  \"base_price\": 2400,\n  \"unit\": \"per_night\",\n  \"hsn_code\": \"996311\",\n  \"tax_rate\": 12,\n  \"price_includes_tax\": true,\n  \"attributes\": {\n    \"occupancy\": 3,\n    \"ac\": true,\n    \"meal_plan\": \"CP\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data) { pm.collectionVariables.set('product_id', r.data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "③b Add product (multipart, as the app sends it)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/addProduct",
+              "host": [
+                "{{base_url}}/api/v2/addProduct"
+              ]
+            },
+            "description": "Everything arrives as strings. attributes is a JSON string. The server coerces \"3\"→3 and \"true\"→true.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "site_id",
+                  "value": "{{site_id}}",
+                  "type": "text",
+                  "description": ""
+                },
+                {
+                  "key": "product_category_id",
+                  "value": "{{product_category_id}}",
+                  "type": "text",
+                  "description": ""
+                },
+                {
+                  "key": "name",
+                  "value": "Garden Cottage",
+                  "type": "text",
+                  "description": ""
+                },
+                {
+                  "key": "base_price",
+                  "value": "1800",
+                  "type": "text",
+                  "description": ""
+                },
+                {
+                  "key": "unit",
+                  "value": "per_night",
+                  "type": "text",
+                  "description": ""
+                },
+                {
+                  "key": "attributes",
+                  "value": "{\"occupancy\":\"2\",\"ac\":\"false\",\"meal_plan\":\"EP\"}",
+                  "type": "text",
+                  "description": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "④ Upload product media",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/uploadProductMedia",
+              "host": [
+                "{{base_url}}/api/v2/uploadProductMedia"
+              ]
+            },
+            "description": "One image per call. First upload becomes the cover automatically.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "id",
+                  "value": "{{product_id}}",
+                  "type": "text",
+                  "description": ""
+                },
+                {
+                  "key": "image",
+                  "value": "",
+                  "type": "file",
+                  "description": ""
+                },
+                {
+                  "key": "title",
+                  "value": "Sea view",
+                  "type": "text",
+                  "description": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "⑤ Save variant (extra price point)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/saveProductVariant",
+              "host": [
+                "{{base_url}}/api/v2/saveProductVariant"
+              ]
+            },
+            "description": "Omit variant_id to create. Every product already has a default 'Standard' variant.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\",\n  \"name\": \"Non-AC\",\n  \"price\": 1800,\n  \"stock\": 5,\n  \"min_order_qty\": 1,\n  \"max_order_qty\": 3,\n  \"is_default\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "⑥ Submit for review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/submitProductForReview",
+              "host": [
+                "{{base_url}}/api/v2/submitProductForReview"
+              ]
+            },
+            "description": "DRAFT → PENDING. Fails if a required schema attribute or the price is missing.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Vendor — manage catalog",
+      "item": [
+        {
+          "name": "My products",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/myProducts",
+              "host": [
+                "{{base_url}}/api/v2/myProducts"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"\",\n  \"site_id\": \"\",\n  \"search\": \"\",\n  \"per_page\": 15\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get product (for editing)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/getProduct",
+              "host": [
+                "{{base_url}}/api/v2/getProduct"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/updateProduct",
+              "host": [
+                "{{base_url}}/api/v2/updateProduct"
+              ]
+            },
+            "description": "Editing an APPROVED product sends it back to PENDING.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\",\n  \"name\": \"Deluxe Sea View Room (Renovated)\",\n  \"base_price\": 2600\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Toggle status (pause / resume)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/toggleProductStatus",
+              "host": [
+                "{{base_url}}/api/v2/toggleProductStatus"
+              ]
+            },
+            "description": "approved ⇄ paused only.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Set cover image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/setProductCover",
+              "host": [
+                "{{base_url}}/api/v2/setProductCover"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\",\n  \"media_id\": \"{{media_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reorder media",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/reorderProductMedia",
+              "host": [
+                "{{base_url}}/api/v2/reorderProductMedia"
+              ]
+            },
+            "description": "Send EVERY image id in the new order. A partial list is rejected.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\",\n  \"media_ids\": [\n    3,\n    1,\n    2\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete media",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/deleteProductMedia",
+              "host": [
+                "{{base_url}}/api/v2/deleteProductMedia"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\",\n  \"media_id\": \"{{media_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete variant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/deleteProductVariant",
+              "host": [
+                "{{base_url}}/api/v2/deleteProductVariant"
+              ]
+            },
+            "description": "The last variant cannot be deleted.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\",\n  \"variant_id\": \"{{variant_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/deleteProduct",
+              "host": [
+                "{{base_url}}/api/v2/deleteProduct"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Vendor — analytics",
+      "item": [
+        {
+          "name": "My usage stats",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/myUsageStats",
+              "host": [
+                "{{base_url}}/api/v2/myUsageStats"
+              ]
+            },
+            "description": "Defaults to the last 30 days. Reads product_daily_stats — run `php artisan products:rollup-stats` first or it reads zero.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"\",\n  \"to\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Product analytics",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/productAnalytics",
+              "host": [
+                "{{base_url}}/api/v2/productAnalytics"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "My leads",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/myLeads",
+              "host": [
+                "{{base_url}}/api/v2/myLeads"
+              ]
+            },
+            "description": "The actual enquiries. lead_type: call | whatsapp | directions | enquiry",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lead_type\": \"\",\n  \"product_id\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Public — browse",
+      "item": [
+        {
+          "name": "List products (all filters)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/listProducts",
+              "host": [
+                "{{base_url}}/api/v2/listProducts"
+              ]
+            },
+            "description": "sort: latest | price_asc | price_desc | popular | nearest. Blank out unused keys.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_code\": \"\",\n  \"site_id\": \"\",\n  \"min_price\": \"\",\n  \"max_price\": \"\",\n  \"booking_type\": \"\",\n  \"search\": \"\",\n  \"is_featured\": false,\n  \"latitude\": \"\",\n  \"longitude\": \"\",\n  \"radius_km\": \"\",\n  \"sort\": \"latest\",\n  \"page\": 1,\n  \"per_page\": 15\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List products — nearby",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/listProducts",
+              "host": [
+                "{{base_url}}/api/v2/listProducts"
+              ]
+            },
+            "description": "Each row gains distance_km.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 16.0512,\n  \"longitude\": 73.468,\n  \"radius_km\": 25,\n  \"sort\": \"nearest\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List products — cheap first",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/listProducts",
+              "host": [
+                "{{base_url}}/api/v2/listProducts"
+              ]
+            },
+            "description": "max_price alone is valid — reads the default variant, not base_price.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"max_price\": 1000,\n  \"sort\": \"price_asc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Product detail",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/productDetail",
+              "host": [
+                "{{base_url}}/api/v2/productDetail"
+              ]
+            },
+            "description": "Or send {\"slug\": \"deluxe-sea-view-room\"}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Products by site",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/productsBySite",
+              "host": [
+                "{{base_url}}/api/v2/productsBySite"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"site_id\": \"{{site_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Featured products",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/featuredProducts",
+              "host": [
+                "{{base_url}}/api/v2/featuredProducts"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Public — engagement",
+      "item": [
+        {
+          "name": "Record view",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/recordProductView",
+              "host": [
+                "{{base_url}}/api/v2/recordProductView"
+              ]
+            },
+            "description": "Fire on detail screen open. Never block the UI.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\",\n  \"platform\": \"android\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Record lead",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/recordProductLead",
+              "host": [
+                "{{base_url}}/api/v2/recordProductLead"
+              ]
+            },
+            "description": "Fire on the tap, BEFORE opening the dialler/WhatsApp. This is the billable signal.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\",\n  \"lead_type\": \"whatsapp\",\n  \"message\": \"Is this available next weekend?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Favourite / unfavourite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/addDeleteFavourite",
+              "host": [
+                "{{base_url}}/api/v2/addDeleteFavourite"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"favouritable_id\": \"{{product_id}}\",\n  \"favouritable_type\": \"Product\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Rate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/addUpdateRating",
+              "host": [
+                "{{base_url}}/api/v2/addUpdateRating"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rateable_id\": \"{{product_id}}\",\n  \"rateable_type\": \"Product\",\n  \"rate\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/comment",
+              "host": [
+                "{{base_url}}/api/v2/comment"
+              ]
+            },
+            "description": "Moderated — invisible until an admin approves it.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"commentable_id\": \"{{product_id}}\",\n  \"commentable_type\": \"Product\",\n  \"comment\": \"Lovely room, great view.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List comments",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/comments",
+              "host": [
+                "{{base_url}}/api/v2/comments"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"commentable_id\": \"{{product_id}}\",\n  \"commentable_type\": \"Product\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Admin — moderation",
+      "item": [
+        {
+          "name": "Pending products (review queue)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/pendingProducts",
+              "host": [
+                "{{base_url}}/admin/v2/pendingProducts"
+              ]
+            },
+            "description": "Oldest first.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List all products",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/listAllProducts",
+              "host": [
+                "{{base_url}}/admin/v2/listAllProducts"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"\",\n  \"site_id\": \"\",\n  \"search\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get product (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/getProductAdmin",
+              "host": [
+                "{{base_url}}/admin/v2/getProductAdmin"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Approve product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/approveProduct",
+              "host": [
+                "{{base_url}}/admin/v2/approveProduct"
+              ]
+            },
+            "description": "Refuses if the product's SITE is not approved and published.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reject product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/rejectProduct",
+              "host": [
+                "{{base_url}}/admin/v2/rejectProduct"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\",\n  \"rejection_reason\": \"Images do not match the description.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Feature product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/featureProduct",
+              "host": [
+                "{{base_url}}/admin/v2/featureProduct"
+              ]
+            },
+            "description": "Approved products only.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_id}}\",\n  \"is_featured\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Pending sites",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/pendingSites",
+              "host": [
+                "{{base_url}}/admin/v2/pendingSites"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Approve site",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/approveSite",
+              "host": [
+                "{{base_url}}/admin/v2/approveSite"
+              ]
+            },
+            "description": "First approved site becomes the vendor's primary automatically.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{site_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reject site",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/rejectSite",
+              "host": [
+                "{{base_url}}/admin/v2/rejectSite"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{site_id}}\",\n  \"rejection_reason\": \"Location could not be verified.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Approve role request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/approveRoleRequest",
+              "host": [
+                "{{base_url}}/admin/v2/approveRoleRequest"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{role_request_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "User role requests",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/userRoleRequests",
+              "host": [
+                "{{base_url}}/admin/v2/userRoleRequests"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Admin — product taxonomy",
+      "item": [
+        {
+          "name": "List product categories",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/listProductCategories",
+              "host": [
+                "{{base_url}}/admin/v2/listProductCategories"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"\",\n  \"booking_type\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get product category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/getProductCategory",
+              "host": [
+                "{{base_url}}/admin/v2/getProductCategory"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_category_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Add product category (ships a new vertical)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/addProductCategory",
+              "host": [
+                "{{base_url}}/admin/v2/addProductCategory"
+              ]
+            },
+            "description": "No migration, no code, no app release. Keys must be snake_case; price/stock are refused.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alphonso Mango\",\n  \"code\": \"alphonso_mango_test\",\n  \"booking_type\": \"quantity\",\n  \"attribute_schema\": {\n    \"grade\": {\n      \"type\": \"enum\",\n      \"label\": \"Grade\",\n      \"mr_label\": \"दर्जा\",\n      \"required\": true,\n      \"options\": [\n        \"A\",\n        \"B\"\n      ]\n    },\n    \"dozen_count\": {\n      \"type\": \"int\",\n      \"label\": \"Mangoes per box\",\n      \"required\": true,\n      \"min\": 1,\n      \"max\": 100\n    },\n    \"organic\": {\n      \"type\": \"bool\",\n      \"label\": \"Organically grown\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update product category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/updateProductCategory",
+              "host": [
+                "{{base_url}}/admin/v2/updateProductCategory"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_category_id}}\",\n  \"name\": \"Room Night\",\n  \"status\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete product category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/deleteProductCategory",
+              "host": [
+                "{{base_url}}/admin/v2/deleteProductCategory"
+              ]
+            },
+            "description": "Refused if it has sub-categories.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{product_category_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Set allowed product categories (the whitelist)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/v2/setAllowedProductCategories",
+              "host": [
+                "{{base_url}}/admin/v2/setAllowedProductCategories"
+              ]
+            },
+            "description": "Replaces the whole set for that site category. This is what stops a hospital listing mangoes.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": \"{{site_category_id}}\",\n  \"allowed\": [\n    {\n      \"product_category_id\": 1,\n      \"max_products\": 50\n    },\n    {\n      \"product_category_id\": 2\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "vendor_email",
+      "value": ""
+    },
+    {
+      "key": "vendor_password",
+      "value": ""
+    },
+    {
+      "key": "admin_email",
+      "value": ""
+    },
+    {
+      "key": "admin_password",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    },
+    {
+      "key": "site_id",
+      "value": ""
+    },
+    {
+      "key": "site_category_id",
+      "value": ""
+    },
+    {
+      "key": "product_id",
+      "value": ""
+    },
+    {
+      "key": "product_category_id",
+      "value": ""
+    },
+    {
+      "key": "variant_id",
+      "value": ""
+    },
+    {
+      "key": "media_id",
+      "value": ""
+    },
+    {
+      "key": "role_request_id",
+      "value": ""
+    }
+  ]
+}
