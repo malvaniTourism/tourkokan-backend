@@ -1,9 +1,9 @@
 # Vendor Product Listing — Design & Implementation Plan
 
-**Status:** Phases 1–3 implemented and tested · Phase 4 (products) next
+**Status:** Phases 1–4 implemented and tested — **a vendor can now list a product from the app** · Phase 5 (public read APIs) next
 **Date:** 2026-08-05
 **Branch:** `feature/vendor-products`
-**Tests:** 127 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
+**Tests:** 163 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
 **Client:** Tourkokan mobile app (`tourkokan-v2`, React Native) — vendors add products from the app
 **Backend:** `tourkokan-backend` (Laravel 12)
 
@@ -103,7 +103,28 @@ end in `_test`. The check sits in `createApplication()` rather than `TestCase::s
 because Laravel boots the `RefreshDatabase` trait *inside* its own `setUp()`, where a later
 check would fire only after the data was gone.
 
-### 0.6 Legacy `Projects` naming
+### 0.6 `galleries.title` is NOT NULL — worked around
+
+Product image upload passes no caption (the app does not prompt for one), which crashed on
+insert. The column is shared with Site and Event galleries, which always send a title, so
+rather than alter a shared table the product uploader falls back to the product name — also
+sensible alt text. Covered by `VendorProductTest::test_the_first_uploaded_image_becomes_the_cover`.
+
+### 0.7 `attributes` collides with Eloquent's internal property
+
+`Model::$attributes` is Eloquent's own storage. `$product->attributes` works from outside
+the model (PHP routes it through `__get`), but **inside** model or trait code it returns the
+raw internal array rather than the cast value. Read it with `getAttribute('attributes')` in
+any code that lives on the model. Covered by
+`VendorProductTest::test_attributes_are_cast_despite_colliding_with_eloquents_internal_property`.
+
+### 0.8 Policy abilities resolve by model class
+
+`$user->can('createOn', $site)` resolves `SitePolicy`, which does not exist — so the check
+silently misbehaves instead of consulting `ProductPolicy`. The call must name the policy's
+model: `can('createOn', [Product::class, $site])`.
+
+### 0.9 Legacy `Projects` naming
 
 `PlaceController` answered "Projects updated successfully" when updating a Place, and
 `Blog`/`Photos` carried docblocks describing Projects. Cleaned up. The only remaining
@@ -541,8 +562,8 @@ Feed the same hook into `user_activity_logs` and the analytics dashboard comes f
 | ~~**1**~~ ✅ | Demolition: drop `projects` + legacy product/accom/tour tables, models, broken controllers, legacy routes | clean slate |
 | ~~**2**~~ ✅ | `sites.is_primary`, `User::sites()`, `setPrimarySite`, `mySubmissions` → `mySites` | multi-outlet vendors |
 | ~~**3**~~ ✅ | `product_categories` rebuild + `attribute_schema` + `booking_type` + validator + admin CRUD + seeder | taxonomy |
-| **4** ← next | `products` + variants + media + vendor CRUD + `ProductPolicy` + admin moderation | **vendor can list from app** |
-| **5** | Public reads: listProducts / getProduct / productsBySite / geo + filters; wire Comment/Rating/Favourite morphs | tourist can browse |
+| ~~**4**~~ ✅ | `products` + variants + media + vendor CRUD + `ProductPolicy` + admin moderation | **vendor can list from app** |
+| **5** ← next | Public reads: listProducts / getProduct / productsBySite / geo + filters; wire Comment/Rating/Favourite morphs | tourist can browse |
 | **6** | Metering: view/lead recording, rollup + prune jobs, vendor analytics | pricing data |
 | **7** | `plans` + `vendor_subscriptions` + `CheckPlanLimit`, everyone on free/12mo | monetization ready |
 | **8** | *(~12 mo)* Payment gateway, invoices, dunning | revenue |

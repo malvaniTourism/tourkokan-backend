@@ -20,6 +20,8 @@ class Gallery extends Model
         'path',
         'is_url',
         'status',
+        'sort_order',
+        'is_cover',
         'galleryable_type',
         'galleryable_id',
     ];

@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\V2\SiteGalleryController as AdminSiteGalleryContr
 use App\Http\Controllers\Admin\V2\UserRoleRequestController as AdminUserRoleRequestController;
 use App\Http\Controllers\Admin\V2\AnalyticsController;
 use App\Http\Controllers\Admin\V2\ProductCategoryController as AdminProductCategoryController;
+use App\Http\Controllers\Admin\V2\ProductController as AdminProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -242,6 +243,14 @@ Route::group(['middleware' => ['auth:api', 'premiddleware', 'admin', 'throttle:a
     Route::post('updateProductCategory',       [AdminProductCategoryController::class, 'updateProductCategory']);
     Route::post('deleteProductCategory',       [AdminProductCategoryController::class, 'deleteProductCategory']);
     Route::post('setAllowedProductCategories', [AdminProductCategoryController::class, 'setAllowedProductCategories']);
+
+    // ── Product Moderation ────────────────────────────────────────────────────
+    Route::post('pendingProducts',  [AdminProductController::class, 'pendingProducts']);
+    Route::post('listAllProducts',  [AdminProductController::class, 'listAllProducts']);
+    Route::post('getProductAdmin',  [AdminProductController::class, 'getProductAdmin']);
+    Route::post('approveProduct',   [AdminProductController::class, 'approveProduct']);
+    Route::post('rejectProduct',    [AdminProductController::class, 'rejectProduct']);
+    Route::post('featureProduct',   [AdminProductController::class, 'featureProduct']);
 
     // ── Analytics ─────────────────────────────────────────────────────────────
     Route::post('analytics/activityLogs',      [AnalyticsController::class, 'activityLogs']);

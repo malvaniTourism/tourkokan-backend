@@ -50,6 +50,7 @@ use App\Http\Controllers\User\V2\{
     UserRoleRequestController,
     RouteStopsController,
     ProductCategoryController,
+    ProductController,
 };
 
 /*
@@ -318,6 +319,26 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
         // ── Product taxonomy lookups (drive the app's Add-Product form) ──
         Route::post('allowedProductCategories', [ProductCategoryController::class, 'allowedProductCategories']);
         Route::post('categoryAttributeSchema', [ProductCategoryController::class, 'categoryAttributeSchema']);
+
+        // ── Vendor catalog ──────────────────────────────────────────────
+        Route::post('myProducts', [ProductController::class, 'myProducts']);
+        Route::post('getProduct', [ProductController::class, 'getProduct']);
+        Route::post('addProduct', [ProductController::class, 'addProduct']);
+        Route::post('updateProduct', [ProductController::class, 'updateProduct']);
+        Route::post('deleteProduct', [ProductController::class, 'deleteProduct']);
+        Route::post('submitProductForReview', [ProductController::class, 'submitProductForReview']);
+        Route::post('toggleProductStatus', [ProductController::class, 'toggleProductStatus']);
+
+        Route::post('saveProductVariant', [ProductController::class, 'saveProductVariant']);
+        Route::post('deleteProductVariant', [ProductController::class, 'deleteProductVariant']);
+
+        Route::post('deleteProductMedia', [ProductController::class, 'deleteProductMedia']);
+        Route::post('setProductCover', [ProductController::class, 'setProductCover']);
+    });
+
+    // Image uploads carry their own throttle, matching the site/event gallery routes.
+    Route::middleware(['vendor', 'throttle:uploads'])->group(function () {
+        Route::post('uploadProductMedia', [ProductController::class, 'uploadProductMedia']);
     });
 
     // ── Role Requests ───────────────────────────────────────────────
