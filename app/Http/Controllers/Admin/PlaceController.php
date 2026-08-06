@@ -211,7 +211,7 @@ class PlaceController extends BaseController
 
         $place->update($input);
 
-        return $this->sendResponse($place, 'Projects updated successfully...!');   
+        return $this->sendResponse($place, 'Place updated successfully...!');   
     }
 
     /**

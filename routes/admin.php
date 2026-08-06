@@ -108,17 +108,13 @@ Route::group(['middleware' => ['api', 'premiddleware', 'throttle:auth'], 'prefix
     });
 });
 
-// SECURITY: this group is missing the `admin` middleware, so every endpoint below is
-// reachable by ANY authenticated user — including approveSite, deleteEvent,
-// approveRoleRequest and the analytics endpoints. Verified against a user holding only the
-// `vendor` role: listBanners, listAppVersions, pendingSites, listEvents and
-// analytics/dashboardStats all returned 200 rather than 403.
+// Every endpoint here requires the admin/superadmin role.
 //
-// The fix is to add 'admin' to the middleware array below, but it changes access for ~60
-// endpoints at once, so it is deliberately left as a separate decision rather than folded
-// into the vendor-products work. New admin routes go in the properly gated group at the
-// bottom of this file.
-Route::group(['middleware' =>  ['auth:api', 'premiddleware', 'throttle:admin'], 'prefix' => 'v2'], function ($router) {
+// The `admin` alias was missing from this group until 2026-08-05, which left the whole
+// admin API — approveSite, approveRoleRequest, deleteEvent, allUsers, analytics — open to
+// any authenticated user. Do not remove it. Regression coverage lives in
+// tests/Feature/AdminAccessTest.php.
+Route::group(['middleware' => ['auth:api', 'premiddleware', 'admin', 'throttle:admin'], 'prefix' => 'v2'], function ($router) {
     Route::post('listcategories', [CategoryController::class, 'listcategories']);
     Route::post('getCategory', [CategoryController::class, 'getCategory']);
     Route::post('addCategory', [CategoryController::class, 'addCategory']);
@@ -236,6 +232,17 @@ Route::group(['middleware' =>  ['auth:api', 'premiddleware', 'throttle:admin'], 
     Route::post('listMessages', [AdminMessageController::class, 'index']);
     Route::post('deleteMessage', [AdminMessageController::class, 'destroy']);
 
+    // ── Product Taxonomy ──────────────────────────────────────────────────────
+    // A product category carries the attribute_schema that drives the vendor's
+    // Add-Product form in the app, so creating one here ships a new vertical with
+    // no migration and no app release. See docs/VENDOR_PRODUCTS_DESIGN.md §6.
+    Route::post('listProductCategories',       [AdminProductCategoryController::class, 'listProductCategories']);
+    Route::post('getProductCategory',          [AdminProductCategoryController::class, 'getProductCategory']);
+    Route::post('addProductCategory',          [AdminProductCategoryController::class, 'addProductCategory']);
+    Route::post('updateProductCategory',       [AdminProductCategoryController::class, 'updateProductCategory']);
+    Route::post('deleteProductCategory',       [AdminProductCategoryController::class, 'deleteProductCategory']);
+    Route::post('setAllowedProductCategories', [AdminProductCategoryController::class, 'setAllowedProductCategories']);
+
     // ── Analytics ─────────────────────────────────────────────────────────────
     Route::post('analytics/activityLogs',      [AnalyticsController::class, 'activityLogs']);
     Route::post('analytics/userTimeline',      [AnalyticsController::class, 'userTimeline']);
@@ -258,18 +265,4 @@ Route::group(['middleware' => ['auth:api', 'premiddleware', 'admin', 'throttle:a
     Route::post('deleteRoute', [RouteController::class, 'deleteRoute']);
     Route::post('massRouteStopsUpdate', [RouteController::class, 'massRouteStopsUpdate']);
 
-    // ── Product Taxonomy ──────────────────────────────────────────────────────
-    // A product category carries the attribute_schema that drives the vendor's
-    // Add-Product form in the app, so creating one here ships a new vertical with
-    // no migration and no app release. See docs/VENDOR_PRODUCTS_DESIGN.md §6.
-    //
-    // Deliberately placed in THIS group, not the one above: that group is missing the
-    // `admin` middleware, so every endpoint in it is reachable by any authenticated
-    // user. See the note above that group.
-    Route::post('listProductCategories',       [AdminProductCategoryController::class, 'listProductCategories']);
-    Route::post('getProductCategory',          [AdminProductCategoryController::class, 'getProductCategory']);
-    Route::post('addProductCategory',          [AdminProductCategoryController::class, 'addProductCategory']);
-    Route::post('updateProductCategory',       [AdminProductCategoryController::class, 'updateProductCategory']);
-    Route::post('deleteProductCategory',       [AdminProductCategoryController::class, 'deleteProductCategory']);
-    Route::post('setAllowedProductCategories', [AdminProductCategoryController::class, 'setAllowedProductCategories']);
 });

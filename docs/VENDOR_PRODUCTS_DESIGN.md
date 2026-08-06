@@ -1,8 +1,9 @@
 # Vendor Product Listing — Design & Implementation Plan
 
-**Status:** Phases 1–3 implemented · Phase 4 (products) next
+**Status:** Phases 1–3 implemented and tested · Phase 4 (products) next
 **Date:** 2026-08-05
 **Branch:** `feature/vendor-products`
+**Tests:** 127 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
 **Client:** Tourkokan mobile app (`tourkokan-v2`, React Native) — vendors add products from the app
 **Backend:** `tourkokan-backend` (Laravel 12)
 
@@ -10,6 +11,7 @@
 
 ## Table of contents
 
+0. [Defects found and fixed](#0-defects-found-and-fixed)
 1. [What already exists](#1-what-already-exists--do-not-rebuild)
 2. [Core model decisions](#2-core-model-decisions)
 3. [Booking-ready design](#3-booking-ready-design--read-before-writing-any-pricing-code)
@@ -20,6 +22,93 @@
 8. [Mobile app flow](#8-mobile-app-flow-tourkokan-v2)
 9. [Monetization](#9-monetization)
 10. [Phases](#10-implementation-phases)
+
+---
+
+## 0. Defects found and fixed
+
+Bugs uncovered while implementing Phases 1–3. All are fixed and covered by tests; the
+regressions listed here are the ones worth guarding, not the routine ones.
+
+### 0.1 🔴 The entire `/admin/v2/*` API was unauthenticated for role — **fixed**
+
+`routes/admin.php` declared the group as `['auth:api', 'premiddleware', 'throttle:admin']`.
+The `admin` alias was missing, so **every** admin endpoint was reachable by any
+authenticated user. Verified against a user holding only the `vendor` role:
+
+```
+listBanners              HTTP 200   (expected 403)
+listAppVersions          HTTP 200
+pendingSites             HTTP 200
+listEvents               HTTP 200
+analytics/dashboardStats HTTP 200
+```
+
+Real-world impact: an ordinary app user could approve their own site submission
+(`approveSite`), grant themselves any role (`approveRoleRequest`), delete other users'
+events (`deleteEvent`), read the full user list (`allUsers`), or message all users
+(`sendMessage`).
+
+Two sibling groups were already correct — `/admin/api/*` and the route-management group —
+so this was an oversight when the V2 group was introduced, not a deliberate choice.
+
+**Fix:** added `'admin'` to the group's middleware. Blast radius checked first — only
+`admin-panel` calls `/admin/v2` (`VITE_ADMIN_API_BASE=/admin/v2`); the mobile app and web
+frontend never do. The seeded admin holds `superadmin`, which `AdminAccessMiddleware`
+accepts.
+
+**Regression cover:** `tests/Feature/AdminAccessTest.php` — 15 representative endpoints ×
+{vendor, plain user, anonymous}, plus positive cases for admin/superadmin, role revocation,
+and a check that the vendor API is unaffected. 50 tests.
+
+### 0.2 `product_categories.icon` and `.meta_data` were NOT NULL — **fixed**
+
+Both columns were `NOT NULL` with no default while `ProductCategoryController` validated
+them as optional, so every insert that omitted them failed at the database. Fixed in the
+Phase 3 rebuild; covered by
+`LegacySchemaRemovedTest::test_product_categories_no_longer_require_icon_and_meta_data`.
+
+### 0.3 Multipart booleans and multi-selects were unvalidatable — **fixed**
+
+Vendors add products from the React Native app over `multipart/form-data`, where every
+value arrives as a **string**. Laravel's `boolean` rule accepts `1/0/"1"/"0"` but rejects
+`"true"`/`"false"`, and `array` rejects a JSON string — so every `bool` and `multi`
+attribute in every vertical would have failed validation in the app while passing any
+JSON-based test.
+
+`ProductAttributeValidator::normalize()` now coerces these before validation. Covered by
+data-driven tests over all input shapes the app can send.
+
+### 0.4 `assertOk()` is not evidence of success in this API
+
+`BaseController::sendResponse` returns `{"success": false, "message": "Unauthorised
+Access"}` with **HTTP 200** when `PreMiddleware` cannot resolve an app version, and
+validation failures elsewhere also return 200. A test asserting only the status code
+passes while receiving no data.
+
+Not changed — altering the status codes would break existing clients — but
+`tests/ApiTestCase` provides `assertApiSuccess()` / `assertApiFailure()`, which check the
+envelope's `success` flag. **Use those, never bare `assertOk()`.**
+
+> Worth revisiting separately: an auth failure answering 200 defeats client-side error
+> handling and any HTTP-level monitoring.
+
+### 0.5 The test suite could wipe the development database — **fixed**
+
+`RefreshDatabase` runs `migrate:fresh`. With no `DB_DATABASE` override in `phpunit.xml`
+(the state this repo shipped in) it targets whatever `.env` points at — the dev database.
+
+`tests/CreatesApplication.php` now refuses to boot against any database whose name does not
+end in `_test`. The check sits in `createApplication()` rather than `TestCase::setUp()`
+because Laravel boots the `RefreshDatabase` trait *inside* its own `setUp()`, where a later
+check would fire only after the data was gone.
+
+### 0.6 Legacy `Projects` naming
+
+`PlaceController` answered "Projects updated successfully" when updating a Place, and
+`Blog`/`Photos` carried docblocks describing Projects. Cleaned up. The only remaining
+mentions are inside the commented-out V1 route blocks, which go when `app/Http/Controllers/API/V1/`
+is deleted.
 
 ---
 

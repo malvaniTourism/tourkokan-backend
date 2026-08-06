@@ -41,7 +41,7 @@ class Blog extends Model
     protected $casts = [];
 
      /**
-     * Get the category that owns the Projects
+     * Get the category that owns the Blog
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
@@ -51,7 +51,7 @@ class Blog extends Model
     }
     
     /**
-     * Get all of the photos for the Projects
+     * Get all of the photos for the Blog
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */

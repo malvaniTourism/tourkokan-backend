@@ -64,7 +64,7 @@ class Photos extends Model
     }
     
      /**
-     * Get the City that owns the Projects
+     * Get the City that owns the Photo
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
