@@ -22,6 +22,10 @@ class Category extends Model
      */
     protected $fillable = [
         'name',
+        // categories.mr_name is NOT NULL with no default. Without it here, mass assignment
+        // silently drops it — which only looks harmless because this MySQL runs without
+        // STRICT_TRANS_TABLES; on a strict-mode server every create() would fail.
+        'mr_name',
         'code',
         'parent_id',
         'description',

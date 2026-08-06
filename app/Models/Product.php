@@ -138,10 +138,18 @@ class Product extends Model
 
     // ── Scopes ───────────────────────────────────────────────────────────────────
 
-    /** Publicly visible: approved, and within its availability window if one is set. */
+    /**
+     * Publicly visible: the product is approved, its site is still live, and it is inside
+     * its availability window.
+     *
+     * The site check matters — a vendor can build a catalog while their business is still
+     * pending, and an admin can unpublish a site later. Neither must leave listings
+     * reachable underneath it.
+     */
     public function scopeLive($query)
     {
         return $query->where('status', 'approved')
+            ->whereHas('site', fn($q) => $q->where('status', true)->where('submission_status', 'approved'))
             ->where(fn($q) => $q->whereNull('available_from')->orWhere('available_from', '<=', now()))
             ->where(fn($q) => $q->whereNull('available_to')->orWhere('available_to', '>=', now()));
     }

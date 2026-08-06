@@ -42,10 +42,14 @@ class ProductCategoryController extends BaseController
             return $this->sendError($validator->errors(), '', 422);
         }
 
-        $site = Site::ownedBy(auth()->id())->approved()->find($request->site_id);
+        // Pending sites included — a vendor builds their catalog while the business is
+        // under review. See docs/VENDOR_PRODUCTS_DESIGN.md §2.6.
+        $site = Site::ownedBy(auth()->id())
+            ->whereIn('submission_status', ['pending', 'approved'])
+            ->find($request->site_id);
 
         if (!$site) {
-            return $this->sendError('Site not found, not yours, or not yet approved.', '', 404);
+            return $this->sendError('Site not found, not yours, or was rejected.', '', 404);
         }
 
         $siteCategoryIds = $site->categories()->pluck('categories.id');

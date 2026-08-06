@@ -131,11 +131,21 @@ class VendorProductTest extends ApiTestCase
         $this->assertSame(0, Product::count());
     }
 
-    public function test_a_product_cannot_be_added_to_an_unapproved_site(): void
+    public function test_a_product_can_be_added_to_a_site_still_under_review(): void
     {
+        // Onboarding is one round trip, not two — see design doc §2.6. Nothing goes public
+        // until both the site and the product are approved.
         $pending = $this->makeSite(['submission_status' => 'pending', 'status' => false]);
 
-        $this->assertApiFailure($this->addProduct(['site_id' => $pending->id]), 403);
+        $this->assertApiSuccess($this->addProduct(['site_id' => $pending->id]));
+        $this->assertSame(0, Product::live()->count(), 'but it is not publicly visible');
+    }
+
+    public function test_a_product_cannot_be_added_to_a_rejected_site(): void
+    {
+        $rejected = $this->makeSite(['submission_status' => 'rejected', 'status' => false]);
+
+        $this->assertApiFailure($this->addProduct(['site_id' => $rejected->id]), 403);
     }
 
     public function test_a_product_category_outside_the_sites_whitelist_is_refused(): void

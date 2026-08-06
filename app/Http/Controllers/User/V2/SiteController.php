@@ -336,19 +336,25 @@ class SiteController extends BaseController
     }
 
     /**
-     * The vendor's live business outlets — approved sites only.
+     * The vendor's business outlets — approved and still-pending alike.
      *
-     * This is the list the app shows when a vendor picks where to add a product;
-     * products may only be attached to an approved site. Primary location first.
+     * This is the list the app shows when a vendor picks where to add a product. Pending
+     * sites are included on purpose: a vendor can build their catalog while the business is
+     * under review rather than waiting out two approval rounds. Rejected sites are excluded
+     * — those need fixing before anything can hang off them.
+     *
+     * Primary location first. `submission_status` tells the app which listings are still
+     * awaiting review so it can badge them.
      *
      * POST /api/v2/mySites
      */
     public function mySites(Request $request)
     {
         $sites = Site::ownedBy(auth()->id())
-            ->approved()
+            ->whereIn('submission_status', ['pending', 'approved'])
             ->with('categories:id,name,code')
-            ->select('id', 'name', 'image', 'logo', 'is_primary', 'parent_id', 'latitude', 'longitude', 'pin_code', 'created_at')
+            ->withCount('products')
+            ->select('id', 'name', 'image', 'logo', 'is_primary', 'parent_id', 'status', 'submission_status', 'latitude', 'longitude', 'pin_code', 'created_at')
             ->orderByDesc('is_primary')
             ->latest()
             ->paginateSafe();

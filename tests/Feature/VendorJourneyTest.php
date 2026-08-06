@@ -90,13 +90,18 @@ class VendorJourneyTest extends ApiTestCase
         $site = Site::where('user_id', $user->id)->firstOrFail();
         $this->assertSame('pending', $site->submission_status);
 
-        // Products cannot be listed while the business is still under review.
-        $this->assertApiFailure(
+        // The vendor starts listing straight away rather than waiting out a second
+        // approval round — see design doc §2.6.
+        $this->assertApiSuccess(
             $this->actingAs($user, 'api')->postJson('/api/v2/addProduct', [
-                'site_id' => $site->id, 'product_category_id' => $roomNight->id, 'name' => 'Too Early',
-            ]),
-            403
+                'site_id'             => $site->id,
+                'product_category_id' => $roomNight->id,
+                'name'                => 'Early Bird Room',
+                'base_price'          => 1800,
+                'attributes'          => ['occupancy' => 2],
+            ])
         );
+        $this->assertSame(0, Product::live()->count(), 'nothing is public yet');
 
         // ── 5. Admin approves the site ───────────────────────────────────────────
         $this->assertApiSuccess(

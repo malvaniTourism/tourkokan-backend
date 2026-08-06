@@ -150,10 +150,22 @@ class ProductTaxonomyTest extends ApiTestCase
         );
     }
 
-    public function test_products_cannot_be_listed_against_an_unapproved_site(): void
+    public function test_the_picker_works_for_a_site_still_under_review(): void
     {
+        // A vendor builds their catalog while the business is pending — see design doc §2.6.
         $site = $this->approvedSite([$this->hotelCategory->id]);
         $site->update(['submission_status' => 'pending', 'status' => false]);
+
+        $this->assertApiSuccess(
+            $this->actingAs($this->vendor, 'api')
+                ->postJson('/api/v2/allowedProductCategories', ['site_id' => $site->id])
+        );
+    }
+
+    public function test_a_rejected_site_has_no_picker(): void
+    {
+        $site = $this->approvedSite([$this->hotelCategory->id]);
+        $site->update(['submission_status' => 'rejected', 'status' => false]);
 
         $this->assertApiFailure(
             $this->actingAs($this->vendor, 'api')

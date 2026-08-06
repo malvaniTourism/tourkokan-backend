@@ -80,11 +80,19 @@ class Site extends Model
     }
 
     /**
-     * Approved and live — the only sites a vendor may attach products to.
+     * Approved and live — publicly visible.
      */
     public function scopeApproved($query)
     {
         return $query->where('submission_status', 'approved')->where('status', true);
+    }
+
+    /**
+     * Products listed against this business.
+     */
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'site_id');
     }
 
     public function getNameAttribute($value)

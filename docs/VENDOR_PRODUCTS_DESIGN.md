@@ -3,7 +3,7 @@
 **Status:** Phases 1–4 implemented and tested — **a vendor can now list a product from the app** · Phase 5 (public read APIs) next
 **Date:** 2026-08-05
 **Branch:** `feature/vendor-products`
-**Tests:** 163 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
+**Tests:** 177 passing — run with `./vendor/bin/phpunit` (requires the `tktesting_test` schema, see §0.5)
 **Client:** Tourkokan mobile app (`tourkokan-v2`, React Native) — vendors add products from the app
 **Backend:** `tourkokan-backend` (Laravel 12)
 
@@ -124,7 +124,22 @@ any code that lives on the model. Covered by
 silently misbehaves instead of consulting `ProductPolicy`. The call must name the policy's
 model: `can('createOn', [Product::class, $site])`.
 
-### 0.9 Legacy `Projects` naming
+### 0.9 `Category::$fillable` omitted `mr_name`
+
+`categories.mr_name` is NOT NULL with no default, but `mr_name` was absent from the model's
+`$fillable`, so mass assignment silently dropped it. This only looked harmless because the
+dev MySQL runs without `STRICT_TRANS_TABLES` (`sql_mode` is just `NO_ENGINE_SUBSTITUTION`)
+and coerced it to `''`. On a strict-mode production server every `Category::create()` would
+have failed. Added to `$fillable`.
+
+### 0.10 `Product::live()` ignored the site
+
+The scope checked only the product's own status, so a listing stayed publicly visible after
+its site was unpublished — and, once vendors could list against pending sites, would have
+gone live before the business was ever approved. Now requires the site be `approved` and
+`status = true`. Covered by `PendingSiteProductTest`.
+
+### 0.11 Legacy `Projects` naming
 
 `PlaceController` answered "Projects updated successfully" when updating a Place, and
 `Blog`/`Photos` carried docblocks describing Projects. Cleaned up. The only remaining
@@ -199,6 +214,56 @@ One new column — `sites.is_primary` — is the entire vendor layer.
 | Primary business | `...->where('is_primary', true)` |
 | Vendor's products | `Product::whereHas('site', fn($q) => $q->where('user_id', $id))` |
 | Places in Malvan | `Site::where('parent_id', $malvanId)` — branches included ✅ |
+
+### 2.6 A vendor lists products while the business is still under review
+
+Requiring site approval before any product could be added meant a vendor onboarded, went
+idle waiting, then had to come back and start again — two round trips before they saw any
+value, at the point where they are least invested.
+
+Instead **both queues fill in parallel**. A vendor submits their business and immediately
+starts adding listings; site and products all sit `pending`, and an admin reviews the
+business once and its catalog alongside it.
+
+Nothing becomes publicly visible early — three independent gates:
+
+| Gate | Where |
+|---|---|
+| Product must be `approved` | admin per listing |
+| `approveProduct` refuses while the site is not live | `Admin\V2\ProductController::approveProduct` |
+| `Product::live()` requires the site be approved **and** `status = true` | `Product::scopeLive` |
+
+That third gate also covers a case the first two do not: an admin unpublishing a site later
+must take its listings down with it.
+
+A **rejected** site is excluded — `createOn` allows `pending` and `approved` only. Fix the
+business listing before hanging more off it. `mySites` and `allowedProductCategories`
+follow the same rule, and `mySites` returns `submission_status` so the app can badge
+listings that are still under review.
+
+### 2.7 Who can be a vendor
+
+The original taxonomy describes tourist *places* — it covered hotels and restaurants, but a
+tour operator, a carpenter or a village shop had nowhere to register, and `Transportation`
+holds infrastructure (Airport, Railway Station, MSRTC) rather than services for hire.
+
+`VendorCategorySeeder` adds three business-facing branches:
+
+| Branch | Children | Can list |
+|---|---|---|
+| **Tour & Travel** `tour_travel` | Tour Operator, Travel Agency, Taxi Service, Boat Operator, Vehicle Rental, Tour Guide | Tour Package, Guide Service, Vehicle Rental, Taxi/Transfer, Boat Ride |
+| **Local Services** `local_service` | Carpenter, Electrician, Plumber, Mason, Painter, Vehicle Mechanic, Tailor, Salon & Barber, Photographer, Catering, Event Decorator, Appliance Repair | Service Visit, Repair Service, Catering Package |
+| **Shopping** `shopping` | Grocery, Bakery, Sweet Shop, Medical Store, Hardware, Clothing, Handicraft Shop, Fish Market, Farm Produce | Shop Item, Farm Produce, Handicraft, Alphonso, Kokum, Cashew |
+
+Plus the existing **Accommodation** → Room Night / Stay Package and **Food** → Menu Item /
+Thali.
+
+Children may narrow their parent's set (`allowedByChildCategory`) — without it a carpenter
+is offered "Catering Package" and a taxi service is offered "Boat Ride". Harmless to the
+data, but it makes the app's category picker noisy for the vendor.
+
+Categories with no whitelist entry — Hospital, Government offices, Beach — can list
+nothing, which is the intended default.
 
 ### 2.4 Flatten the `productable` morph
 The 2022 design made `products` a thin join to per-vertical tables (Food / TourPackage /

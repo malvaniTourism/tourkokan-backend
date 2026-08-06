@@ -95,7 +95,9 @@ class ProductController extends BaseController
         // explicitly — can('createOn', $site) would look for a SitePolicy instead.
         if (!auth()->user()->can('createOn', [Product::class, $site])) {
             return $this->sendError(
-                'You can only add products to your own approved sites.',
+                $site->user_id === auth()->id()
+                    ? 'This business listing was rejected. Please update and resubmit it before adding products.'
+                    : 'You can only add products to your own business listings.',
                 '',
                 403
             );
@@ -147,7 +149,9 @@ class ProductController extends BaseController
 
         return $this->sendResponse(
             $product->load(['variants', 'productCategory:id,name,code']),
-            'Product saved as a draft. Submit it for review when you are ready.'
+            $site->submission_status === 'approved'
+                ? 'Product saved as a draft. Submit it for review when you are ready.'
+                : 'Product saved as a draft. It will go live once both your business listing and this product are approved.'
         );
     }
 

@@ -32,15 +32,23 @@ class ProductPolicy
     }
 
     /**
-     * A vendor may only attach products to a site they own **and** that an admin has
-     * approved — otherwise a pending submission becomes a way to publish unreviewed
-     * listings.
+     * A vendor may build their catalog while the business itself is still under review.
+     *
+     * Waiting for site approval before allowing any product meant a vendor onboarded, then
+     * sat idle, then had to come back — two round trips before they saw any value. Instead
+     * both queues fill in parallel: the site and its products are all `pending`, and an
+     * admin reviews the business once and its listings alongside it.
+     *
+     * Nothing becomes publicly visible early. Approval is still per-product, and
+     * Admin\V2\ProductController::approveProduct refuses to approve a listing whose site is
+     * not yet live, so the site is necessarily approved first.
+     *
+     * A rejected site is excluded: fix the business listing before adding to it.
      */
     public function createOn(User $user, Site $site): bool
     {
         return $site->user_id === $user->id
-            && $site->submission_status === 'approved'
-            && (bool) $site->status;
+            && in_array($site->submission_status, ['pending', 'approved'], true);
     }
 
     private function owns(User $user, Product $product): bool

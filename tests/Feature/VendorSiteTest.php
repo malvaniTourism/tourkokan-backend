@@ -126,11 +126,14 @@ class VendorSiteTest extends ApiTestCase
 
     // ── mySites ──────────────────────────────────────────────────────────────────
 
-    public function test_my_sites_returns_only_approved_outlets_primary_first(): void
+    public function test_my_sites_returns_approved_and_pending_outlets_primary_first(): void
     {
+        // Pending businesses are included so a vendor can start listing against them
+        // straight away — see design doc §2.6. Rejected ones are not.
         $this->site(['name' => 'Branch']);
         $this->site(['name' => 'Head', 'is_primary' => true]);
         $this->site(['name' => 'Pending', 'submission_status' => 'pending', 'status' => false]);
+        $this->site(['name' => 'Rejected', 'submission_status' => 'rejected', 'status' => false]);
 
         $response = $this->assertApiSuccess(
             $this->actingAs($this->vendor, 'api')->postJson('/api/v2/mySites')
@@ -138,7 +141,8 @@ class VendorSiteTest extends ApiTestCase
 
         $names = collect($response->json('data.data'))->pluck('name');
 
-        $this->assertCount(2, $names, 'pending submissions are not outlets');
+        $this->assertCount(3, $names, 'rejected businesses are excluded');
+        $this->assertNotContains('Rejected', $names);
         $this->assertSame('Head', $names->first(), 'primary location sorts first');
     }
 
