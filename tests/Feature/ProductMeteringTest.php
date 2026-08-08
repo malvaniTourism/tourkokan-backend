@@ -294,6 +294,59 @@ class ProductMeteringTest extends ApiTestCase
         );
     }
 
+    public function test_todays_activity_appears_before_the_rollup_has_run(): void
+    {
+        // Otherwise a vendor's first enquiry of the day shows in myLeads while the summary
+        // above it still reads zero — and on launch day everyone sees zeros regardless.
+        $this->recordView(now()->toDateString(), 's1');
+        $this->recordLead(now()->toDateString(), 'whatsapp');
+
+        $this->assertSame(0, ProductDailyStat::count(), 'nothing rolled up yet');
+
+        $response = $this->assertApiSuccess(
+            $this->actingAs($this->vendor, 'api')->postJson('/api/v2/myUsageStats')
+        );
+
+        $this->assertSame(1, $response->json('data.views.total'));
+        $this->assertSame(1, $response->json('data.leads.total'));
+        $this->assertSame(1, $response->json('data.leads.whatsapp'));
+    }
+
+    public function test_rolled_up_days_are_not_double_counted(): void
+    {
+        $yesterday = now()->subDay()->toDateString();
+        $this->recordView($yesterday, 's1');
+        $this->recordLead($yesterday, 'call');
+        $this->recordView(now()->toDateString(), 's2');
+
+        $this->artisan('products:rollup-stats')->assertSuccessful();
+
+        $response = $this->assertApiSuccess(
+            $this->actingAs($this->vendor, 'api')->postJson('/api/v2/myUsageStats')
+        );
+
+        $this->assertSame(2, $response->json('data.views.total'), 'one rolled up, one live');
+        $this->assertSame(1, $response->json('data.leads.total'));
+    }
+
+    public function test_the_daily_series_includes_today(): void
+    {
+        $this->recordView(now()->subDay()->toDateString());
+        $this->recordView(now()->toDateString());
+        $this->artisan('products:rollup-stats')->assertSuccessful();
+
+        $response = $this->assertApiSuccess(
+            $this->actingAs($this->vendor, 'api')
+                ->postJson('/api/v2/productAnalytics', ['id' => $this->product->id])
+        );
+
+        $dates = collect($response->json('data.daily'))->pluck('date');
+
+        $this->assertCount(2, $dates, 'yesterday from the rollup, today live');
+        $this->assertContains(now()->toDateString(), $dates);
+        $this->assertSame(2, $response->json('data.totals.views'));
+    }
+
     public function test_analytics_are_closed_to_non_vendors(): void
     {
         $plain = $this->userWithRole('user');

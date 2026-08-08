@@ -299,10 +299,9 @@ Setting `is_default: true` clears the flag on the others.
 }
 ```
 
-> **These read `product_daily_stats`, not live counters.** The rollup runs nightly at 00:45,
-> so **today's activity is not included** and a fresh install shows zeros until
-> `php artisan products:rollup-stats` has run at least once. Say "updated daily" in the UI
-> rather than implying real time.
+> These read `product_daily_stats`, topped up with anything the nightly rollup has not
+> reached yet — so **today's activity is included** and the totals agree with `myLeads`.
+> A missed nightly run self-corrects the same way.
 
 `productAnalytics.daily` is an array of `{date, views, unique_views, leads, leads_call,
 leads_whatsapp, leads_directions, leads_enquiry}`. **Days with no activity are absent, not
@@ -480,6 +479,5 @@ subscription dates, and usage against every quota.
 - [ ] `reorderProductMedia` needs the complete id list
 - [ ] Fire `recordProductView` on detail open and `recordProductLead` on every contact tap
 - [ ] Tell users their comment awaits moderation
-- [ ] Analytics are "updated daily", not real time — today is not included
 - [ ] `limit: null` renders as "Unlimited", never as 0
 - [ ] Show the quota refusal `message` directly; it already names the plan and the number
