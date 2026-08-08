@@ -122,6 +122,48 @@ customer actually pays. `unit` (`per_night`, `per_plate`, `per_kg`, …) is the 
 
 ---
 
+## 3b. Vendor profiles
+
+One owner may run several businesses, so vendors are a first-class thing a tourist can
+browse — not just a name attached to a listing.
+
+| Endpoint | Payload |
+|---|---|
+| `listVendors` | `search?`, `category_id?`, `category_code?`, `latitude?`+`longitude?`, `radius_km?`, `page?` |
+| `vendorProfile` | `id` (the vendor id from a list row), `latitude?`+`longitude?` |
+
+`listVendors` gives **one card per owner**, not per business:
+
+```json
+{
+  "id": 9,
+  "business_name": "Sagar Resort Tarkarli",
+  "tag_line": "Sea view stays",
+  "logo": "https://…",
+  "outlet_count": 2,
+  "product_count": 7,
+  "categories": [ { "id": 11, "name": "Hotel Rooms", "code": "hotel_rooms" } ],
+  "distance_km": 0.4
+}
+```
+
+`distance_km` is to the **nearest** of that vendor's outlets, not the primary one — so a
+chain with a branch next to the user sorts as close, which is what a tourist means.
+
+`vendorProfile` returns the vendor, all their live outlets (each with categories, location
+and rating), and their catalog **across all outlets** in one paginated list.
+
+Two things to rely on:
+
+- **The identity is the business, never the person.** `business_name`, `logo` and
+  `description` come from the vendor's primary business. The owner's name, email and mobile
+  are encrypted personal data and are never returned — do not build UI expecting them.
+- **Only live data appears.** A pending or rejected business is absent, as are its products,
+  and a vendor with no live business has no profile at all (404). Nothing needs filtering
+  client-side.
+
+---
+
 ## 4. Engagement — please wire these up
 
 | Endpoint | Payload | Fire when |

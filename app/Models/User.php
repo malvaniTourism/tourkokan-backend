@@ -160,6 +160,21 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Site::class, 'user_id');
     }
 
+    /**
+     * Plan history for a vendor. Use PlanService to resolve the effective one — it falls
+     * back to the free plan when nothing is current.
+     */
+    public function vendorSubscriptions()
+    {
+        return $this->hasMany(VendorSubscription::class, 'user_id');
+    }
+
+    /** Everything this vendor lists, across all their outlets. */
+    public function products()
+    {
+        return $this->hasManyThrough(Product::class, Site::class, 'user_id', 'site_id');
+    }
+
 
     /**
      * Get all of the project's comments.

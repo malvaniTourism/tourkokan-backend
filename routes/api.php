@@ -54,6 +54,7 @@ use App\Http\Controllers\User\V2\{
     CatalogController,
     VendorAnalyticsController,
     SubscriptionController,
+    VendorController,
 };
 
 /*
@@ -305,6 +306,12 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('getSiteGallery', [SiteGalleryController::class, 'index']);
     Route::post('uploadSiteGallery', [SiteGalleryController::class, 'upload'])->middleware('throttle:uploads');
     Route::post('deleteSiteGallery', [SiteGalleryController::class, 'destroy'])->middleware('throttle:writes');
+
+    // ── Vendor profiles (one owner, several businesses) ─────────────
+    // Identity comes from the vendor's primary business, never from the user record —
+    // name/email/mobile are encrypted personal data.
+    Route::post('listVendors', [VendorController::class, 'listVendors']);
+    Route::post('vendorProfile', [VendorController::class, 'vendorProfile']);
 
     // ── Public Catalog (what tourists browse) ───────────────────────
     // Everything reads through Product::scopeLive — approved listing, approved and

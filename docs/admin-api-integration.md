@@ -1024,6 +1024,40 @@ Meals" without engineering.
 
 ---
 
+## 5b. Vendors
+
+There is no `vendors` table — a vendor is a user holding the `vendor` role, and their
+businesses are the sites they own. That keeps ownership unambiguous, but it means
+"list all vendors" is a query nothing else performs, hence these two endpoints.
+
+| Endpoint | Payload |
+|---|---|
+| `listVendors` | `search?`, `plan_code?`, `has_pending_products?`, `has_no_sites?`, `page?` |
+| `getVendor` | `id` (the **user** id) |
+
+`listVendors` returns one row per vendor, named after their **primary** business, with site
+counts by status, product counts by status, and their current plan:
+
+```json
+{
+  "id": 9, "name": "…", "email": "…", "joined_at": "…",
+  "business_name": "Sagar Resort Tarkarli", "logo": "https://…",
+  "sites":    { "total": 2, "approved": 2, "pending": 0 },
+  "products": { "total": 3, "approved": 1, "pending": 1, "draft": 1, "rejected": 0, "paused": 0 },
+  "plan":     { "code": "free", "name": "Free", "ends_at": "2027-08-08T…" }
+}
+```
+
+`has_pending_products: true` is the useful filter for a moderation dashboard — it surfaces
+exactly the vendors with something waiting on you.
+
+`getVendor` returns everything about one: their sites with categories and per-site product
+counts, their 50 most recent products, plan and quota usage, and engagement totals with the
+10 most recent leads. It answers "who is this vendor and what have they got?" in one call.
+Passing a user who is not a vendor is refused with 422 rather than returning an empty shell.
+
+---
+
 ## 6. Plans & subscriptions
 
 Not urgent — listing is free for the launch year. `vendorUsageReport` is the one useful today.

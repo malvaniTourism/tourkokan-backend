@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\V2\AnalyticsController;
 use App\Http\Controllers\Admin\V2\ProductCategoryController as AdminProductCategoryController;
 use App\Http\Controllers\Admin\V2\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\V2\PlanController as AdminPlanController;
+use App\Http\Controllers\Admin\V2\VendorController as AdminVendorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -252,6 +253,12 @@ Route::group(['middleware' => ['auth:api', 'premiddleware', 'admin', 'throttle:a
     Route::post('approveProduct',   [AdminProductController::class, 'approveProduct']);
     Route::post('rejectProduct',    [AdminProductController::class, 'rejectProduct']);
     Route::post('featureProduct',   [AdminProductController::class, 'featureProduct']);
+
+    // ── Vendors ───────────────────────────────────────────────────────────────
+    // A vendor is a user with the `vendor` role; their businesses are the sites they
+    // own. See docs/VENDOR_PRODUCTS_DESIGN.md §2.1.
+    Route::post('listVendors', [AdminVendorController::class, 'listVendors']);
+    Route::post('getVendor',   [AdminVendorController::class, 'getVendor']);
 
     // ── Plans & Subscriptions ─────────────────────────────────────────────────
     // Going paid is a data change: activate a tier, assign vendors onto it.
