@@ -173,7 +173,45 @@ an admin unpublishing the business hides all of its listings immediately. If a v
 
 ---
 
-## 7. Checklist
+## 7. Walking the flow by hand
+
+Before wiring screens, it helps to see the whole journey run. There is an interactive
+command that drives **only the app-side calls** over real HTTP and stops wherever an admin
+has to act, so you approve each step yourself in the admin panel:
+
+```bash
+php artisan serve                 # in one terminal
+php artisan vendor:walkthrough    # in another
+```
+
+```
+[1]  register + login
+[2]  requestRole (vendor)
+     ⏸  approve in Admin → Role Requests, then confirm
+[4]  addSite
+     ⏸  approve in Admin → Pending Sites, then confirm
+[6]  allowedProductCategories → categoryAttributeSchema
+[7]  addProduct   (attributes generated from the fetched schema)
+[8]  uploadProductMedia
+[9]  submitProductForReview
+     ⏸  approve in Admin → Pending Products, then confirm
+[11] listProducts / productDetail / recordProductView / recordProductLead
+```
+
+At each pause it **re-checks the database** rather than trusting the confirmation — if the
+approval has not actually landed it says so and waits again, so a mis-click cannot make the
+run look successful.
+
+Options: `--url=` (default `http://127.0.0.1:8000`) · `--email=` to reuse an account ·
+`--keep` to leave the created data behind. It offers to delete what it made when finished.
+
+One caveat worth knowing: registration is followed by a direct database write to set
+`isVerified`, because login refuses an unverified account and a real user would complete
+that step by OTP. It is the only call in the script that is not the API.
+
+---
+
+## 8. Checklist
 
 - [ ] Read `success`, never the status code
 - [ ] Rows are at `data.data`; `per_page` caps at 30

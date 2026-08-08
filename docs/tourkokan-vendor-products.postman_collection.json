@@ -28,7 +28,7 @@
                 "{{base_url}}/api/v2/auth/login"
               ]
             },
-            "description": "Saves data.token into {{token}} automatically.",
+            "description": "Saves data.access_token into {{token}} automatically.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{vendor_email}}\",\n  \"password\": \"{{vendor_password}}\"\n}",
@@ -46,8 +46,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "const r = pm.response.json();",
-                  "if (r.success && r.data && r.data.token) {",
-                  "  pm.collectionVariables.set('token', r.data.token);",
+                  "if (r.success && r.data && r.data.access_token) {",
+                  "  pm.collectionVariables.set('token', r.data.access_token);",
                   "  pm.test('token saved', () => true);",
                   "} else {",
                   "  pm.test('login failed: ' + JSON.stringify(r.message), () => false);",
@@ -77,7 +77,7 @@
                 "{{base_url}}/admin/v2/auth/login"
               ]
             },
-            "description": "Saves data.token into {{admin_token}}.",
+            "description": "Saves data.access_token into {{admin_token}}.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}",
@@ -95,8 +95,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "const r = pm.response.json();",
-                  "if (r.success && r.data && r.data.token) {",
-                  "  pm.collectionVariables.set('admin_token', r.data.token);",
+                  "if (r.success && r.data && r.data.access_token) {",
+                  "  pm.collectionVariables.set('admin_token', r.data.access_token);",
                   "  pm.test('admin token saved', () => true);",
                   "} else {",
                   "  pm.test('admin login failed: ' + JSON.stringify(r.message), () => false);",
