@@ -184,6 +184,16 @@ php artisan serve                 # in one terminal
 php artisan vendor:walkthrough    # in another
 ```
 
+If another project is already on port 8000, `artisan serve` **silently binds the next free
+port** — so check the port it prints and pass it through:
+
+```bash
+php artisan vendor:walkthrough --url=http://127.0.0.1:8003
+```
+
+The script verifies the URL is actually this API before doing anything, so pointing it at
+the wrong app fails immediately with a clear message rather than part-way through.
+
 ```
 [1]  seed a verified dummy user + login
 [2]  requestRole (vendor)

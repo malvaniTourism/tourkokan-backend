@@ -52,10 +52,8 @@ class VendorWalkthrough extends Command
         $this->comment('  admin panel, then continues when you confirm.');
         $this->line('');
 
+        // serverIsUp() reports precisely what it found, so nothing is added here.
         if (!$this->serverIsUp()) {
-            $this->error("  Cannot reach {$this->base}. Start the server first:");
-            $this->line('      php artisan serve');
-
             return self::FAILURE;
         }
 
@@ -81,6 +79,9 @@ class VendorWalkthrough extends Command
             $this->line('');
             $this->error('  Stopped: ' . $e->getMessage());
             $this->summary();
+            // A half-finished run leaves a seeded account behind; tidy it so repeated
+            // attempts do not accumulate orphans.
+            $this->cleanup(failed: true);
 
             return self::FAILURE;
         }
@@ -484,15 +485,49 @@ class VendorWalkthrough extends Command
         }
     }
 
+    /**
+     * Confirm the URL is reachable *and* is actually this application.
+     *
+     * A bare reachability check is not enough — any other service on the port answers it,
+     * and the run then fails several steps later with a confusing error from a stranger's
+     * stack trace. Probing a known Tourkokan route settles it: unauthenticated it must
+     * answer 401, whereas a different app has no such route and answers 404.
+     */
     private function serverIsUp(): bool
     {
         try {
-            Http::timeout(5)->get("{$this->base}/up");
-
-            return true;
+            $probe = Http::timeout(5)->acceptJson()->post("{$this->base}/api/v2/listProducts");
         } catch (\Throwable) {
+            $this->error("  Nothing is listening on {$this->base}");
+            $this->line('  Start it with:  php artisan serve');
+
             return false;
         }
+
+        if ($probe->status() === 401) {
+            return true;
+        }
+
+        if ($probe->status() === 404) {
+            $this->error("  Something is running on {$this->base}, but it is not this API.");
+            $this->line('  POST /api/v2/listProducts returned 404 — a different Laravel app');
+            $this->line('  is occupying that port.');
+            $this->line('');
+            $this->line('  Note that `php artisan serve` silently picks the next free port when');
+            $this->line('  the one you asked for is taken, so this project may be listening');
+            $this->line('  somewhere other than you expect. Check its startup line, or:');
+            $this->line('      lsof -nP -iTCP -sTCP:LISTEN | grep php');
+            $this->line('');
+            $this->line('  Then point the walkthrough at the right one:');
+            $this->line('      php artisan vendor:walkthrough --url=http://127.0.0.1:8003');
+
+            return false;
+        }
+
+        $this->error("  Unexpected response from {$this->base} (HTTP {$probe->status()}).");
+        $this->line('  Expected 401 from POST /api/v2/listProducts. Check the URL.');
+
+        return false;
     }
 
     private function heading(int $n, string $title): void
@@ -517,15 +552,22 @@ class VendorWalkthrough extends Command
         $this->line('  ' . str_repeat('─', 66));
     }
 
-    private function cleanup(): void
+    private function cleanup(bool $failed = false): void
     {
-        if ($this->option('keep')) {
-            $this->comment('   --keep given, leaving the data in place.');
+        if ($this->option('keep') || empty($this->created)) {
+            if ($this->option('keep') && $this->created) {
+                $this->comment('   --keep given, leaving the data in place.');
+            }
 
             return;
         }
 
-        if (!$this->confirm('   Delete the data this run created?', false)) {
+        // After a failure the leftovers are useless, so offer removal by default rather
+        // than letting failed attempts pile up orphaned accounts.
+        $prompt  = $failed ? '   Remove what this failed run created?' : '   Delete the data this run created?';
+        $default = $failed;
+
+        if (!$this->confirm($prompt, $default)) {
             return;
         }
 
