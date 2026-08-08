@@ -185,7 +185,7 @@ php artisan vendor:walkthrough    # in another
 ```
 
 ```
-[1]  register + login
+[1]  seed a verified dummy user + login
 [2]  requestRole (vendor)
      ⏸  approve in Admin → Role Requests, then confirm
 [4]  addSite
@@ -205,9 +205,14 @@ run look successful.
 Options: `--url=` (default `http://127.0.0.1:8000`) · `--email=` to reuse an account ·
 `--keep` to leave the created data behind. It offers to delete what it made when finished.
 
-One caveat worth knowing: registration is followed by a direct database write to set
-`isVerified`, because login refuses an unverified account and a real user would complete
-that step by OTP. It is the only call in the script that is not the API.
+The account is the one thing not created through the API: a **verified dummy user is seeded
+directly** each run, because registration needs an OTP round trip the script cannot
+complete. It prints the credentials, mirrors what registration assigns (`tourist` role), and
+hard-deletes the account at the end. Everything after login is the real API.
+
+A fresh account per run also keeps re-runs clean — an account that already holds the vendor
+role cannot request it again. Pass `--email=` to reuse one instead, and the script skips
+straight past the role steps if that account is already a vendor.
 
 ---
 

@@ -8,6 +8,7 @@ use App\Models\Site;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -15,8 +16,9 @@ use Illuminate\Support\Str;
  * Walks the whole app-side vendor journey against a running server, pausing wherever an
  * admin has to act so the approval can be done by hand in the admin panel.
  *
- * Every call goes over real HTTP to the URL you point it at — nothing is faked and nothing
- * is done through the models — so what passes here is what the mobile app will get.
+ * Every call goes over real HTTP to the URL you point it at, so what passes here is what the
+ * mobile app will get. The one exception is the account itself: a verified dummy user is
+ * seeded directly, because registration needs an OTP round trip the script cannot complete.
  *
  *   php artisan vendor:walkthrough
  *   php artisan vendor:walkthrough --url=https://api.tourkokan.com --email=me@example.com
@@ -27,7 +29,7 @@ class VendorWalkthrough extends Command
 {
     protected $signature = 'vendor:walkthrough
                             {--url=http://127.0.0.1:8000 : Base URL of the running API}
-                            {--email= : Reuse an existing account instead of registering}
+                            {--email= : Reuse an existing account instead of seeding a dummy one}
                             {--password=secret123 : Password for the account}
                             {--keep : Leave the created data behind when finished}';
 
@@ -58,9 +60,15 @@ class VendorWalkthrough extends Command
         }
 
         try {
-            $user     = $this->step1_account();
-            $this->step2_requestVendorRole();
-            $this->step3_waitForRoleApproval($user);
+            $user = $this->step1_account();
+
+            if ($user->fresh()->load('roles')->hasRole('vendor')) {
+                $this->heading(2, 'Vendor role');
+                $this->ok('already granted — skipping the request and approval steps');
+            } else {
+                $this->step2_requestVendorRole();
+                $this->step3_waitForRoleApproval($user);
+            }
             $site     = $this->step4_addSite();
             $this->step5_waitForSiteApproval($site);
             [$category, $schema] = $this->step6_pickCategory($site);
@@ -89,29 +97,18 @@ class VendorWalkthrough extends Command
     {
         $this->heading(1, 'Account');
 
-        $email    = $this->option('email') ?: 'walkthrough+' . Str::random(6) . '@example.com';
         $password = $this->option('password');
 
-        if (!$this->option('email')) {
-            $this->post('auth/register', [
-                'name'                  => 'Walkthrough Vendor',
-                'email'                 => $email,
-                'mobile'                => (string) random_int(7000000000, 9999999999),
-                'password'              => $password,
-                'password_confirmation' => $password,
-            ], auth: false);
-            $this->ok("registered {$email}");
+        $user = $this->option('email')
+            ? $this->existingUser($this->option('email'))
+            : $this->makeDummyUser($password);
 
-            // Login refuses an unverified account. A real user completes this by OTP; the
-            // script runs server-side, so it flips the flag directly rather than making you
-            // fetch a code from a mailbox. This is the ONLY place it touches the database
-            // instead of going through the API.
-            $fresh = User::findByEmail($email);
-            $fresh?->forceFill(['isVerified' => true])->saveQuietly();
-            $this->ok('marked verified (bypasses the OTP step — script only)');
-        }
+        // Everything from here on is the API. Only the account itself is seeded locally.
+        $login = $this->post('auth/login', [
+            'email'    => $this->plainEmail($user),
+            'password' => $password,
+        ], auth: false);
 
-        $login = $this->post('auth/login', ['email' => $email, 'password' => $password], auth: false);
         // The JWT comes back as data.access_token, not data.token.
         $this->token = data_get($login, 'data.access_token');
 
@@ -119,17 +116,68 @@ class VendorWalkthrough extends Command
             throw new \RuntimeException('Login returned no token: ' . json_encode($login));
         }
 
-        // Emails are encrypted at rest; findByEmail() goes through the blind index.
-        $user = User::findByEmail($email);
-
-        if (!$user) {
-            throw new \RuntimeException("Logged in but could not resolve the user record for {$email}.");
-        }
-
-        $this->created['user'] = $user->id;
         $this->ok("logged in — user #{$user->id}");
 
         return $user;
+    }
+
+    /**
+     * Seed a verified dummy account directly, rather than going through registration.
+     *
+     * Registration would need an OTP round trip the script cannot complete, and creates a
+     * wallet row that complicates cleanup. A fresh account per run also keeps re-runs
+     * clean: an account that already holds the vendor role cannot request it again.
+     */
+    private function makeDummyUser(string $password): User
+    {
+        $email  = 'walkthrough+' . Str::lower(Str::random(6)) . '@tourkokan.test';
+        $mobile = (string) random_int(7000000000, 9999999999);
+
+        $user = User::create([
+            'name'       => 'Walkthrough Vendor',
+            'email'      => $email,
+            'mobile'     => $mobile,
+            'password'   => bcrypt($password),
+            'language'   => 'en',
+            'isVerified' => true,          // seeded verified — no OTP step to complete
+            'uid'        => Str::random(10),
+        ]);
+
+        // Mirror what registration assigns, so the account starts exactly like a real one.
+        if ($tourist = \App\Models\Roles::where('code', 'tourist')->first()) {
+            $user->roles()->attach($tourist->id);
+        }
+
+        $this->created['user'] = $user->id;
+        $this->ok("seeded dummy user #{$user->id} — {$email} / {$password}");
+        $this->line('      verified, role: tourist (as a real registration would leave it)');
+
+        return $user;
+    }
+
+    private function existingUser(string $email): User
+    {
+        $user = User::findByEmail($email);
+
+        if (!$user) {
+            throw new \RuntimeException("No user found for {$email}.");
+        }
+
+        if (!$user->isVerified) {
+            $user->forceFill(['isVerified' => true])->saveQuietly();
+            $this->warn('      account was unverified — marked verified so login can proceed');
+        }
+
+        $this->created['user'] = $user->id;
+        $this->ok("reusing user #{$user->id} — {$email}");
+
+        return $user;
+    }
+
+    /** Email is encrypted at rest; the accessor gives the plain value back. */
+    private function plainEmail(User $user): string
+    {
+        return $user->email;
     }
 
     private function step2_requestVendorRole(): void
@@ -488,10 +536,18 @@ class VendorWalkthrough extends Command
             Site::where('id', $this->created['site'] ?? 0)->delete();
 
             if (!$this->option('email')) {
-                // Soft delete, not force: registration creates a wallet row that holds a
-                // foreign key. The model clears the email/mobile blind indexes on delete,
-                // so the address is freed for reuse anyway.
-                User::where('id', $this->created['user'] ?? 0)->delete();
+                $id = $this->created['user'] ?? 0;
+                DB::table('user_roles')->where('user_id', $id)->delete();
+                DB::table('vendor_subscriptions')->where('user_id', $id)->delete();
+                DB::table('user_role_requests')->where('user_id', $id)->delete();
+
+                // The seeded account owns nothing else, so it can go entirely. Falls back
+                // to a soft delete if some other table turns out to reference it.
+                try {
+                    User::where('id', $id)->forceDelete();
+                } catch (\Throwable) {
+                    User::where('id', $id)->delete();
+                }
             }
 
             $this->ok('cleaned up');
