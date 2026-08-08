@@ -268,6 +268,39 @@ straight past the role steps if that account is already a vendor.
 
 ---
 
+## 7b. Test data
+
+To develop against something realistic rather than an empty catalogue:
+
+```bash
+php artisan demo:vendors                      # 6 vendors, ~10 businesses, ~30 products
+php artisan products:rollup-stats --days=21   # so the analytics screens have a curve
+```
+
+```
+Vendors   6      Sites  10      Products  32
+Views     2249   Leads  189
+```
+
+Every listing is generated from the **real taxonomy** — attributes come from each category's
+own `attribute_schema` — so the rows exercise the same validation the app does. Businesses
+hang off real Kokan villages with scattered coordinates, so geo search returns a spread;
+products span all five statuses; some have two variants and some carry a sale price.
+
+Demo vendors log in with their seeded email and `secret123`.
+
+Remove all of it again — nothing else is touched:
+
+```bash
+php artisan demo:vendors --purge
+```
+
+Two caveats: gallery rows point at a placeholder path, so **images will 404** (enough to wire
+list/detail, not to check how a photo renders); and `--count` above ~50 makes the engagement
+history slow to generate, since it writes a row per view.
+
+---
+
 ## 8. Checklist
 
 - [ ] Read `success`, never the status code

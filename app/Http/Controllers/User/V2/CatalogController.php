@@ -288,10 +288,12 @@ class CatalogController extends BaseController
      */
     private function distanceExpression(): string
     {
+        // Rounded here rather than left to the client: raw double precision reaches the
+        // app as 0.8652333325024, and User\V2\VendorController already returns 2 decimals.
         return sprintf(
-            '(%d * ACOS(LEAST(1, COS(RADIANS(?)) * COS(RADIANS(sites.latitude)) '
+            'ROUND(%d * ACOS(LEAST(1, COS(RADIANS(?)) * COS(RADIANS(sites.latitude)) '
             . '* COS(RADIANS(sites.longitude) - RADIANS(?)) '
-            . '+ SIN(RADIANS(?)) * SIN(RADIANS(sites.latitude)))))',
+            . '+ SIN(RADIANS(?)) * SIN(RADIANS(sites.latitude)))), 2)',
             self::EARTH_RADIUS_KM
         );
     }
