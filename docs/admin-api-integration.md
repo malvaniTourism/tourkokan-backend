@@ -1392,7 +1392,32 @@ _No required fields — send `{}`._
 
 ## 7. Changed behaviour on existing endpoints
 
-Payloads and response shapes are unchanged; both now do more.
+### `sites` — vendor businesses were invisible
+
+`global` means "an actual place, not one of the geographic containers" (District / City /
+Village), which were the only parentless rows when it was written. It filtered on
+`whereNotNull('parent_id')`.
+
+**Vendor businesses are parentless too** — `submitSite` does not ask for a geographic
+parent — so `global=1` hid every vendor listing from the admin site list. A vendor could
+register a business, an admin could approve it, and it would still not appear.
+
+Now: `parent_id IS NOT NULL OR user_id IS NOT NULL`. Platform places behave exactly as
+before; vendor businesses join them.
+
+Two related fixes on the same endpoint:
+
+- **`category_id` is now accepted.** The endpoint only understood `category` (a *code*
+  string), so a `category_id` was silently ignored and you got an unfiltered list. Both work.
+- **`global=0` no longer filters.** The check was `has('global')`, true for any present key
+  regardless of value, so "global: off" still applied the filter. Now `boolean('global')`.
+  `parent_id` and `search` likewise ignore empty strings.
+
+Covered by `tests/Feature/AdminSiteListFilterTest.php`.
+
+---
+
+Payloads and response shapes are unchanged on the two below; both now do more.
 
 
 ### `POST /admin/v2/approveSite`

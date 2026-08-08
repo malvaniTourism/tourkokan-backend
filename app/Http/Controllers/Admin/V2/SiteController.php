@@ -20,10 +20,11 @@ class SiteController extends BaseController
         $validator = Validator::make($request->all(), [
             'search'    => 'sometimes|nullable|string|alpha|max:255',
             'type'      => 'sometimes|required|string|max:255|in:bus',
-            'apitype'   => 'required|string|max:255|in:list,dropdown',
-            'category'  => 'nullable|exists:categories,code',
-            'parent_id' => 'nullable|exists:sites,parent_id',
-            'global'    => 'sometimes|boolean',
+            'apitype'     => 'required|string|max:255|in:list,dropdown',
+            'category'    => 'nullable|exists:categories,code',
+            'category_id' => 'nullable|numeric|exists:categories,id',
+            'parent_id'   => 'nullable|exists:sites,parent_id',
+            'global'      => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -60,17 +61,30 @@ class SiteController extends BaseController
             } else {
                 $sites = $sites->whereNull('id');
             }
-        } elseif ($request->has('category')) {
+        } elseif ($request->filled('category')) {
             $sites = $sites->whereHas('categories', fn($q) => $q->where('code', $request->category));
+        } elseif ($request->filled('category_id')) {
+            // The panel filters by id; `category` (a code) predates it and still works.
+            $sites = $sites->whereHas('categories', fn($q) => $q->where('categories.id', $request->category_id));
         }
 
-        if ($request->has('parent_id')) {
+        if ($request->filled('parent_id')) {
             $sites = $sites->where('parent_id', $request->parent_id);
         }
-        if ($request->has('global')) {
-            $sites = $sites->whereNotNull('parent_id');
+
+        // `global` means "an actual place, not one of the geographic containers"
+        // (District / City / Village), which were the only parentless rows when this was
+        // written. Vendor-submitted businesses are also parentless — `submitSite` does not
+        // ask for a geographic parent — so a bare whereNotNull('parent_id') hid every
+        // vendor listing from the admin site list. They are places too.
+        //
+        // boolean() rather than has(): `global=0` previously still applied the filter,
+        // because has() only checks the key is present.
+        if ($request->boolean('global')) {
+            $sites = $sites->where(fn($q) => $q->whereNotNull('parent_id')->orWhereNotNull('user_id'));
         }
-        if ($request->has('search')) {
+
+        if ($request->filled('search')) {
             $sites = $sites->where('name', 'like', $request->input('search') . '%');
         }
         if ($request->has('type') && $request->input('type') == 'bus') {
