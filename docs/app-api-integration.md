@@ -1,15 +1,23 @@
-# Tourkokan App API — Integration Basics
+# Tourkokan App API — Integration Guide
 
-For `tourkokan-v2` (React Native) and the `tourkokan` web frontend — the **public,
-tourist-facing** surface.
+For `tourkokan-v2` (React Native) and the `tourkokan` web frontend.
+
+The app has **two surfaces**, both in the same build:
+
+- **Browse** (§1–6) — what every user sees: products, vendors, engagement. Tourist-facing.
+- **Sell** (§9–13) — what a user who has become a *vendor* sees: their businesses, their
+  catalog, their analytics.
+
+A person is both. They browse as a tourist and, once they take the vendor role, also get the
+vendor screens. Same login, same token — the vendor endpoints are simply gated on the role.
 
 **Base URL** — `{API_PATH}/api/v2`
 **Auth** — JWT. `Authorization: Bearer <token>` on every request below; the app requires
-login before browsing.
+login before anything.
 **Method** — every endpoint is `POST`, including reads.
 
-> Building the **vendor** screens instead? That is a separate, much larger contract:
-> `docs/vendor-products-api.md`. This file is only what a tourist sees.
+> This file is the practical integration guide. For exhaustive field lists and every edge
+> case, `docs/vendor-products-api.md` is the full contract.
 
 ---
 
@@ -215,6 +223,201 @@ an admin unpublishing the business hides all of its listings immediately. If a v
 
 ---
 
+# Vendor side — selling from the app
+
+Everything below requires the **`vendor` role**. Without it these endpoints return **403**
+with a message telling the user to request the role — show that as a prompt to become a
+vendor, not an error. Same token as the browse side; the role is the only gate.
+
+## 9. Becoming a vendor
+
+```
+requestRole            user asks for the vendor role
+   ⏸ admin approves (nothing the app does)
+addSite                register the first business
+   ⏸ admin approves
+   → vendor can list products (and can start adding them while the site is still pending)
+```
+
+| Endpoint | Payload | Notes |
+|---|---|---|
+| `requestRole` | `role_code: "vendor"`, `reason?` | 422 if a request is already pending |
+| `myRoleRequests` | — | poll `status`: `pending` / `approved` / `rejected` |
+| `addSite` | see below | **multipart** — vendor-gated |
+| `mySites` | — | the outlet picker, §11 |
+| `setPrimarySite` | `id` | mark the head location |
+
+`addSite` (multipart/form-data):
+```
+name, description (min 20 chars), categories[] (site-category ids), latitude, longitude,
+tag_line?, domain_name?, pin_code?, image? logo? (jpeg/jpg/png/webp),
+social_media? speciality? rules?  (JSON strings)
+```
+
+Site-category ids come from `listcategories`. The first site an admin approves is
+auto-marked the vendor's **primary** business.
+
+## 10. The add-product flow
+
+The Add-Product form is **rendered from the server** — the app never hardcodes fields per
+category, so a new product type ships with no app release. The sequence:
+
+```
+① mySites                   → vendor picks which business
+② allowedProductCategories  → { site_id }              what this outlet may sell
+③ categoryAttributeSchema   → { product_category_id }  the fields to render
+④ addProduct                → saved as a DRAFT
+⑤ uploadProductMedia        → one call per image
+⑥ saveProductVariant        → optional extra price points
+⑦ submitProductForReview    → DRAFT → PENDING → (admin) → live
+```
+
+**A vendor can add products while their business is still `pending`.** Gate the Add-Product
+button on the site not being `rejected`, **not** on it being approved — `mySites` returns
+`submission_status` so you can badge pending outlets "under review" and let them carry on.
+Nothing goes public until both the site and the product are approved.
+
+### ② `allowedProductCategories` `{ site_id }`
+
+Returns the product categories this outlet is allowed to list — a hospital cannot list
+mangoes. Each entry has `id`, `name`, `mr_name`, `code`, `booking_type`, `icon`,
+`has_attributes`. Use these to populate the category picker.
+
+### ③ `categoryAttributeSchema` `{ product_category_id }`
+
+The form definition. `attribute_schema` may be `{}` (no extra fields).
+
+```json
+{
+  "id": 1, "name": "Room Night", "mr_name": "रूम प्रति रात्र",
+  "code": "room_night", "booking_type": "date_range",
+  "attribute_schema": {
+    "ac":        { "type": "bool", "label": "Air conditioned", "mr_label": "वातानुकूलित" },
+    "bed_type":  { "type": "enum", "label": "Bed type", "options": ["Single","Double","Twin","Queen","King"] },
+    "check_in":  { "type": "time", "label": "Check-in time" },
+    "occupancy": { "type": "int",  "label": "Max guests", "required": true, "min": 1, "max": 20 }
+  }
+}
+```
+
+Render one input per key, in order. Type → widget:
+
+| `type` | Widget | Send as |
+|---|---|---|
+| `string` / `text` | text / textarea (`max`) | string |
+| `int` / `decimal` | number (honour `min`/`max`) | number or numeric string |
+| `bool` | switch | `true`/`false` — `"true"`/`"1"`/`"yes"` also accepted |
+| `enum` | single-select from `options` | the option string exactly |
+| `multi` | multi-select from `options` | JSON array string, or comma-separated |
+| `date` | date picker | `YYYY-MM-DD` |
+| `time` | time picker | `HH:MM` |
+
+Use `mr_label` when the user's language is Marathi, falling back to `label`.
+`booking_type` is informational for now (everything is enquiry-only) — do **not** build
+booking UI on it yet.
+
+### ④ `addProduct`
+
+Multipart, because the app sends everything as strings — the server coerces `"3"`→3 and
+`"true"`→true.
+
+```
+site_id, product_category_id, name,
+description?, mr_name?, mr_description?,
+base_price?, sale_price?  (≤ base_price),
+unit?           per_night | per_person | per_plate | per_kg | per_hour | per_piece | per_package
+hsn_code?, tax_rate?  (0/5/12/18/28), price_includes_tax?
+attributes      JSON string, validated against the category schema
+available_from?, available_to?  (YYYY-MM-DD)
+```
+
+Returns a **draft** with its auto-created default variant. Attribute errors come back keyed
+`attributes.<field>` using the schema's `label` — map them straight onto the rendered inputs.
+**Unknown attribute keys are rejected** — send only what the schema declares.
+
+**Do not render controls for** `status`, `is_featured`, `is_bookable`, `fulfilment_type` —
+posting them is silently ignored. A vendor cannot approve or feature their own listing.
+
+## 11. Managing the catalog
+
+| Endpoint | Payload |
+|---|---|
+| `myProducts` | `site_id?`, `status?`, `search?`, `page?` — a vendor's own listings, **any status** |
+| `getProduct` | `id` — full detail incl. `attribute_schema`, for the edit screen |
+| `updateProduct` | `id` + any add field |
+| `deleteProduct` | `id` (soft delete) |
+| `submitProductForReview` | `id` — draft/rejected → pending |
+| `toggleProductStatus` | `id` — approved ⇄ paused |
+
+Status lifecycle:
+```
+draft ──submit──▶ pending ──admin──▶ approved ⇄ paused
+  ▲                  │                (toggleProductStatus)
+  └──── rejected ◀───┘   (carries rejection_reason — show it)
+```
+
+**Editing an approved product returns it to `pending`.** Warn the vendor: *"Saving will send
+this listing for review again."* A `myProducts` row is the full product object (`id`,
+`name`, `status`, `attributes`, `base_price`, `default_variant`, `cover`, …) — the same
+shape as the browse rows plus the non-public fields.
+
+### Media
+
+| Endpoint | Payload | Notes |
+|---|---|---|
+| `uploadProductMedia` | `id`, `image` (jpeg/jpg/png/webp ≤4 MB), `title?` | one per call; first upload becomes the cover |
+| `deleteProductMedia` | `id`, `media_id` | deleting the cover promotes the next image |
+| `setProductCover` | `id`, `media_id` | |
+| `reorderProductMedia` | `id`, `media_ids[]` | **send every image id in the new order** — a partial list is rejected |
+
+### Variants (price points)
+
+Every product has at least one; if the vendor entered a single price the server created a
+`Standard` variant for it. The displayed price comes from the **default variant**, not
+`base_price`.
+
+| Endpoint | Payload |
+|---|---|
+| `saveProductVariant` | `id`, `variant_id?` (omit to create), `name`, `price`, `sale_price?`, `sku?`, `stock?`, `min_order_qty?`, `max_order_qty?`, `is_default?` |
+| `deleteProductVariant` | `id`, `variant_id` — **the last variant cannot be deleted** (422) |
+
+## 12. Vendor dashboard
+
+| Endpoint | Payload | Returns |
+|---|---|---|
+| `myUsageStats` | `from?`, `to?` (default last 30 days) | account totals — views, leads by type, listing counts, conversion rate |
+| `productAnalytics` | `id`, `from?`, `to?` | one listing + a daily series for charting |
+| `myLeads` | `product_id?`, `lead_type?`, `page?` | the actual enquiries, newest first |
+
+`myUsageStats` includes **today** — the counts are topped up with activity the nightly
+rollup has not reached yet, so they agree with `myLeads` and never read zero on launch day.
+Frame **leads** as the headline number and views as supporting context.
+
+## 13. Subscription and limits
+
+| Endpoint | Payload | Returns |
+|---|---|---|
+| `mySubscription` | — | current plan, end date, and live usage against every quota |
+| `listPlans` | — | active plans, for an upgrade screen |
+
+```json
+{
+  "plan": { "code": "free", "name": "Free", "price": "0.00", "billing_period": "free" },
+  "subscription": { "starts_at": "…", "ends_at": "…", "days_remaining": 360, "status": "active" },
+  "usage": {
+    "max_sites":    { "limit": 5,   "used": 1, "remaining": 4,  "exceeded": false },
+    "max_products": { "limit": 100, "used": 1, "remaining": 99, "exceeded": false }
+  }
+}
+```
+
+`limit: null` means **unlimited** — render "Unlimited", not `0`. Listing is free for the
+launch year with generous limits, so a quota refusal is a rare path. When it does happen it
+arrives on the **create** call (`addProduct`, `addSite`, `uploadProductMedia`) as
+`success: false` with a human `message` naming the plan and the number — show it directly.
+
+---
+
 ## 7. Walking the flow by hand
 
 Before wiring screens, it helps to see the whole journey run. There is an interactive
@@ -303,17 +506,28 @@ history slow to generate, since it writes a row per view.
 
 ## 8. Checklist
 
+**Browse (every user)**
 - [ ] Read `success`, never the status code
 - [ ] Rows are at `data.data`; `per_page` caps at 30
 - [ ] Handle `message` as string **and** as field-errors object
 - [ ] Price comes from `default_variant`, with `unit` as the suffix
 - [ ] Send `latitude` and `longitude` together, or neither
-- [ ] Fire `recordProductView` on detail open
-- [ ] Fire `recordProductLead` on every contact tap, before leaving the app
+- [ ] Fire `recordProductView` on detail open, `recordProductLead` on every contact tap
 - [ ] Use `mr_name` / `mr_description` when the user's language is Marathi
 - [ ] Tell users their comment is awaiting moderation
 
+**Sell (vendor role)**
+- [ ] Vendor endpoints 403 without the role — prompt to become a vendor, not an error
+- [ ] Render the Add-Product form from `categoryAttributeSchema`, never hardcoded
+- [ ] Send `attributes` as a JSON string; expect errors keyed `attributes.<field>`
+- [ ] Show the Add-Product button for `pending` outlets too, badged "under review"
+- [ ] Warn before saving an approved product — it returns to review
+- [ ] Don't render controls for `status` / `is_featured` / `is_bookable` / `fulfilment_type`
+- [ ] `reorderProductMedia` needs the complete id list
+- [ ] `limit: null` renders as "Unlimited"; surface a quota `message` from the create call
+
 ---
 
-Full wire format including the vendor side: `docs/vendor-products-api.md`.
+Full wire format and every edge case: `docs/vendor-products-api.md`.
 Postman collection: `docs/tourkokan-vendor-products.postman_collection.json`.
+See the whole vendor journey run live: `php artisan vendor:walkthrough` (§7).
