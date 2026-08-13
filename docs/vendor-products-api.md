@@ -399,6 +399,66 @@ Price to display: `default_variant.sale_price ?? default_variant.price`.
 | `productsBySite` | `site_id` | one business's catalog |
 | `featuredProducts` | `page?` | home rail |
 
+### Vendor directory — one owner, several businesses
+
+A vendor can run more than one outlet, so these browse by **business owner** rather than by
+site. Only vendors with at least one live business appear, and only their live outlets and
+products are exposed. Identity is the vendor's **primary business**, never the owner's
+personal name/email — those are encrypted and never returned.
+
+#### `listVendors`
+
+```
+search?  category_id?  category_code?
+latitude? longitude?   sent together
+radius_km?             needs latitude+longitude; distance is to the nearest outlet
+page?  per_page?
+```
+
+Card shape (rows at `data.data`):
+```json
+{
+  "id": 51,
+  "business_name": "Sai Electric Works",
+  "mr_name": null,
+  "tag_line": "Trusted local service",
+  "logo": null,
+  "outlet_count": 3,
+  "product_count": 3,
+  "distance_km": 4.2,
+  "categories": [ { "id": 91, "name": "Electrician", "code": "electrician" } ]
+}
+```
+
+`id` is the vendor id — pass it to `vendorProfile`. `distance_km` is present only when a
+location was sent.
+
+#### `vendorProfile`  `{ id, latitude?, longitude? }`
+
+One vendor with **all** their live businesses and their combined catalog. `data` has three
+keys — `vendor`, `outlets`, `products` (paginated):
+
+```json
+{
+  "vendor": {
+    "id": 9,
+    "business_name": "Sagar Resort Group",
+    "tag_line": "Family run since 1994",
+    "logo": null, "image": null,
+    "description": "…",
+    "social_media": null, "domain_name": null,
+    "member_since": "2026-08-08T07:53:15Z",
+    "outlet_count": 3,
+    "product_count": 27,
+    "categories": [ { "id": 11, "name": "Hotel Rooms", "code": "hotel_rooms" } ]
+  },
+  "outlets":  [ /* each site: name, tag_line, logo, lat/lng, categories, products_count, rating_avg_rate, distance_km? */ ],
+  "products": { "current_page": 1, "data": [ /* same row shape as listProducts */ ], "total": 27 }
+}
+```
+
+404 if the id is not a vendor, or the vendor has no live business yet.
+
 ### Engagement — please wire these up
 
 | Endpoint | Payload | When |
