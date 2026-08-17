@@ -26,7 +26,6 @@ use Tests\ApiTestCase;
  */
 class AdminApiDocCaptureTest extends ApiTestCase
 {
-    private const OUT = '/private/tmp/claude-502/-Users-pranavkamble-Documents-tourkokan-backend/8dc5e2c0-349e-4a48-ad9e-b8c9032ed07c/scratchpad/admin_samples.json';
 
     private array $captured = [];
     private User $admin;
@@ -176,7 +175,9 @@ class AdminApiDocCaptureTest extends ApiTestCase
         $this->grab('approveRoleRequest', ['id' => $roleReq->id],
                     'approveRoleRequest — also enrols vendors on the free plan');
 
-        file_put_contents(self::OUT, json_encode($this->captured, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        @mkdir(sys_get_temp_dir() . '/tk-docs', 0777, true);
+        $out = sys_get_temp_dir() . '/tk-docs/admin_samples.json';
+        file_put_contents($out, json_encode($this->captured, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         $this->assertNotEmpty($this->captured);
     }

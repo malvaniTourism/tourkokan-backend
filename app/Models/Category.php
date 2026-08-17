@@ -32,6 +32,7 @@ class Category extends Model
         'icon',
         'status',
         'is_hot_category',
+        'is_business',
         'meta_data',
     ];
 
@@ -50,6 +51,7 @@ class Category extends Model
     protected $casts = [
         'status' => 'boolean',
         'is_hot_category' => 'boolean',
+        'is_business' => 'boolean',
         'meta_data' => 'array'
     ];
 

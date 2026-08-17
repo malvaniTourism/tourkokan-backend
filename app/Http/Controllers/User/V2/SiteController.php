@@ -290,6 +290,8 @@ class SiteController extends BaseController
             'description'  => 'required|string|min:20',
             'tag_line'     => 'nullable|string|max:100',
             'domain_name'  => 'nullable|url|max:255',
+            'phone'        => 'nullable|string|max:20|regex:/^[0-9+\-\s]+$/',
+            'whatsapp'     => 'nullable|string|max:20|regex:/^[0-9+\-\s]+$/',
             'image'        => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
             'logo'         => 'nullable|mimes:jpeg,jpg,png,webp|max:1024',
             'latitude'     => 'required|numeric|between:-90,90',
@@ -354,7 +356,7 @@ class SiteController extends BaseController
             ->whereIn('submission_status', ['pending', 'approved'])
             ->with('categories:id,name,code')
             ->withCount('products')
-            ->select('id', 'name', 'image', 'logo', 'is_primary', 'parent_id', 'status', 'submission_status', 'latitude', 'longitude', 'pin_code', 'created_at')
+            ->select('id', 'name', 'image', 'logo', 'is_primary', 'parent_id', 'status', 'submission_status', 'latitude', 'longitude', 'pin_code', 'phone', 'whatsapp', 'created_at')
             ->orderByDesc('is_primary')
             ->latest()
             ->paginateSafe();
@@ -425,6 +427,8 @@ class SiteController extends BaseController
             'description'  => 'sometimes|string|min:20',
             'tag_line'     => 'nullable|string|max:100',
             'domain_name'  => 'nullable|url|max:255',
+            'phone'        => 'nullable|string|max:20|regex:/^[0-9+\-\s]+$/',
+            'whatsapp'     => 'nullable|string|max:20|regex:/^[0-9+\-\s]+$/',
             'image'        => 'nullable|mimes:jpeg,jpg,png,webp|max:2048',
             'logo'         => 'nullable|mimes:jpeg,jpg,png,webp|max:1024',
             'latitude'     => 'nullable|numeric|between:-90,90',

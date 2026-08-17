@@ -6,6 +6,7 @@ use App\Models\AllowedProductCategory;
 use App\Models\Category;
 use App\Models\ProductCategory;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
@@ -250,5 +251,19 @@ class VendorCategorySeeder extends Seeder
         }
 
         $this->command->info("Vendor site-category → product-category links: {$links}.");
+
+        // Flag every registrable category (and its parent) so the app's "Register a
+        // business" picker can filter on one field. Mirrors the migration's backfill so a
+        // fresh seed leaves is_business correct. See docs/marketplace-backend-asks.md #4.
+        if (Schema::hasColumn('categories', 'is_business')) {
+            $leafIds = AllowedProductCategory::distinct()->pluck('category_id');
+            Category::whereIn('id', $leafIds)->update(['is_business' => true]);
+
+            $parentIds = Category::whereIn('id', $leafIds)->whereNotNull('parent_id')
+                ->distinct()->pluck('parent_id');
+            Category::whereIn('id', $parentIds)->update(['is_business' => true]);
+
+            $this->command->info('Flagged is_business on registrable categories.');
+        }
     }
 }

@@ -115,7 +115,7 @@ class VendorController extends BaseController
             ->get([
                 'id', 'name', 'mr_name', 'tag_line', 'mr_tag_line', 'description', 'mr_description',
                 'logo', 'image', 'is_primary', 'parent_id',
-                'latitude', 'longitude', 'pin_code', 'domain_name', 'social_media',
+                'latitude', 'longitude', 'pin_code', 'domain_name', 'phone', 'whatsapp', 'social_media',
             ]);
 
         if ($sites->isEmpty()) {

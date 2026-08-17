@@ -33,6 +33,29 @@ class CategoryController extends BaseController
     }
 
     /**
+     * POST /api/v2/businessCategories
+     *
+     * The "Register a business" picker. Returns only vendor-registrable categories
+     * (is_business = true) as a flat parent -> children tree, skipping the directory-only
+     * branches (Destination, Emergency, Government, Education, Transportation) a vendor
+     * cannot list products under. See docs/marketplace-backend-asks.md #4.
+     */
+    public function businessCategories()
+    {
+        $categories = \App\Models\Category::where('is_business', true)
+            ->whereNull('parent_id')
+            ->whereStatus(true)
+            ->with(['subCategories' => fn($q) => $q
+                ->where('is_business', true)->whereStatus(true)
+                ->select('id', 'name', 'mr_name', 'code', 'parent_id', 'icon', 'is_business')
+                ->orderBy('name')])
+            ->orderBy('id')
+            ->get(['id', 'name', 'mr_name', 'code', 'icon', 'is_business']);
+
+        return $this->sendResponse($categories, 'Business categories fetched.');
+    }
+
+    /**
      * Display the specified resource.
      *
      * @param  \App\Models\new_category  $new_category

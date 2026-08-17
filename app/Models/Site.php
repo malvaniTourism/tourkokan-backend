@@ -31,6 +31,8 @@ class Site extends Model
         'description',
         'mr_description',
         'domain_name',
+        'phone',
+        'whatsapp',
         'logo',
         'icon',
         'image',

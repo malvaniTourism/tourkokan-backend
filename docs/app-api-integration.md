@@ -104,7 +104,8 @@ Row:
   "distance_km": 2.83,
   "product_category": { "id": 7, "name": "Room Night", "code": "room_night" },
   "site":             { "id": 41, "name": "Sagar Resort", "logo": "https://…",
-                        "latitude": 16.05, "longitude": 73.46 },
+                        "latitude": 16.05, "longitude": 73.46,
+                        "phone": "+91 9876543210", "whatsapp": "9876543210" },
   "default_variant":  { "id": 30, "price": "2400.00", "sale_price": null, "stock": null },
   "cover":            { "id": 88, "path": "https://…" }
 }
@@ -243,6 +244,7 @@ addSite                register the first business
 |---|---|---|
 | `requestRole` | `role_code: "vendor"`, `reason?` | 422 if a request is already pending |
 | `myRoleRequests` | — | poll `status`: `pending` / `approved` / `rejected` |
+| `businessCategories` | — | the register picker: only vendor-registrable categories |
 | `addSite` | see below | **multipart** — vendor-gated |
 | `mySites` | — | the outlet picker, §11 |
 | `setPrimarySite` | `id` | mark the head location |

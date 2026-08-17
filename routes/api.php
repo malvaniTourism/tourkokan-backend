@@ -246,6 +246,8 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('deleteQuery', [ContactController::class, 'deleteQuery']);
 
     Route::post('listcategories', [CategoryController::class, 'listcategories']);
+    // Vendor-registrable categories for the "Register a business" picker. §4
+    Route::post('businessCategories', [CategoryController::class, 'businessCategories']);
     Route::post('getCategory', [CategoryController::class, 'getCategory']);
 
     Route::post('ratings', [RatingController::class, 'index']);
