@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\V2;
 
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\Product;
+use App\Services\VendorNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -15,6 +16,10 @@ use Illuminate\Support\Facades\Validator;
  */
 class ProductController extends BaseController
 {
+    public function __construct(private VendorNotifier $notifier)
+    {
+    }
+
     /**
      * POST /admin/v2/pendingProducts
      */
@@ -95,6 +100,7 @@ class ProductController extends BaseController
         }
 
         $product->update(['status' => 'approved', 'rejection_reason' => null]);
+        $this->notifier->productApproved($product);
 
         return $this->sendResponse($product->fresh(), 'Product approved and is now live.');
     }
@@ -123,6 +129,7 @@ class ProductController extends BaseController
             'status'           => 'rejected',
             'rejection_reason' => $request->rejection_reason,
         ]);
+        $this->notifier->productRejected($product, $request->rejection_reason);
 
         return $this->sendResponse($product->fresh(), 'Product rejected.');
     }

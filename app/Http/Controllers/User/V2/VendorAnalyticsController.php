@@ -180,11 +180,60 @@ class VendorAnalyticsController extends BaseController
                 fn($q) => $q->where('product_id', $request->product_id))
             ->when($request->filled('lead_type'),
                 fn($q) => $q->where('lead_type', $request->lead_type))
+            ->when($request->boolean('unread_only'),
+                fn($q) => $q->where('is_read', false))
             ->with(['product:id,name,site_id', 'user:id,name,mobile'])
             ->latest()
             ->paginateSafe();
 
-        return $this->sendResponse($leads, 'Leads fetched.');
+        // Merged into the payload rather than set as a property on the paginator — a
+        // dynamic property is silently dropped by toArray(), so it would never reach the
+        // client. Surfaced here so the leads tab can badge without a second call.
+        $payload = $leads->toArray();
+        $payload['unread_count'] = ProductLead::whereIn('product_id', $productIds)
+            ->where('is_read', false)
+            ->count();
+
+        return $this->sendResponse($payload, 'Leads fetched.');
+    }
+
+    /**
+     * POST /api/v2/markLeadRead  { id | all: true }
+     *
+     * A vendor clears an enquiry once they have called back. Without this the leads screen
+     * is an undifferentiated pile and the unread badge never goes down.
+     */
+    public function markLeadRead(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id'  => 'required_without:all|nullable|numeric|exists:product_leads,id',
+            'all' => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 422);
+        }
+
+        // Scoped to the caller's own products — a lead id alone must not be enough to
+        // read someone else's enquiries.
+        $owned = ProductLead::whereIn('product_id', Product::ownedBy(auth()->id())->select('id'));
+
+        if ($request->boolean('all')) {
+            $count = (clone $owned)->where('is_read', false)
+                ->update(['is_read' => true, 'read_at' => now()]);
+
+            return $this->sendResponse(['marked' => $count], 'All leads marked as read.');
+        }
+
+        $lead = (clone $owned)->where('id', $request->id)->first();
+
+        if (!$lead) {
+            return $this->sendError('Lead not found or not yours.', '', 404);
+        }
+
+        $lead->update(['is_read' => true, 'read_at' => now()]);
+
+        return $this->sendResponse($lead->only(['id', 'is_read', 'read_at']), 'Lead marked as read.');
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\V2;
 
 use App\Models\Site;
 use App\Rules\ImageGuideline;
+use App\Services\VendorNotifier;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\Category;
@@ -377,6 +378,8 @@ class SiteController extends BaseController
             $site->update(['is_primary' => true]);
         }
 
+        app(VendorNotifier::class)->siteApproved($site);
+
         return $this->sendResponse($site->fresh(), 'Site approved and is now live.');
     }
 
@@ -401,6 +404,8 @@ class SiteController extends BaseController
             'status'            => false,
             'rejection_reason'  => $request->rejection_reason,
         ]);
+
+        app(VendorNotifier::class)->siteRejected($site, $request->rejection_reason);
 
         return $this->sendResponse($site, 'Site rejected. User has been notified of the reason.');
     }

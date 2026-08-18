@@ -30,9 +30,16 @@ class ProductLead extends Model
         'message',
         'platform',
         'ip_hash',
+        'is_read',
+        'read_at',
     ];
 
     protected $hidden = ['ip_hash'];
+
+    protected $casts = [
+        'is_read' => 'boolean',
+        'read_at' => 'datetime',
+    ];
 
     public function product()
     {

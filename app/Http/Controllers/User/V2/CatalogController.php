@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductLead;
 use App\Models\ProductViewEvent;
 use App\Models\Site;
+use App\Services\VendorNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -27,7 +28,7 @@ class CatalogController extends BaseController
     /** Earth radius in kilometres, for the Haversine distance expression. */
     private const EARTH_RADIUS_KM = 6371;
 
-    public function __construct()
+    public function __construct(private VendorNotifier $notifier)
     {
         $this->middleware('auth:api');
     }
@@ -234,6 +235,10 @@ class CatalogController extends BaseController
 
             return $lead;
         });
+
+        // The vendor is told outside the transaction: a notification failure must not roll
+        // back a captured lead.
+        $this->notifier->leadReceived($product, $lead);
 
         return $this->sendResponse(
             $lead->only(['id', 'lead_type']),

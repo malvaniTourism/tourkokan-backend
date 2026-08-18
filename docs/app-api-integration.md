@@ -350,6 +350,7 @@ posting them is silently ignored. A vendor cannot approve or feature their own l
 | `deleteProduct` | `id` (soft delete) |
 | `submitProductForReview` | `id` — draft/rejected → pending |
 | `toggleProductStatus` | `id` — approved ⇄ paused |
+| `bulkProductStatus` | `ids[]` (≤200), `status: paused\|approved` — returns `{updated, skipped}` |
 
 Status lifecycle:
 ```
@@ -383,13 +384,35 @@ Every product has at least one; if the vendor entered a single price the server 
 | `saveProductVariant` | `id`, `variant_id?` (omit to create), `name`, `price`, `sale_price?`, `sku?`, `stock?`, `min_order_qty?`, `max_order_qty?`, `is_default?` |
 | `deleteProductVariant` | `id`, `variant_id` — **the last variant cannot be deleted** (422) |
 
+## 11b. Notifications — the vendor is now told things
+
+Five events write to the **existing inbox** (`myMessages` / `readMessage` /
+`unreadMessageCount`) and push to the device if a token is registered. **No new screen
+needed** — they appear wherever admin messages already do.
+
+| `type` | Fired when | `meta_data` |
+|---|---|---|
+| `lead` | a customer taps call / WhatsApp / directions, or enquires | `product_id`, `lead_id`, `lead_type` |
+| `product_approved` | admin approves a listing | `product_id` |
+| `product_rejected` | admin rejects (message carries the reason) | `product_id` |
+| `site_approved` / `site_rejected` | admin reviews a business | `site_id` |
+| `vendor_approved` | vendor role granted | — |
+
+`admin_id` is `null` on these (system-generated, no person behind it) and `type` is new —
+older admin-to-user messages have `type: null`. Use `meta_data` to deep-link: a `lead`
+notification should open that product's leads screen.
+
+The inbox row is the durable record; **push is best-effort**. A vendor with no device token
+still sees everything next time they open the app.
+
 ## 12. Vendor dashboard
 
 | Endpoint | Payload | Returns |
 |---|---|---|
 | `myUsageStats` | `from?`, `to?` (default last 30 days) | account totals — views, leads by type, listing counts, conversion rate |
 | `productAnalytics` | `id`, `from?`, `to?` | one listing + a daily series for charting |
-| `myLeads` | `product_id?`, `lead_type?`, `page?` | the actual enquiries, newest first |
+| `myLeads` | `product_id?`, `lead_type?`, `unread_only?`, `page?` | enquiries, newest first — plus `data.unread_count` for the tab badge |
+| `markLeadRead` | `id` **or** `all: true` | clears an enquiry once the vendor has called back |
 
 `myUsageStats` includes **today** — the counts are topped up with activity the nightly
 rollup has not reached yet, so they agree with `myLeads` and never read zero on launch day.

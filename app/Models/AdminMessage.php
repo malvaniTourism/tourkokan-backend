@@ -12,15 +12,18 @@ class AdminMessage extends Model
     protected $fillable = [
         'user_id',
         'admin_id',
+        'type',
         'subject',
         'message',
+        'meta_data',
         'is_read',
         'read_at',
     ];
 
     protected $casts = [
-        'is_read' => 'boolean',
-        'read_at' => 'datetime',
+        'is_read'   => 'boolean',
+        'read_at'   => 'datetime',
+        'meta_data' => 'array',
     ];
 
     public function user()

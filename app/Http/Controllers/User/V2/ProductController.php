@@ -288,6 +288,44 @@ class ProductController extends BaseController
     }
 
     /**
+     * POST /api/v2/bulkProductStatus  { ids: [], status: paused|approved }
+     *
+     * A restaurant menu is easily sixty items; pausing for the monsoon one call at a time
+     * is not a workflow. Restricted to the pause/resume pair — bulk-submitting for review
+     * would let a vendor push unchecked listings into the moderation queue en masse.
+     */
+    public function bulkProductStatus(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'ids'    => 'required|array|min:1|max:200',
+            'ids.*'  => 'numeric',
+            'status' => 'required|string|in:paused,approved',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 422);
+        }
+
+        // Scoped to the caller's own products, and only ones already in the opposite state,
+        // so a stray id cannot flip someone else's listing or resurrect a draft.
+        $from = $request->status === 'paused' ? 'approved' : 'paused';
+
+        $affected = Product::ownedBy(auth()->id())
+            ->whereIn('id', $request->ids)
+            ->where('status', $from)
+            ->update(['status' => $request->status]);
+
+        $skipped = count($request->ids) - $affected;
+
+        return $this->sendResponse(
+            ['updated' => $affected, 'skipped' => $skipped],
+            $affected === 0
+                ? 'Nothing to change — those listings are not ' . $from . '.'
+                : "{$affected} listing(s) " . ($request->status === 'paused' ? 'paused' : 'resumed') . '.'
+        );
+    }
+
+    /**
      * POST /api/v2/deleteProduct
      */
     public function deleteProduct(Request $request)

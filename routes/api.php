@@ -357,6 +357,7 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
         Route::post('deleteProduct', [ProductController::class, 'deleteProduct']);
         Route::post('submitProductForReview', [ProductController::class, 'submitProductForReview']);
         Route::post('toggleProductStatus', [ProductController::class, 'toggleProductStatus']);
+        Route::post('bulkProductStatus', [ProductController::class, 'bulkProductStatus']);
 
         Route::post('saveProductVariant', [ProductController::class, 'saveProductVariant']);
         Route::post('deleteProductVariant', [ProductController::class, 'deleteProductVariant']);
@@ -370,6 +371,7 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
         Route::post('myUsageStats', [VendorAnalyticsController::class, 'myUsageStats']);
         Route::post('productAnalytics', [VendorAnalyticsController::class, 'productAnalytics']);
         Route::post('myLeads', [VendorAnalyticsController::class, 'myLeads']);
+        Route::post('markLeadRead', [VendorAnalyticsController::class, 'markLeadRead']);
 
         // ── Plan & quota ────────────────────────────────────────────────
         Route::post('mySubscription', [SubscriptionController::class, 'mySubscription']);

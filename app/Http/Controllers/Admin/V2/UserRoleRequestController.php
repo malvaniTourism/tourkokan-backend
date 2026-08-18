@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\V2;
 use App\Http\Controllers\BaseController;
 use App\Models\UserRoleRequest;
 use App\Services\PlanService;
+use App\Services\VendorNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -75,6 +76,10 @@ class UserRoleRequestController extends BaseController
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);
+
+        if (($roleRequest->role->code ?? '') === 'vendor') {
+            app(VendorNotifier::class)->vendorRoleGranted($roleRequest->user);
+        }
 
         return $this->sendResponse(
             $roleRequest->load(['user:id,name,email', 'role:id,name,code', 'reviewer:id,name']),
