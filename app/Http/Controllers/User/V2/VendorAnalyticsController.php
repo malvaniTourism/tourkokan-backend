@@ -131,14 +131,26 @@ class VendorAnalyticsController extends BaseController
             ->sortBy('date')
             ->values();
 
+        $views = (int) $series->sum('views');
+        $leads = (int) $series->sum('leads');
+
         return $this->sendResponse([
             'product' => $product->only(['id', 'name', 'status', 'views_count', 'leads_count']),
             'from'    => $from,
             'to'      => $to,
             'totals'  => [
-                'views'        => (int) $series->sum('views'),
+                'views'        => $views,
                 'unique_views' => (int) $series->sum('unique_views'),
-                'leads'        => (int) $series->sum('leads'),
+                'leads'        => $leads,
+            ],
+            // Mirrors myUsageStats so a per-product screen can show the same headline
+            // figures without summing the daily series client-side.
+            'conversion_rate' => $views > 0 ? round(($leads / $views) * 100, 2) : 0,
+            'leads_by_type'   => [
+                'call'       => (int) $series->sum('leads_call'),
+                'whatsapp'   => (int) $series->sum('leads_whatsapp'),
+                'directions' => (int) $series->sum('leads_directions'),
+                'enquiry'    => (int) $series->sum('leads_enquiry'),
             ],
             // gaps are absent rather than zero-filled — the client charts what it receives
             'daily'   => $series,

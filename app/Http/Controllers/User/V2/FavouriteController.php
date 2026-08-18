@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User\V2;
 
 use App\Models\Favourite;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\BaseController;
@@ -15,12 +16,48 @@ class FavouriteController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    /**
+     * The caller's favourites.
+     *
+     * Optionally filtered by type (`Product`, `Site`, `Event`…). Without eager loading the
+     * rows are bare morph pointers — id and type — which is not enough to render a card, so
+     * the favourited record is loaded alongside. Products additionally carry the pieces a
+     * product card needs (category, site, default variant, cover) to match the shape
+     * `listProducts` returns.
+     */
+    public function index(Request $request)
     {
-        $favourite =  Favourite::where('user_id', auth()->id())
+        $type = $request->input('favouritable_type');
+
+        $favourites = Favourite::where('user_id', auth()->id())
+            ->when($type, fn($q) => $q->where('favouritable_type', "App\\Models\\" . $type))
+            ->with(['favouritable' => function ($morph) {
+                $morph->morphWith([
+                    Product::class => [
+                        'productCategory:id,name,mr_name,code,booking_type',
+                        'site:id,name,logo,latitude,longitude,phone,whatsapp',
+                        'defaultVariant:id,product_id,price,sale_price,stock',
+                        'cover',
+                    ],
+                ]);
+            }])
+            ->latest()
             ->paginateSafe();
 
-        return $this->sendResponse($favourite, 'Favourites successfully Retrieved...!');
+        // A favourited product whose listing has since been unapproved or deleted would
+        // otherwise render as an empty card.
+        $favourites->getCollection()->transform(function ($fav) {
+            $item = $fav->favouritable;
+
+            if ($item instanceof Product && !Product::live()->whereKey($item->id)->exists()) {
+                $fav->setRelation('favouritable', null);
+                $fav->unavailable = true;
+            }
+
+            return $fav;
+        });
+
+        return $this->sendResponse($favourites, 'Favourites successfully Retrieved...!');
     }
 
     /**
