@@ -313,3 +313,83 @@ scope for v1. All match what the app expects.
 
 Everything else is done. Contract: `docs/app-api-integration.md` ·
 walkthrough: `php artisan vendor:walkthrough`.
+
+---
+
+# Addendum — confirmations for `marketplace-backend-needs.md` (2026-08-19)
+
+Shapes below captured live from the running app. **Everything is present; the only deltas
+are field names**, which you asked to confirm. Nothing needs a backend change.
+
+### C1 · getProduct edit-prefill — ✅ all fields present
+
+`getProduct` returns every prefill field:
+```
+name · description · base_price · sale_price (null when unset, not absent) · unit ·
+attributes (as stored) · product_category {id,name,code,…} · product_category_id (scalar) ·
+variants[] · gallery[]
+```
+`updateProduct` takes the same multipart shape as `addProduct` and **re-enters review** on an
+approved product (status → pending).
+**Delta:** the image array is **`gallery`**, not `media` (see C3).
+
+### C2 · productAnalytics — ✅ present, note the nesting
+
+```json
+{
+  "product": { "id": 6, "name": "…", "status": "approved", "views_count": 3, "leads_count": 3 },
+  "totals": { "views": 3, "unique_views": 3, "leads": 3 },
+  "conversion_rate": 100,
+  "leads_by_type": { "call": 2, "whatsapp": 1, "directions": 0, "enquiry": 0 },
+  "daily": [ { "date": "…", "views": 3, "unique_views": 3, "leads": 3,
+              "leads_call": 2, "leads_whatsapp": 1, "leads_directions": 0, "leads_enquiry": 0 } ]
+}
+```
+Mapping to what you expected: `name` / `views_count` / `leads_count` are **under `product`**;
+the series key is **`daily`** (you allowed "series or daily"); `conversion_rate` and
+`leads_by_type` are top-level as requested. Days with no activity are **absent, not
+zero-filled** — zero-fill client-side for a continuous axis. Today is included (topped up
+before the nightly rollup).
+
+### C3 · gallery — ✅ full ordered array, but named `gallery`
+
+`productDetail` and `getProduct` already return the whole ordered array, not just the cover.
+**Field name is `gallery`, not `media`.** Item:
+```json
+{ "id": 4, "path": "local/products/x.png", "path_url": "https://…s3…/local/products/x.png",
+  "is_cover": 1, "sort_order": 1, "title": "…", "galleryable_type": "…", "galleryable_id": 6 }
+```
+Two naming notes for your mapper:
+- image field is **`path`** (relative — prefix `AWS_URL`) and **`path_url`** (already
+  absolute — use this to skip prefixing). There is no `url` key.
+- `is_cover` is **`1`/`0`** (int), not `true`/`false`.
+
+Ordered by `sort_order` ascending.
+
+### C4 · favourites list — ✅ shipped
+
+`POST /api/v2/favourites { favouritable_type: "Product" }` returns the caller's favourites,
+each with the full product card under `favouritable`; a listing that has gone offline returns
+`favouritable: null` + `unavailable: true`. (Details in §C4 above.)
+
+### A1 · seed api-test — commands unchanged
+
+```bash
+php artisan migrate --force
+php artisan db:seed --class=PlanSeeder --force
+php artisan db:seed --class=ProductCategorySeeder --force
+php artisan db:seed --class=VendorCategorySeeder --force
+# + cron:  * * * * * php artisan schedule:run
+```
+Verify: `ProductCategory` ≈ 20, `AllowedProductCategory` ≈ 163, `Category::where('is_business',true)` ≈ 27.
+
+### B1 / B2 — still your call
+
+B1 `custom_specs`: recommend schema-only for v1 (zero work). B2 self-serve upgrade: recommend
+keep admin-assigns until the commerce layer exists. Neither blocks the current slice.
+
+### D · contract confirmations
+
+`addSite` **persists `parent_id`** (city link) — verified live: sent `parent_id`, stored and
+returned. `mySites` rows carry `is_primary`, `phone`, `whatsapp`, `logo`, `parent_id`. All
+seven D contracts hold and are pinned by `tests/Feature/MarketplaceAsksTest`.
