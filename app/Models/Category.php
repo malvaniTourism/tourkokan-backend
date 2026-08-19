@@ -84,6 +84,22 @@ class Category extends Model
     }
 
     /**
+     * Only sites a tourist can actually reach: approved and published.
+     *
+     * `sites()` counts every category_site row — including submissions still under review,
+     * rejected businesses, and pivot rows left behind by a deleted site — which inflates the
+     * "N places in this category" figure the app shows. Use this for any public-facing count
+     * or listing. The join to `sites` also drops orphaned pivots for free, since a deleted
+     * site has no row to match.
+     */
+    public function liveSites()
+    {
+        return $this->belongsToMany(Site::class)
+            ->where('sites.status', true)
+            ->where('sites.submission_status', 'approved');
+    }
+
+    /**
      * Get all of the subCategories for the Category
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany

@@ -16,6 +16,21 @@ class Site extends Model
     protected array $fileFields = ['logo', 'icon', 'image'];
 
     /**
+     * Clean up polymorphic children the FK cascade cannot reach.
+     *
+     * The FK cascade deletes products and their FK-backed children, but morph rows
+     * (galleries, comments, ratings, favourites, contacts, banners) and the product gallery
+     * files have no FK and would orphan. This fires before the cascade, while the products
+     * are still queryable. See {@see \App\Services\SiteDeletionCleaner}.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Site $site) {
+            app(\App\Services\SiteDeletionCleaner::class)->clean($site);
+        });
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var string[]

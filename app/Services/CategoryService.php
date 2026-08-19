@@ -29,27 +29,29 @@ class CategoryService
             $fields[] = 'id';
         }
 
+        // Counts and "has anything to show" checks all run through liveSites so the figure
+        // matches what a tourist can actually open — approved, published, not deleted.
         $with = [
             'subCategories' => fn($q) => $q
                 ->select('id', 'name', 'mr_name', 'code', 'parent_id', 'icon', 'is_hot_category')
-                ->withCount('sites')
-                ->when(!$include_empty, fn($sub) => $sub->has('sites'))
+                ->withCount('liveSites as sites_count')
+                ->when(!$include_empty, fn($sub) => $sub->has('liveSites'))
                 ->latest(),
         ];
 
         if ($category) {
-            $with['subCategories.sites'] = fn($q) => $q->select('id', 'name', 'meta_data');
+            $with['subCategories.liveSites'] = fn($q) => $q->select('sites.id', 'name', 'meta_data');
         }
 
         $query = Category::with($with)
             ->select($fields)
-            ->withCount(['sites', 'subCategories'])
+            ->withCount(['liveSites as sites_count', 'subCategories'])
             ->whereNotIn('code', self::LOCATION_CODES)
             ->whereStatus(true)
             ->latest()
             ->when($category, fn($q) => $q->where('code', $category))
             ->when(!$category, fn($q) => $q->whereNull('parent_id')
-                ->when(!$include_empty, fn($qq) => $qq->whereHas('subCategories.sites')));
+                ->when(!$include_empty, fn($qq) => $qq->whereHas('subCategories.liveSites')));
 
         if (!$paginate) {
             return $query->get();
@@ -60,7 +62,10 @@ class CategoryService
         if ($category) {
             $categories->getCollection()->transform(function ($cat) use ($perPage) {
                 $cat->subCategories->transform(function ($subCategory) use ($perPage) {
-                    $subCategory->setRelation('sites', $subCategory->sites->take($perPage ?? 15));
+                    // Expose the trimmed live sites under `sites` — the key the app reads —
+                    // while the count above and this list now share the same live scope.
+                    $subCategory->setRelation('sites', $subCategory->liveSites->take($perPage ?? 15));
+                    $subCategory->unsetRelation('liveSites');
                     return $subCategory;
                 });
                 return $cat;
