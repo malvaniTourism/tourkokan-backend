@@ -466,6 +466,10 @@ not a ledger — reservation belongs in the commerce layer.
 
 Regression cover: `tests/Feature/CommerceReadinessTest.php`.
 
+**The plan that builds all of the above:** `docs/COMMERCE_BOOKING_DESIGN.md` — phased schema,
+state machines, API surface and effort for orders, payments, commission and the availability
+calendar. It is written to honour R1–R6 and C1–C5, so nothing there alters an existing column.
+
 ---
 
 ## 4. Phase 1 — Remove `projects` entirely
