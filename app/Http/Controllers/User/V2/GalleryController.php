@@ -31,10 +31,13 @@ class GalleryController extends BaseController
         $category = $request->input('category');
         $siteId   = $request->input('site_id');
 
-        $gallery = Gallery::with([
-            'galleryable:id,name,mr_name,parent_id',
-            'galleryable.categories:id,name,code,parent_id'
-        ])->where('status', true);
+        // Product galleries share this table but have no `parent_id`/`categories` — exclude
+        // them from the place gallery so the constrained morph load cannot crash.
+        $gallery = Gallery::whereNot('galleryable_type', (new \App\Models\Product())->getMorphClass())
+            ->with([
+                'galleryable:id,name,mr_name,parent_id',
+                'galleryable.categories:id,name,code,parent_id'
+            ])->where('status', true);
 
         if (!empty($siteId)) {
             $gallery->where('galleryable_type', Site::class)

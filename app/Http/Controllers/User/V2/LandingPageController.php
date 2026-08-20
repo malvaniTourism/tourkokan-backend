@@ -202,10 +202,14 @@ class LandingPageController extends BaseController
         $hotSites = $this->siteService->getHotSites($request->filled('site_id') ? $request->site_id : null);
 
 
-        $gallery = Gallery::with([
-            'galleryable:id,name,parent_id',
-            'galleryable.categories:id,name,mr_name,code,parent_id'
-        ])
+        // Homepage feed shows place/site galleries only. Product galleries (added with the
+        // marketplace) live on a different table shape — no `parent_id`, no `categories`
+        // relation — so pulling them into this constrained morph load crashes the query.
+        $gallery = Gallery::whereNot('galleryable_type', (new \App\Models\Product())->getMorphClass())
+            ->with([
+                'galleryable:id,name,parent_id',
+                'galleryable.categories:id,name,mr_name,code,parent_id'
+            ])
             ->limit(isValidReturn($request, 'per_page', 10))
             ->get();
 
