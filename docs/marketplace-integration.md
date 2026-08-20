@@ -148,6 +148,17 @@ with `"unavailable": true` — render "no longer available". Comments are **mode
 invisible until an admin approves; say so after posting. `productDetail` already returns
 `is_favourite`.
 
+### 2.5 My enquiries (buyer's history)
+
+```
+myEnquiries  { lead_type?: "call"|"whatsapp"|"directions"|"enquiry", page? }
+```
+The buyer's own record of listings they reached out about — the mirror of the vendor's
+`myLeads`. Paginated, newest-first. Each row: `id`, `lead_type`, `message`, `created_at`,
+the full product card under `product`, and `available` (boolean). A listing since paused,
+rejected or deleted **stays in the history** with `"available": false` — render it greyed
+out, the way `favourites` handles an unavailable card. Optional `lead_type` filters the list.
+
 ---
 
 # Part 3 — App · Sell (vendor role)

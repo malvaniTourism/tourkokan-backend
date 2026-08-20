@@ -330,6 +330,9 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('recordProductLead', [CatalogController::class, 'recordProductLead'])
         ->middleware('throttle:writes');
 
+    // The buyer's own enquiry history — mirror of the vendor's myLeads.
+    Route::post('myEnquiries', [CatalogController::class, 'myEnquiries']);
+
     // ── Site Onboarding (user-submitted places) ─────────────────────
     Route::post('parseMapUrl', [SiteController::class, 'parseMapUrl']);
     Route::post('mySubmissions', [SiteController::class, 'mySubmissions']);

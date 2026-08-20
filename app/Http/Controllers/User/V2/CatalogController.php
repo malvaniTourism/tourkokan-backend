@@ -246,6 +246,61 @@ class CatalogController extends BaseController
         );
     }
 
+    /**
+     * POST /api/v2/myEnquiries
+     *
+     * The buyer's own record of the listings they reached out about — the mirror of the
+     * vendor's myLeads. One row per enquiry (a buyer may contact the same listing more than
+     * once, or on more than one channel), newest first.
+     *
+     * The product is loaded without the live scope so history survives a listing being
+     * paused, rejected or deleted; each row carries `available` so the app can grey out a
+     * card whose product is no longer open, the way favourites already does.
+     *
+     * Filters: lead_type.
+     */
+    public function myEnquiries(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lead_type' => ['nullable', 'string', 'in:' . implode(',', ProductLead::TYPES)],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 422);
+        }
+
+        $enquiries = ProductLead::where('user_id', auth()->id())
+            ->when($request->filled('lead_type'),
+                fn($q) => $q->where('lead_type', $request->lead_type))
+            ->with(['product' => fn($q) => $q
+                ->select([
+                    'products.id', 'products.site_id', 'products.name', 'products.mr_name',
+                    'products.slug', 'products.base_price', 'products.sale_price',
+                    'products.currency', 'products.unit', 'products.status',
+                ])
+                ->with([
+                    'site:id,name,mr_name,logo,phone,whatsapp',
+                    'defaultVariant:id,product_id,price,sale_price,stock',
+                    'cover',
+                ]),
+            ])
+            ->latest('id') // monotonic — stable newest-first even for same-second enquiries
+            ->paginateSafe();
+
+        // A listing the buyer once contacted may since have been paused, rejected or hard
+        // deleted with its site — flag it rather than dropping the row, so the history stays
+        // complete and the card can render greyed out. Vendor-side lead state (read flags,
+        // capture platform, ip hash) is hidden — this is the buyer's view.
+        $enquiries->getCollection()->transform(function (ProductLead $lead) {
+            $lead->available = $lead->product !== null
+                && $lead->product->status === 'approved';
+
+            return $lead->makeHidden(['is_read', 'read_at', 'platform', 'ip_hash']);
+        });
+
+        return $this->sendResponse($enquiries, 'Enquiries fetched.');
+    }
+
     // ── Query building ───────────────────────────────────────────────────────────
 
     /**

@@ -14,20 +14,20 @@ not read from source. Response shapes quoted are actual output.
 | Item | Verdict |
 |---|---|
 | **A1** seed api-test | ⚠️ **Ops task — commands below.** Correct diagnosis |
-| **B1** `custom_specs` | 🔵 **Your decision.** Recommend ship schema-only for v1 |
-| **B2** self-serve upgrade | 🔵 **Your decision.** Recommend keep admin-assigns |
+| **B1** `custom_specs` | ✅ **Decided: schema-only.** Not building — extras go in `description` |
+| **B2** self-serve upgrade | ✅ **Decided: keep admin-assigns.** Revisit with the commerce layer |
 | **C1** edit product | ✅ **Already worked** — verified all 9 prefill fields |
 | **C2** per-product analytics | ✅ **Implemented** — added `conversion_rate` + `leads_by_type` |
 | **C3** gallery media array | ✅ **Already worked** — `gallery[]` was always there |
 | **C4** favourites list | ✅ **Implemented** — endpoint existed but returned unusable rows |
-| **C5** buyer enquiry history | ⛔ **Not built.** Small, say the word |
+| **C5** buyer enquiry history | ✅ **Built** — `POST /api/v2/myEnquiries`, mirror of `myLeads` |
 | **D** shape contracts | ✅ **All 7 confirmed + pinned by tests** |
 | **E** wired-but-unused | ✅ **All confirmed working** |
 
-**Two code changes shipped (C2, C4). Two were already done (C1, C3). One ops task (A1),
-two decisions (B1, B2), one optional (C5).**
+**Three code changes shipped (C2, C4, C5). Two were already done (C1, C3). Two decisions
+closed (B1 schema-only, B2 admin-assigns). One ops task remains (A1).**
 
-299 tests passing.
+320 tests passing.
 
 ---
 
