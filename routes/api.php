@@ -55,6 +55,7 @@ use App\Http\Controllers\User\V2\{
     VendorAnalyticsController,
     SubscriptionController,
     VendorController,
+    BannerController,
 };
 
 /*
@@ -332,6 +333,14 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
 
     // The buyer's own enquiry history — mirror of the vendor's myLeads.
     Route::post('myEnquiries', [CatalogController::class, 'myEnquiries']);
+
+    // ── Advertising performance ─────────────────────────────────────
+    // Fire-and-forget, same contract as recordProductView. Impressions collapse per
+    // session/placement/day; clicks always count. See docs/banner-tracking-backend-ask.md §1.
+    Route::post('recordBannerImpression', [BannerController::class, 'recordBannerImpression'])
+        ->middleware('throttle:writes');
+    Route::post('recordBannerClick', [BannerController::class, 'recordBannerClick'])
+        ->middleware('throttle:writes');
 
     // ── Site Onboarding (user-submitted places) ─────────────────────
     Route::post('parseMapUrl', [SiteController::class, 'parseMapUrl']);
