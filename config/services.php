@@ -41,4 +41,10 @@ return [
         'server_key' => env('FIREBASE_SERVER_KEY'),
         'fcm_url'    => env('FIREBASE_FCM_URL', 'https://fcm.googleapis.com/fcm/send'),
     ],
+
+    'msg91' => [
+        'auth_key'  => env('MSG91_AUTH_KEY'),
+        'route'     => env('MSG91_ROUTE'),
+        'sender_id' => env('MSG91_SENDER_ID'),
+    ],
 ];

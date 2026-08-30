@@ -51,7 +51,7 @@ class HealthCheckController extends BaseController
             $key = 'healthcheck/ping.txt';
             Storage::disk('s3')->put($key, 'ok');
             Storage::disk('s3')->delete($key);
-            $results['s3'] = $this->ok('S3 upload/delete OK — bucket: ' . env('AWS_BUCKET'));
+            $results['s3'] = $this->ok('S3 upload/delete OK — bucket: ' . config('filesystems.disks.s3.bucket'));
         } catch (\Throwable $e) {
             $results['s3'] = $this->fail($e->getMessage());
             $allHealthy = false;
@@ -70,7 +70,7 @@ class HealthCheckController extends BaseController
 
         // ── 5. MSG91 (SMS) ─────────────────────────────────────────────
         try {
-            $authKey = config('services.msg91.auth_key', env('MSG91_AUTH_KEY'));
+            $authKey = config('services.msg91.auth_key');
             if (empty($authKey)) {
                 $results['msg91'] = $this->warn('MSG91_AUTH_KEY not configured');
             } else {
@@ -89,7 +89,7 @@ class HealthCheckController extends BaseController
 
         // ── 6. Google Maps Geocoding ───────────────────────────────────
         try {
-            $apiKey = env('GOOGLE_MAPS_GEOCODING_API_KEY');
+            $apiKey = config('geocoder.key');
             if (empty($apiKey)) {
                 $results['google_maps'] = $this->warn('GOOGLE_MAPS_GEOCODING_API_KEY not configured');
             } else {
@@ -116,8 +116,8 @@ class HealthCheckController extends BaseController
 
         // ── 7. Firebase FCM ────────────────────────────────────────────
         try {
-            $serverKey  = env('FIREBASE_SERVER_KEY');
-            $projectId  = env('FIREBASE_PROJECT_ID');
+            $serverKey  = config('services.firebase.server_key');
+            $projectId  = config('services.firebase.project_id');
 
             if (empty($serverKey)) {
                 $results['firebase'] = $this->warn('FIREBASE_SERVER_KEY not configured — skipping live check');
@@ -127,7 +127,7 @@ class HealthCheckController extends BaseController
                         'Authorization' => 'key=' . $serverKey,
                         'Content-Type'  => 'application/json',
                     ])
-                    ->post(env('FIREBASE_FCM_URL'), [
+                    ->post(config('services.firebase.fcm_url'), [
                         'registration_ids' => ['healthcheck_dry_run'],
                         'dry_run'          => true,
                         'notification'     => ['title' => 'ping'],

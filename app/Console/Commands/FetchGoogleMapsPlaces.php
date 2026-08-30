@@ -61,7 +61,7 @@ class FetchGoogleMapsPlaces extends Command
                 $method = "GET";
 
                 $payload = array(
-                    "key" => env('GOOGLE_MAPS_GEOCODING_API_KEY'),
+                    "key" => config('geocoder.key'),
                     "query" => $cateValue['name'] . " in " . $value['name'],
                     'radius' => 5000,
                     // "type" => "tourist_attraction"

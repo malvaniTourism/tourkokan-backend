@@ -6,8 +6,6 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use App\Models\AppVersion;
-use Illuminate\Support\Facades\Cache;
 
 class AdminAccessMiddleware
 {
@@ -19,10 +17,6 @@ class AdminAccessMiddleware
             Str::startsWith($request->route()->getPrefix(), 'admin') &&
             $user->roles()->whereIn('code', ['superadmin', 'admin'])->exists()
         ) {
-            config(['app_version' => Cache::has('app_version')
-                ? Cache::get('app_version')->version_number
-                : AppVersion::latest()->first()->version_number]);
-
             return $next($request);
         }
 

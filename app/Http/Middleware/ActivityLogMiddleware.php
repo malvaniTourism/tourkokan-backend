@@ -9,8 +9,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ActivityLogMiddleware
 {
-    private int $startTime = 0;
-
     // ── Skip these routes entirely ───────────────────────────────────────────
     private const SKIP_ROUTES = [
         'v2/healthcheck',
@@ -22,7 +20,10 @@ class ActivityLogMiddleware
 
     public function handle(Request $request, Closure $next): Response
     {
-        $this->startTime = (int) (microtime(true) * 1000);
+        // On the request, not on $this: Laravel resolves a fresh middleware instance for
+        // the terminate phase, so a property set here would read back as 0 there.
+        $request->attributes->set('log_start_time', (int) (microtime(true) * 1000));
+
         return $next($request);
     }
 
@@ -37,7 +38,10 @@ class ActivityLogMiddleware
             }
         }
 
-        $responseTimeMs = (int) (microtime(true) * 1000) - $this->startTime;
+        $startTime      = (int) $request->attributes->get('log_start_time', 0);
+        $responseTimeMs = $startTime > 0
+            ? (int) (microtime(true) * 1000) - $startTime
+            : 0;
 
         // Parse success from response body
         $success = false;
