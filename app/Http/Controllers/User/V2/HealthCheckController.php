@@ -149,6 +149,10 @@ class HealthCheckController extends BaseController
         return response()->json([
             'success'   => $allHealthy,
             'status'    => $allHealthy ? 'healthy' : 'degraded',
+            // 'cli' = Octane/RoadRunner worker, 'fpm-fcgi' = classic PHP-FPM.
+            // php_sapi_name() can't lie — it's how the PHP process was launched.
+            'runtime'   => php_sapi_name() === 'cli' ? 'octane' : php_sapi_name(),
+            'pid'       => getmypid(),
             'timestamp' => now()->toIso8601String(),
             'services'  => $results,
         ], $allHealthy ? 200 : 207);
