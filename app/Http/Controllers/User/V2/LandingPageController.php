@@ -128,37 +128,15 @@ class LandingPageController extends BaseController
                 return $city;
             });
 
+        // Single eager-load pass (categories -> sites -> gallery -> comment tree) instead of
+        // per-city lazy queries; per-parent limits ride on MySQL 8 window functions.
         $cities->load([
-            'categories:id,name,code,parent_id,icon,status,is_hot_category'
+            'categories:id,name,code,parent_id,icon,status,is_hot_category',
+            'sites' => fn($q) => $q->select('id', 'name', 'mr_name', 'parent_id')
+                ->with(['categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category', 'site:id,parent_id,name,mr_name'])
+                ->orderBy('id')->limit(5),
         ]);
-
-        foreach ($cities as $city) {
-            $city->setRelation('sites', $city->sites()->select('id', 'name', 'mr_name', 'parent_id')
-                    ->with(['categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category', 'site:id,parent_id,name,mr_name'])
-                    ->limit(5)
-                    ->get());
-            $city->setRelation('gallery', $city->gallery()
-                    ->limit(5)
-                    ->get());
-
-            $city->setRelation('comment', $city->comment()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
-                    ->limit(5)
-                    ->get()
-                    ->each(function ($comment) {
-                        $comment->setRelation('comments', $comment->comments()->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
-                                ->limit(5)
-                                ->get()
-                                ->each(function ($reply) {
-                                    $reply->setRelation('users', $reply->users()->select('id', 'name', 'email', 'profile_picture')->get());
-                                }
-                            )
-                        );
-
-                        $comment->setRelation('users', $comment->users()->select('id', 'name', 'email', 'profile_picture')->get());
-                    }
-                )
-            );
-        }
+        SiteService::loadSiteEngagement($cities);
 
         #Top 5 Hotels, Restaurants, Resorts
         $categorySites = $this->siteService->getTrending($request->filled('site_id') ? $request->site_id : null);

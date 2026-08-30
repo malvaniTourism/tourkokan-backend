@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Favourite;
 use App\Models\Site;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -47,35 +48,64 @@ class SiteService
                     return $site;
                 });
 
-            $sites->load(['categories:id,name,code,parent_id,icon,status,is_hot_category']);
-
-            foreach ($sites as $site) {
-                $site->setRelation('gallery', $site->gallery()->limit(5)->get());
-                $site->setRelation('comment', $site->comment()
-                    ->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
-                    ->limit(5)
-                    ->get()
-                    ->each(function ($comment) {
-                        $comment->setRelation('comments', $comment->comments()
-                            ->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
-                            ->limit(5)
-                            ->get()
-                            ->each(fn($reply) => $reply->setRelation(
-                                'users',
-                                $reply->users()->select('id', 'name', 'email', 'profile_picture')->get()
-                            ))
-                        );
-                        $comment->setRelation('users', $comment->users()->select('id', 'name', 'email', 'profile_picture')->get());
-                    })
-                );
-            }
-
             if ($sites->isNotEmpty()) {
                 $result[Str::plural($code)] = $sites;
             }
         }
 
+        // One eager-load pass over every trending site at once (instead of per-site
+        // queries inside the loop). MySQL 8 window functions enforce the per-parent limits.
+        $merged = new EloquentCollection(collect($result)->flatten(1));
+        $merged->load(['categories:id,name,code,parent_id,icon,status,is_hot_category']);
+        self::loadSiteEngagement($merged);
+
         return $result;
+    }
+
+    /**
+     * Eager-load gallery/comment trees (with per-parent limits) onto a set of sites,
+     * preserving the exact response shape of the old per-site lazy queries.
+     */
+    public static function loadSiteEngagement(EloquentCollection $sites, int $galleryLimit = 5): void
+    {
+        if ($sites->isEmpty()) {
+            return;
+        }
+
+        $sites->load([
+            'gallery' => fn($q) => $q->orderBy('id')->limit($galleryLimit),
+            'comment' => fn($q) => $q
+                ->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
+                ->orderBy('id')->limit(5),
+            // comments before users so the serialized key order matches the old output
+            'comment.comments' => fn($q) => $q
+                ->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')
+                ->orderBy('id')->limit(5),
+            'comment.comments.users:id,name,email,profile_picture',
+            'comment.users:id,name,email,profile_picture',
+        ]);
+
+        // The old code called ->get() on the belongsTo users(), which yields a
+        // collection (serialized as an array). Eager loading yields a single model
+        // (serialized as an object) — wrap it back into a collection so the JSON
+        // contract stays identical.
+        foreach ($sites as $site) {
+            foreach ($site->comment as $comment) {
+                foreach ($comment->comments as $reply) {
+                    self::wrapUsersRelation($reply);
+                }
+                self::wrapUsersRelation($comment);
+            }
+        }
+    }
+
+    private static function wrapUsersRelation($comment): void
+    {
+        $user = $comment->getRelation('users');
+
+        if (!$user instanceof EloquentCollection) {
+            $comment->setRelation('users', new EloquentCollection($user ? [$user] : []));
+        }
     }
 
     /**
@@ -123,11 +153,13 @@ class SiteService
                 ->get();
         }
 
-        $hotSites->load(['categories:id,name,code,parent_id,icon,status,is_hot_category']);
+        $hotSites->load([
+            'categories:id,name,code,parent_id,icon,status,is_hot_category',
+            'gallery' => fn($q) => $q->orderBy('id')->limit(3),
+        ]);
 
         foreach ($hotSites as $site) {
             $site->rating_avg_rate = number_format($site->rating_avg_rate, 1);
-            $site->setRelation('gallery', $site->gallery()->limit(3)->get());
         }
 
         return $hotSites;
