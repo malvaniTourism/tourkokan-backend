@@ -124,7 +124,7 @@ class LandingPageController extends BaseController
             ->latest()
             ->get()
             ->map(function ($city) {
-                $city->rating_avg_rate = number_format($city->rating_avg_rate, 1);
+                $city->rating_avg_rate = number_format((float) $city->rating_avg_rate, 1);
                 return $city;
             });
 

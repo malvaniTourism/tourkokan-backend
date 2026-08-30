@@ -44,7 +44,7 @@ class SiteService
                 ->limit(5)
                 ->get()
                 ->map(function ($site) {
-                    $site->rating_avg_rate = number_format($site->rating_avg_rate, 1);
+                    $site->rating_avg_rate = number_format((float) $site->rating_avg_rate, 1);
                     return $site;
                 });
 
@@ -159,7 +159,7 @@ class SiteService
         ]);
 
         foreach ($hotSites as $site) {
-            $site->rating_avg_rate = number_format($site->rating_avg_rate, 1);
+            $site->rating_avg_rate = number_format((float) $site->rating_avg_rate, 1);
         }
 
         return $hotSites;
