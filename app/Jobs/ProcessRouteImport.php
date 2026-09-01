@@ -20,14 +20,18 @@ class ProcessRouteImport implements ShouldQueue
 
     protected $data;
 
+    /** Per-file error log so each taluka's failures stay separate. */
+    protected $errorFile;
+
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($data)
+    public function __construct($data, $errorFile = 'error_routes.csv')
     {
-        $this->data = $data;
+        $this->data      = $data;
+        $this->errorFile = $errorFile;
     }
 
     /**
@@ -44,7 +48,7 @@ class ProcessRouteImport implements ShouldQueue
 
                 if (!$sourceSite) {
                     $errors[] = ['route_no' => $value['route_no'], 'from_stop_name' => $value['from_stop_name']];
-                    $this->writeToCsv('error_routes.csv', $errors);
+                    $this->writeToCsv($this->errorFile, $errors);
                     $sourceSite = $this->addSite($value['from_stop_name']);
                 }
 
@@ -52,7 +56,7 @@ class ProcessRouteImport implements ShouldQueue
 
                 if (!$destinationSite) {
                     $errors[] = ['route_no' => $value['route_no'], 'till_stop_name' => $value['till_stop_name']];
-                    $this->writeToCsv('error_routes.csv', $errors);
+                    $this->writeToCsv($this->errorFile, $errors);
                     $destinationSite = $this->addSite($value['till_stop_name']);
                 }
 
@@ -60,16 +64,16 @@ class ProcessRouteImport implements ShouldQueue
 
                 if (!$stopSite) {
                     $errors[] = ['route_no' => $value['route_no'], 'bstop_name' => $value['bstop_name']];
-                    $this->writeToCsv('error_routes.csv', $errors);
+                    $this->writeToCsv($this->errorFile, $errors);
                     $stopSite = $this->addSite($value['bstop_name']);
                 }
 
                 if (!$sourceSite || !$destinationSite || !$stopSite) {
-                    $this->writeToCsv('error_routes.csv', $errors);
+                    $this->writeToCsv($this->errorFile, $errors);
                     continue;
                 }
 
-                $route = Route::where([['name', $value['route_name'], 'route_no' => $value['route_no']]])->first();
+                $route = Route::where('route_no', $value['route_no'])->first();
 
                 if (!$route) {
                     $route = array(

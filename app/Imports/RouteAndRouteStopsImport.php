@@ -19,6 +19,15 @@ use Maatwebsite\Excel\Concerns\WithChunkReading;
 class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChunkReading
 {
 
+    /**
+     * @param  string  $errorFile  per-taluka error log under storage/app
+     * @param  bool    $sync       run inline (see failures immediately) instead of queueing
+     */
+    public function __construct(
+        protected string $errorFile = 'error_routes.csv',
+        protected bool $sync = true,
+    ) {}
+
     public function chunkSize(): int
     {
         return 100; // Adjust the chunk size as needed
@@ -32,7 +41,9 @@ class RouteAndRouteStopsImport implements ToCollection, WithHeadingRow, WithChun
         $dataChunks = $data->chunk(50); // Adjust the chunk size as needed
 
         foreach ($dataChunks as $chunk) {
-            ProcessRouteImport::dispatch($chunk);
+            $this->sync
+                ? ProcessRouteImport::dispatchSync($chunk, $this->errorFile)
+                : ProcessRouteImport::dispatch($chunk, $this->errorFile);
         }
     }
 }

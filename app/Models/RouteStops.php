@@ -17,6 +17,7 @@ class RouteStops extends Model
      * @var string[]
      */
     protected $fillable = [
+        'route_no',
         'serial_no',
         'route_id',
         'site_id',
@@ -24,6 +25,7 @@ class RouteStops extends Model
         'dept_time',
         'total_time',
         'delayed_time',
+        'distance',
         'meta_data'
     ];
 
