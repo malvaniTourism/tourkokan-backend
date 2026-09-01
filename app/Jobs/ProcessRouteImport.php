@@ -12,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use DateTime;
 use Illuminate\Support\Facades\Storage;
 
 class ProcessRouteImport implements ShouldQueue
@@ -76,6 +77,11 @@ class ProcessRouteImport implements ShouldQueue
                 $route = Route::where('route_no', $value['route_no'])->first();
 
                 if (!$route) {
+                    // Trip columns only exist on the taluka CSVs; the older
+                    // AllRoutesWithStops export has none, so every one is optional.
+                    $startTime = $this->toTime(isValidReturn($value, 'departure_time'));
+                    $endTime   = $this->toTime(isValidReturn($value, 'arrival_time'));
+
                     $route = array(
                         'route_no' => $value['route_no'],
                         'source_place_id' => $sourceSite->id,
@@ -83,12 +89,15 @@ class ProcessRouteImport implements ShouldQueue
                         'bus_type_id' => BusType::where('type', 'Ordinary Express')->first()->id,
                         'name' => $value['route_name'],
                         'description' => null,
-                        'meta_data' => null,
-                        'start_time' => 0, // $start_time,
-                        'end_time' => 0, // $end_time,
-                        'total_time' => 0, // $end_time->diff($start_time)->format('%H:%i:%s'),
-                        'delayed_time' => 0, // $faker->time(),
-                        'distance' => isValidReturn($value, 'dist_km'),
+                        'meta_data' => $this->tripMeta($value),
+                        'start_time' => $startTime ?? '00:00:00',
+                        'end_time' => $endTime ?? '00:00:00',
+                        'total_time' => $this->duration($startTime, $endTime),
+                        'delayed_time' => '00:00:00',
+                        'working_days' => isValidReturn($value, 'frequency'),
+                        // Trip distance (whole route) beats dist_km, which is the
+                        // running total at whichever stop happened to come first.
+                        'distance' => isValidReturn($value, 'distance_km') ?? isValidReturn($value, 'dist_km'),
                     );
 
                     $route = Route::create($route);
@@ -125,6 +134,64 @@ class ProcessRouteImport implements ShouldQueue
             logger($th->getMessage());
             throw $th;
         }
+    }
+
+    /**
+     * "09:30" / "9:30" -> "09:30:00"; null when absent or unparseable.
+     *
+     * Hand-typed duty sheets use whatever separator the typist hit — "9..05",
+     * "9.05", "9,05" all appear. Treat any run of . , ; : as one separator
+     * rather than discarding the row, which would silently zero start_time.
+     */
+    protected function toTime($raw)
+    {
+        if (!$raw) {
+            return null;
+        }
+
+        $normalised = preg_replace('/[.,;:]+/', ':', trim($raw));
+
+        if (!preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $normalised, $m)) {
+            return null;
+        }
+
+        if ($m[1] > 23 || $m[2] > 59) {
+            return null;
+        }
+
+        return sprintf('%02d:%02d:%02d', $m[1], $m[2], $m[3] ?? 0);
+    }
+
+    /** Journey length; rolls past midnight when arrival precedes departure. */
+    protected function duration($start, $end)
+    {
+        if (!$start || !$end) {
+            return '00:00:00';
+        }
+
+        $from = new DateTime($start);
+        $to   = new DateTime($end);
+
+        if ($to < $from) {
+            $to->modify('+1 day');
+        }
+
+        return $from->diff($to)->format('%H:%I:%S');
+    }
+
+    /** Trip attributes the routes table has no column for. */
+    protected function tripMeta($value)
+    {
+        $meta = array_filter([
+            'trip_type'   => isValidReturn($value, 'trip_type'),
+            'school_trip' => isValidReturn($value, 'school_trip'),
+            'remark'      => isValidReturn($value, 'remark'),
+            'rest_remark' => isValidReturn($value, 'rest_remark'),
+            'source_mr'   => isValidReturn($value, 'source_marathi'),
+            'dest_mr'     => isValidReturn($value, 'destination_marathi'),
+        ], fn($v) => $v !== null && $v !== '');
+
+        return $meta ? json_encode($meta, JSON_UNESCAPED_UNICODE) : null;
     }
 
     protected function writeToCsv($filename, $data)
