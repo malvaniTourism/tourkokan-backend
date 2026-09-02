@@ -16,7 +16,14 @@ class BuildRouteCsv extends Command
                             {--taluka= : Output name; defaults to the first word of the source filename}
                             {--master=excels/AllRoutesWithStopsCSV.csv : Master stop export}';
 
-    protected $description = 'Build excels/Routes/Final/<taluka>_prod_routes.csv from a taluka duty sheet';
+    protected $description = 'LOCAL ONLY: build excels/Routes/Final/<taluka>_prod_routes.csv from a taluka duty sheet';
+
+    /*
+     * Run this on a developer machine and commit the result. It needs the
+     * 12 MB master export and the raw duty sheets, neither of which the
+     * servers use; they run routes:import against the committed CSV so
+     * every environment seeds byte-identical data.
+     */
 
     /** Raw duty sheets live in the repo so the pipeline is reproducible. */
     private const SOURCE_DIR = 'excels/Routes/Source';
@@ -112,6 +119,39 @@ class BuildRouteCsv extends Command
         }
 
         return ['chosen' => $chosen, 'blank' => $blank, 'total' => $total, 'rescued' => count($rescued)];
+    }
+
+    /**
+     * Depot sheets are hand-built and don't share a column vocabulary: Devgad
+     * has Remark / School_Trip / Rest_Remark, Vengurla folds all three into
+     * Halt_Note. Read whichever the sheet actually has.
+     *
+     * @param  array<string, string>  $trip
+     */
+    private function tripValue(array $trip, string $canonical): string
+    {
+        // Key presence, not emptiness: a sheet that HAS the column is
+        // authoritative, and a blank there means blank — never inferred.
+        if (array_key_exists($canonical, $trip)) {
+            return $trip[$canonical];
+        }
+
+        $aliases = [
+            'Remark'      => 'Halt_Note',
+            'Rest_Remark' => 'Halt_Note',
+        ];
+
+        if (isset($aliases[$canonical]) && array_key_exists($aliases[$canonical], $trip)) {
+            return $trip[$aliases[$canonical]];
+        }
+
+        // Only where the sheet has no School_Trip column at all: these sheets
+        // mark school runs with शालेय in the halt note.
+        if ($canonical === 'School_Trip') {
+            return str_contains($trip['Halt_Note'] ?? '', 'शालेय') ? 'SCHOOL' : '';
+        }
+
+        return '';
     }
 
     /** Accept a bare taluka name, a repo-relative path, or an absolute path. */
@@ -213,7 +253,7 @@ class BuildRouteCsv extends Command
 
             fputcsv($out, array_merge(
                 array_pad(array_slice($row, 0, count($cols)), count($cols), ''),
-                array_map(fn ($k) => $t[$k] ?? '', $extra)
+                array_map(fn ($k) => $this->tripValue($t, $k), $extra)
             ));
             $rows++;
         }

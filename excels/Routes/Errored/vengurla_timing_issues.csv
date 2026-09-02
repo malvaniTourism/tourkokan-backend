@@ -1,0 +1,10 @@
+﻿route_no,route_name,stop_span_km,source_minutes,implied_kmh,problem
+87292,"Kiranpani To Satarda",35,30,70,"stop distances exceed the trip distance — stop list may include the return leg"
+148437,"Nigadi To Vengurle Via Tulas Jaitir Mandir",436,365,72,"stop distances exceed the trip distance — stop list may include the return leg"
+148442,"Vengurle To Nigadi Via Tulas Jaitir Mandir",436,285,92,"stop distances exceed the trip distance — stop list may include the return leg"
+79531,"Vengurle To Chinchwad Via Tarla",427.3,285,90,"stop distances exceed the trip distance — stop list may include the return leg"
+81002,"Chinchwad To Vengurle Via Tarla",427.3,360,71,"stop distances exceed the trip distance — stop list may include the return leg"
+1330,"Nigadi To Vengurle Via Ajara",439.6,365,72,"stop distances exceed the trip distance — stop list may include the return leg"
+409,"Vengurle To Nigadi Via Ajara",439.6,290,91,"stop distances exceed the trip distance — stop list may include the return leg"
+40516,"Vengurle To Akkalkot Via Gbd",471.9,285,99,"stop distances exceed the trip distance — stop list may include the return leg"
+2312,"Aronda To Mumbai",542.1,430,76,"stop distances exceed the trip distance — stop list may include the return leg"

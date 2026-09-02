@@ -17,7 +17,7 @@ class ImportRoutes extends Command
                             {--queue : Dispatch to the queue instead of running inline}
                             {--no-times : Skip estimating per-stop arrival/departure times}';
 
-    protected $description = 'Import a taluka route CSV (excels/Routes/Final) into routes + route_stops';
+    protected $description = 'Seed routes + route_stops from a committed excels/Routes/Final CSV (run on every environment)';
 
     private const DIR = 'excels/Routes/Final';
 

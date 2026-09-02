@@ -1,0 +1,10 @@
+﻿reason,Route_No,Old_Route_No,Duty_No,Source_English,Destination_English,Departure_Time
+"route_no not in master",12685,,58,Sawantwadi,Vengurla,15:00
+"route_no not in master",154277,,71,Mumbai,"Chiplun (Shivajinagar)",16:25
+"route_no not in master",67747R,,73,Vengurla,"Wadkhol Vengurla",16:55
+"no route number",,,35,Sawantwadi,Vengurla,16:40
+"no route number",,,42/1,Vengurla,Aronda,13:00
+"no route number",,,43,Kudal,Vengurla,08:15
+"no route number",,,65,Vengurla,Shiroda,16:20
+"no route number",,,new,Vengurla,Korjai,07:40
+"no route number",,,new,Korjai,Vengurla,08:55
