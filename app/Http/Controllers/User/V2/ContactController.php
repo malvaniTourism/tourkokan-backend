@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User\V2;
 
 use App\Models\Contact;
 use App\Services\ContactService;
+use App\Services\SpamGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -11,8 +12,10 @@ use App\Http\Controllers\BaseController as BaseController;
 
 class ContactController extends BaseController
 {
-    public function __construct(protected ContactService $contactService)
-    {
+    public function __construct(
+        protected ContactService $contactService,
+        protected SpamGuard $spamGuard,
+    ) {
     }
     /**
      * Display a listing of the resource.
@@ -59,6 +62,20 @@ class ContactController extends BaseController
 
         if ($validator->fails()) {
             return $this->sendError($validator->errors(), '', 200);
+        }
+
+        // Bot/spam filtering. On a hit we DON'T persist, but we return the exact
+        // same success response a real submission gets — so bots receive no
+        // signal that they were caught and won't adapt. Logged for visibility.
+        if ($reason = $this->spamGuard->reason($request)) {
+            Log::info('[addQuery] Dropped suspected spam', [
+                'reason' => $reason,
+                'ip'     => $request->ip(),
+                'name'   => $request->input('name'),
+                'email'  => $request->input('email'),
+                'phone'  => $request->input('phone'),
+            ]);
+            return $this->sendResponse([], 'Query submited successfully...!');
         }
 
         $contact = array(

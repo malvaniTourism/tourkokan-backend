@@ -69,6 +69,12 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Public query/enquiry submissions: 5/min per IP — bot-spam protection.
+        // Humans never submit contact forms this fast; bots do.
+        RateLimiter::for('queries', function (Request $request) {
+            return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+        });
+
         // Model observers
         Event::observe(EventObserver::class);
 

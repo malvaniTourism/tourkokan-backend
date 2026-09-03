@@ -197,7 +197,7 @@ use App\Http\Controllers\User\V2\{
 
 Route::group(['middleware' => 'premiddleware', 'prefix' => 'v2'], function ($router) {
     Route::get('roleDD', [RolesController::class, 'roleDD']);
-    Route::post('addGuestQuery', [ContactController::class, 'addQuery']);
+    Route::post('addGuestQuery', [ContactController::class, 'addQuery'])->middleware('throttle:queries');
     Route::post('deleteMyAccount', [AuthController::class, 'deleteMyAccount']);
     Route::post('eventTypeDD', [EventTypeController::class, 'index']);
     Route::get('advertisingPackages', function () {
@@ -241,9 +241,9 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('addDeleteFavourite', [FavouriteController::class, 'addDeleteFavourite']);
 
     Route::post('getQueries', [ContactController::class, 'getQueries']);
-    Route::post('addQuery', [ContactController::class, 'addQuery']);
+    Route::post('addQuery', [ContactController::class, 'addQuery'])->middleware('throttle:queries');
     Route::post('getQuery', [ContactController::class, 'getQuery']);
-    Route::post('updateQuery', [ContactController::class, 'updateQuery']);
+    Route::post('updateQuery', [ContactController::class, 'updateQuery'])->middleware('throttle:queries');
     Route::post('deleteQuery', [ContactController::class, 'deleteQuery']);
 
     Route::post('listcategories', [CategoryController::class, 'listcategories']);
