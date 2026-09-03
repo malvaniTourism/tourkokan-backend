@@ -104,6 +104,37 @@ class RouteDepartureOrderTest extends ApiTestCase
         );
     }
 
+    public function test_routes_with_no_recorded_time_sort_last_not_first(): void
+    {
+        // A duty sheet with no usable departure imports as 00:00:00, not NULL, because
+        // routes.start_time is NOT NULL. Sorted naively that reads as a midnight bus and
+        // leads every result, pushing the real 05:00 departures below it.
+        $this->makeRoute('Unknown time', '00:00:00', '00:00:00');
+        $this->makeRoute('Early bus',    '05:00:00', '05:10:00');
+        $this->makeRoute('Later bus',    '09:00:00', '09:10:00');
+
+        $names = collect($this->assertApiSuccess($this->search())->json('data.data'))
+            ->pluck('name')->all();
+
+        $this->assertSame(['Early bus', 'Later bus', 'Unknown time'], $names,
+            'A 00:00:00 start time means "time unknown" and must sort last, not as midnight.');
+    }
+
+    public function test_unknown_boarding_time_sorts_last_when_searching_from_a_stop(): void
+    {
+        $this->makeRoute('No time at stop', '06:00:00', '00:00:00');
+        $this->makeRoute('Boards at 07:00', '08:00:00', '07:00:00');
+        $this->makeRoute('Boards at 10:00', '05:00:00', '10:00:00');
+
+        $names = collect($this->assertApiSuccess($this->search([
+            'source_place_id'      => $this->source->id,
+            'destination_place_id' => $this->destination->id,
+        ]))->json('data.data'))->pluck('name')->all();
+
+        $this->assertSame(['Boards at 07:00', 'Boards at 10:00', 'No time at stop'], $names,
+            'An unknown departure at the boarding stop must sort last, not as midnight.');
+    }
+
     public function test_the_source_departure_time_is_returned(): void
     {
         $this->makeRoute('Morning', '06:00:00', '09:15:00');

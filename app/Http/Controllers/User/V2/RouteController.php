@@ -55,8 +55,10 @@ class RouteController extends BaseController
                 DB::raw('(SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id) AS distance')
             )
             // A timetable reads in departure order; without this the list came back in
-            // whatever order the engine happened to return.
-            ->orderByRaw('routes.start_time IS NULL, routes.start_time ASC, routes.id ASC')
+            // whatever order the engine happened to return. Routes whose duty sheet had
+            // no usable times import as 00:00:00 rather than NULL, so both count as
+            // "time unknown" and sort last instead of leading the list as midnight buses.
+            ->orderByRaw("routes.start_time IS NULL OR routes.start_time = '00:00:00', routes.start_time ASC, routes.id ASC")
             ->paginateSafe();
 
         return $this->sendResponse($routes, 'Routes successfully Retrieved...!');
@@ -126,11 +128,14 @@ class RouteController extends BaseController
             ))->addBinding([$sourceId], 'select');
         }
 
-        // Stops with no recorded time sort last rather than leading the list.
+        // Stops with no recorded time sort last rather than leading the list. An
+        // unknown time arrives as 00:00:00 as often as NULL — route_stops defaults
+        // to it, and routes whose duty sheet had no times import that way — so both
+        // are treated as unknown instead of sorting as midnight.
         $query->orderByRaw(
             $sourceId
-                ? 'source_dept_time IS NULL, source_dept_time ASC, routes.id ASC'
-                : 'routes.start_time IS NULL, routes.start_time ASC, routes.id ASC'
+                ? "source_dept_time IS NULL OR source_dept_time = '00:00:00', source_dept_time ASC, routes.id ASC"
+                : "routes.start_time IS NULL OR routes.start_time = '00:00:00', routes.start_time ASC, routes.id ASC"
         );
 
         $routes = $query->paginateSafe();
