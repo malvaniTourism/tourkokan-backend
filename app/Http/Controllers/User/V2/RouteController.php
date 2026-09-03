@@ -54,6 +54,9 @@ class RouteController extends BaseController
                 'delayed_time',
                 DB::raw('(SELECT MAX(distance) FROM route_stops WHERE route_id = routes.id) AS distance')
             )
+            // A timetable reads in departure order; without this the list came back in
+            // whatever order the engine happened to return.
+            ->orderByRaw('routes.start_time IS NULL, routes.start_time ASC, routes.id ASC')
             ->paginateSafe();
 
         return $this->sendResponse($routes, 'Routes successfully Retrieved...!');
@@ -96,6 +99,8 @@ class RouteController extends BaseController
             DB::raw('(SELECT COUNT(*) FROM route_stops WHERE route_id = routes.id) AS route_stops_count')
         );
 
+        $sourceId = $request->source_place_id;
+
         if ($request->filled('source_place_id') && $request->filled('destination_place_id')) {
             // Self-join on route_stops: find routes where source serial_no < destination serial_no
             $routeIds = DB::table('route_stops as rs1')
@@ -108,6 +113,25 @@ class RouteController extends BaseController
 
             $query->whereIn('id', $routeIds);
         }
+
+        // Departure is ordered from the stop the traveller actually boards at, not from the
+        // route's origin. A bus that starts at 06:00 two districts away may reach this stop
+        // after one that started at 08:00 nearby, so ordering on routes.start_time would show
+        // a timetable in the wrong order for anyone boarding mid-route.
+        if ($sourceId) {
+            $query->addSelect(DB::raw(
+                '(SELECT rs.dept_time FROM route_stops rs
+                   WHERE rs.route_id = routes.id AND rs.site_id = ?
+                   ORDER BY rs.serial_no LIMIT 1) AS source_dept_time'
+            ))->addBinding([$sourceId], 'select');
+        }
+
+        // Stops with no recorded time sort last rather than leading the list.
+        $query->orderByRaw(
+            $sourceId
+                ? 'source_dept_time IS NULL, source_dept_time ASC, routes.id ASC'
+                : 'routes.start_time IS NULL, routes.start_time ASC, routes.id ASC'
+        );
 
         $routes = $query->paginateSafe();
 
