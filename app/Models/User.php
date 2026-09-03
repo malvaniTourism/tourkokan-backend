@@ -73,7 +73,11 @@ class User extends Authenticatable implements JWTSubject
         'name'              => 'encrypted',
         'email'             => 'encrypted',
         'mobile'            => 'encrypted',
-        'dob'               => 'date:Y-m-d',
+        // Encrypted like the rest: the migration and EncryptExistingUsers both
+        // encrypt dob, so a date cast here would only ever see ciphertext.
+        // Values are stored as the Y-m-d strings the API validates, so the
+        // response shape is unchanged.
+        'dob'               => 'encrypted',
         'gender'            => 'encrypted',
     ];
 

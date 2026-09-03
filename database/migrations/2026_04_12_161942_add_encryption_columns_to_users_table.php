@@ -11,6 +11,34 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Widen BEFORE encrypting. Crypt::encryptString turns a 10-digit mobile
+        // into ~200 characters and a 34-character email into 256 — mobile was
+        // varchar(16) and email/name varchar(255), so MySQL silently truncated
+        // the ciphertext and the plaintext was gone for good.
+        //
+        // The unique indexes have to go first: MySQL cannot index TEXT without a
+        // prefix length, and they stopped meaning anything the moment these
+        // columns held ciphertext — encryption uses a random IV, so the same
+        // address encrypts differently every time and never collides. Real
+        // uniqueness now belongs on the deterministic *_hash columns.
+        foreach ([['email', 'users_email_unique'], ['mobile', 'users_mobile_unique']] as [$column, $index]) {
+            if ($this->indexExists('users', $index)) {
+                Schema::table('users', fn (Blueprint $table) => $table->dropUnique($index));
+            }
+        }
+
+        // dob is in the encrypt list below but was left a DATE column: MySQL
+        // stores '0000-00-00' for ciphertext in non-strict mode and aborts the
+        // migration in strict mode. It is display-only — never sorted or
+        // filtered — so TEXT costs nothing and keeps the date readable.
+        Schema::table('users', function (Blueprint $table) {
+            $table->text('name')->nullable()->change();
+            $table->text('email')->nullable()->change();
+            $table->text('mobile')->nullable()->change();
+            $table->text('gender')->nullable()->change();
+            $table->text('dob')->nullable()->change();
+        });
+
         Schema::table('users', function (Blueprint $table) {
             $table->string('email_hash')->nullable()->after('email')
                   ->comment('HMAC-SHA256 of email — used for WHERE lookups');
@@ -63,6 +91,13 @@ return new class extends Migration
             $table->dropUnique(['mobile_hash']);
             $table->dropColumn(['email_hash', 'mobile_hash']);
         });
+    }
+
+    /** Environments differ on whether these indexes were ever created. */
+    private function indexExists(string $table, string $index): bool
+    {
+        return collect(DB::select("SHOW INDEX FROM `{$table}`"))
+            ->contains(fn ($row) => $row->Key_name === $index);
     }
 
     private function isEncrypted(string $value): bool
