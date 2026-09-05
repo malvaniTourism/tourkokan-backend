@@ -1,0 +1,581 @@
+﻿Duty_No,Trip_No_in_Duty,Route_No,Trip_Code,Source_Marathi,Source_English,Destination_Marathi,Destination_English,Via_Stops,Distance_KM,Departure_Time,Arrival_Time,Trip_Type,Frequency,Rest_Remark,Duty_Total_KM,Spread_Over,Steering_Duty,Remark,School_Trip,Bus_Class,Excel_Row_Ref
+1,1,16566,3464,निगडी,Nigadi,कोल्हापुर,Kolhapur,CHINCHWAD PUNE STN SATARA KARAD,257,20:30,02:45,NOBL,,,,,,,,LD,4
+1,1,,3464,कोल्हापुर,Kolhapur,सावंतवाडी,Sawantwadi,Amboli NIPANI GADHINGLAZ AJARA AMBOLI,149.6,03:00,07:15,NOBL,,,,,,,,LD,5
+2,5,45352,64379,सावंतवाडी,Sawantwadi,पणजी,Panjim,semi BANDA PATRADEVI MHAPSA,61.7,08:45,10:45,NOBL,,,,,,,,SEMI,7
+2,6,11082,64380,पणजी,Panjim,सावंतवाडी,Sawantwadi,MHAPSA PATRADEVI BANDA,61.7,11:30,13:30,NOBL,,,,,,,,SEMI,8
+,3,40687,3463,सावंतवाडी,Sawantwadi,कोल्हापुर,Kolhapur,Amboli AMBOLI AJRA GADHINGLAZ NIPANI,149.6,18:45,23:20,NOBL,,,,,,,,LD,10
+,1,,3463,कोल्हापुर,Kolhapur,निगडी,Nigadi,KARAD  SATARA PUNE STN CINCHWAD,257,23:45,05:30,NOBL,,,,,,,,LD,11
+3,1,,4509,सावंतवाडी,Sawantwadi,रत्नागिरी,Ratnagiri,KUDAL KANKAVALI TALERE RAJAPUR LANJA PALI HATKHAMBA,184.8,10:00,15:30,NOBL,,,,,,,,MLD,13
+4,1,11100,3418,रत्नागिरी,Ratnagiri,,Sawantwadi,HATKHAMBA PALI LANJA RAJAPUR KANKAVALI KUDAL,184.8,05:30,10:00,NOBL,,,,,,Limited Stops upto Swd,,MLD,15
+,1,,3418,,Ratnagiri Sawantwadi,पणजी,Panjim,BANDA PATRADEVI MHAPSA,61.7,10:45,12:45,OPN,,,,,,,,SEMI,17
+,2,11082,64755,पणजी,Panjim,सावंतवाडी,Sawantwadi,MHAPSA PATRADEVI BANDA,61.7,15:00,17:00,OPN,,,,,,,,SEMI,18
+5,1,45352,64070,सावंतवाडी,Sawantwadi,पणजी,Panjim,semi BANDA PATRADEVI MHAPSA,61.7,06:15,08:15,OPN,,,,,,,,SEMI,20
+5,2,11082,64071,पणजी,Panjim,सावंतवाडी,Sawantwadi,,61.7,,10:35,,,,,,,,,SEMI,21
+,2,116982,3419,पणजी,Panjim,,Sawantwadi,MHAPSA PATRADEVI BANDA,61.7,08:45,10:30,OPN,,,,,,,,SEMI,23
+6,1,45352,64359,सावंतवाडी,Sawantwadi,पणजी,Panjim,semi BANDA PATRADEVI MHAPSA,61.7,10:00,12:00,NOBL,,,,,,,,SEMI,25
+6,2,11082,64360,पणजी,Panjim,सावंतवाडी,Sawantwadi,MHAPSA PATRADEVI BANDA,61.7,12:15,14:15,NOBL,,,,,,,,SEMI,26
+6,1,45352,64424,सावंतवाडी,Sawantwadi,पणजी,Panjim,semi BANDA PATRADEVI MHAPSA,61.7,14:15,,NOBL,,,,,,,,SEMI,27
+6,2,11082,64425,पणजी,Panjim,सावंतवाडी,Sawantwadi,semi MHAPSA PATRADEVI BANDA,61.7,16:45,18:45,NOBL,,,,,,,,SEMI,28
+7,1,116986,3420,,Ganpatipule,पणजी,Panjim,BANDA PATRADEVI MHAPSA,61.7,13:15,15:15,OPN,,,,,,,,SEMI,30
+7,2,11082,64763,पणजी,Panjim,सावंतवाडी,Sawantwadi,MHAPSA PATRADEVI BANDA,61.7,15:45,17:45,OPN,,,,,,,,SEMI,31
+8,1,40686,3479,सावंतवाडी,Sawantwadi,निगडी,Nigadi,Amboli AMBOLI AJARA UTTUR NIPANI KOLHAPUR KARAD SATARA PUNE STN,406.7,07:15,18:00,NOBL,,,,,,,,LD,35
+,1,16566,3412,निगडी,Nigadi,कोल्हापुर,Kolhapur,SATARA KARAD,257,19:15,22:50,NOBL,,,,,,,,LD,37
+,1,,3412,कोल्हापुर,Kolhapur,सावंतवाडी,Sawantwadi,Amboli NIPANI UTTUR AJARA AMBOLI,149.6,23:15,03:30,NOBL,,,,,,,,LD,38
+9,1,80542,3480,निगडी,Nigadi,सावंतवाडी,Sawantwadi,Amboli PUNE STN SATARA KARAD KOLHAPUR NIPANI UTTUR AJARA AMBOLI,406.7,06:30,16:30,NOBL,,,,,,,,LD,40
+10,1,404,3421,सावंतवाडी,Sawantwadi,कोल्हापुर,Kolhapur,Amboli AMBOLI AJARA UTTUR NIPANI,149.6,09:00,01:33,NOBL,,,,,,,,LD,41
+10,1,,3421,कोल्हापुर,Kolhapur,तुळजापूर,Tuljapur,,302.2,14:00,02:05,NOBL,,,,,,,,,42
+11,1,11246,3422,तुळजापूर,Tuljapur,कोल्हापुर,Kolhapur,,302.2,10:00,,NOBL,,,,,,,,,44
+11,1,,3422,कोल्हापुर,Kolhapur,सावंतवाडी,Sawantwadi,Amboli NIPANI UTTUR AJARA AMBOLI,149.6,17:00,21:05,NOBL,,,,,,,,LD,45
+12,1,11123,3415,सावंतवाडी,Sawantwadi,दापोली,Dapoli,Deorukh KUDAL KANKAVALI RAJAPUR  BHAMBED SAKHARPA DEORUKH CHIPLUN KHED,315.1,08:00,17:00,NOBL,,,,,,,,LD,47
+13,1,39376,3416,दापोली,Dapoli,सावंतवाडी,Sawantwadi,Hatkhamba KHED CHIPLUN HATKHAMBA LANJA RAJAPUR KANKAVALI KUDAL,315.1,08:00,17:00,NOBL,,,,,,,,LD,50
+,3,11148,64396,सावंतवाडी,Sawantwadi,कुडाळ,Kudal St Depot,,22.2,17:10,17:50,NOBL,,,,,,,,ORD,52
+,4,18541,64397,कुडाळ,Kudal St Depot,सावंतवाडी,Sawantwadi,,22.2,18:05,18:45,NOBL,,,,,,,,ORD,53
+14,3,40756,3413,सावंतवाडी,Sawantwadi,पुणेस्टेशन,Pune Rly. Stn.,Amboli AMBOLI AJARA UTTUR NIPANI KOLHAPUR KARAD SATAR,384,08:30,18:30,NOBL,,,,,,,,LD,55
+15,1,463,3414,पुणेस्टेशन,Pune Rly. Stn.,सावंतवाडी,Sawantwadi,Amboli SATARA KARAD KOLHAPUR NIPANI UTTUR AJARA AMBOLI,384,03:45,13:40,NOBL,,,,,,,,LD,57
+,1,80540,3411,सावंतवाडी,Sawantwadi,कोल्हापुर,Kolhapur,Amboli AMBOLI AJARA UTTUR NIPANI,149.6,17:00,21:35,NOBL,,,,,,,,LD,59
+,1,,3411,कोल्हापुर,Kolhapur,निगडी,Nigadi,KARAD SATARA,257,21:50,,NOBL,,,,,,,,LD,60
+16,1,10919,4504,कोल्हापुर,Kolhapur,सावंतवाडी,Sawantwadi,Gaganbawada GAGANBAWADA TALERE KANKAVALI KUDAL,168,05:00,09:15,NOBL,,,,,,,,MLD,62
+16,2,11183,64122,सावंतवाडी,Sawantwadi,सोनुर्ली,Sonurli Sateri Mandir,,14.9,09:15,10:05,ST,,,,,,,,ORD,63
+16,3,18640,64123,सोनुर्ली,Sonurli Sateri Mandir,सावंतवाडी,Sawantwadi,,14.9,09:55,10:30,ST,,,,,,,,ORD,64
+,1,408,4503,सावंतवाडी,Sawantwadi,इचलकरंजी,Ichalkaranji,Amboli AMBOLI AJARA UTTUR NIPANI KOLHAPUR,173.6,12:30,18:15,NOBL,,,,,,,,MLD,67
+,2,59591,64751,इचलकरंजी,Ichalkaranji,कोल्हापुर,Kolhapur,,27,18:45,19:45,NOBL,,,,,,,,ORD,68
+17,1,10918,64002,कोल्हापुर,Kolhapur,सावंतवाडी,Sawantwadi,danoli NIPANI UTTUR AJARA AMBOLI,149.6,06:15,10:20,NOBL,,,,,,,,ORD,70
+,6,11137,64110,सावंतवाडी,Sawantwadi,कालिकामंदीर,Kalika Mandir,BHAIRAVWADI,8.2,12:00,12:15,ST,,,,,,,,ORD,72
+,7,18448,64111,कालिकामंदीर,Kalika Mandir,सावंतवाडी,Sawantwadi,BHAIRAVWADI,8.2,12:30,12:35,ST,,,,,,,,ORD,73
+,6,75211,64146,सावंतवाडी,Sawantwadi,नेमळे,Nemale,akeri AKERI,15,12:45,13:10,ST,,,,,,,,ORD,75
+,7,75155,64147,नेमळे,Nemale,सावंतवाडी,Sawantwadi,akeri AKERI,15,13:15,14:00,ST,,,,,,,,ORD,76
+,1,405,64001,सावंतवाडी,Sawantwadi,कोल्हापुर,Kolhapur,ajara fata AMBOLI AJARA UTTUR NIPANI,149.6,14:45,18:50,NOBL,,,,,,,,ORD,78
+18,1,11183,64006,सावंतवाडी,Sawantwadi,सोनुर्ली,Sonurli Sateri Mandir,,14.9,06:15,06:55,ST,,,,,,,,ORD,80
+18,2,18640,64007,सोनुर्ली,Sonurli Sateri Mandir,सावंतवाडी,Sawantwadi,,14.9,07:10,07:45,ST,,,,,,,,ORD,81
+18,3,39180,64008,सावंतवाडी,Sawantwadi,कोल्हापुर,Kolhapur,danoli AMBOLI AJARA UTTUR NIPANI,149.6,08:00,12:30,NOBL,,,,,,,,ORD,82
+,1,10918,64009,कोल्हापुर,Kolhapur,सावंतवाडी,Sawantwadi,danoli NIPANI UTTUR AJARA AMBOLI,149.6,13:30,18:00,NOBL,,,,,,,,ORD,84
+,2,11148,64010,सावंतवाडी,Sawantwadi,कुडाळ,Kudal St Depot,,22.2,19:00,19:40,NOBL,,,,,,,,ORD,85
+,3,18541,64011,कुडाळ,Kudal St Depot,सावंतवाडी,Sawantwadi,,22.2,19:45,20:25,NOBL,,,,,,,,ORD,86
+19,1,11193,64012,सावंतवाडी,Sawantwadi,वेंगुर्ला,Vengurle,pal TALAWADE MATOND,36,05:45,07:00,ST,,,,,,,,ORD,88
+19,2,19986,64013,वेंगुर्ला,Vengurle,सावंतवाडी,Sawantwadi,Tulas TULAS TALAWADE,30.2,07:30,08:35,ST,,,,,,,,ORD,89
+,3,39180,64014,सावंतवाडी,Sawantwadi,कोल्हापुर,Kolhapur,danoli AMBOLI AJARA UTTUR NIPANI,149.6,10:30,15:15,NOBL,,,,,,,,ORD,91
+,1,10918,64015,कोल्हापुर,Kolhapur,सावंतवाडी,Sawantwadi,danoli NIPANI UTTUR AJARA AMBOLI,149.6,15:30,20:00,NOBL,,,,,,,,ORD,92
+20,1,11078,4514,,Narsobavadi,सावंतवाडी,Sawantwadi,Jaisingpur SHIROL JAISINGPUR HATKANAGALE KOLHAPUR NIPANI UTTUR AJARA AMBOLI,206,06:45,12:55,NOBL,,,,,,,,MLD,94
+,1,407,4513,सावंतवाडी,Sawantwadi,,Narsobavadi,Ichalkarnji AMBOLI AJARA UTTUR NIPANI KOLHAPUR ICHALKARANJI ABDULLAT,200,13:45,19:45,NOBL,,,,,,,,MLD,96
+21,1,11206,64066,सावंतवाडी,Sawantwadi,,Wasoli Veerwadi,MANGAON WADOS DUKANWAD,31.8,09:10,10:20,NOBL,,,,,,,,ORD,98
+21,2,18782,64067,,Wasoli Veerwadi,सावंतवाडी,Sawantwadi,DUKANWAD WADOS MANGAON,31.8,10:30,11:40,NOBL,,,,,,,,ORD,99
+,4,11145,64538,सावंतवाडी,Sawantwadi,खेरवाडी,Kherwadi,RAILSTATION,13.8,11:45,12:15,ST,,,,,,,,ORD,101
+,5,18537,64539,खेरवाडी,Kherwadi,सावंतवाडी,Sawantwadi,RAILSTATION,13.8,12:20,12:50,ST,,,,,,,,ORD,102
+,1,11138,64016,सावंतवाडी,Sawantwadi,कणकवली,Kankavli,kasal KUDAL KASAL,55.7,13:45,12:20,NOBL,,,,,,CHANGE,,ORD,104
+,2,10810,64021,कणकवली,Kankavli,आजरा,Ajara,KASAL KUDAL SAWANTWADI AMBOLI,117.8,16:30,20:15,NOBL,,,,,,,,ORD,105
+22,1,18296,64022,आजरा,Ajara,कणकवली,Kankavli,AMBOLI SAWANTWADI KUDAL KASAL,117.8,07:15,11:00,NOBL,,,,,,,,ORD,107
+22,2,18298,64017,कणकवली,Kankavli,सावंतवाडी,Sawantwadi,Sindudurg Ngr KASAL SINDHUDURG NAGARI KUDAL,58.7,11:15,13:15,NOBL,,,,,,,,ORD,108
+23,1,10681,64024,सावंतवाडी,Sawantwadi,बेळगांव,Belgaum,dodamarg BANDA DODAMARAG BHEDSHI TILARINAGAR PATANEPHATA,127.5,06:00,10:30,NOBL,,,,,,,,ORD,113
+23,2,59623,64025,बेळगांव,Belgaum,सावंतवाडी,Sawantwadi,dodamarg PATANEPHATA TILARINAGAR BHEDSHI DODAMARG BANDA,127.5,12:30,17:00,NOBL,,,,,,,,ORD,114
+23,3,11183,64026,सावंतवाडी,Sawantwadi,सोनुर्ली,Sonurli Sateri Mandir,,14.9,17:30,17:55,ST,,,,,,,,ORD,115
+23,4,18640,64027,सोनुर्ली,Sonurli Sateri Mandir,सावंतवाडी,Sawantwadi,,14.9,18:10,18:40,ST,,,,,,,,ORD,116
+24,1,61970,64526,सावंतवाडी,Sawantwadi,पागावाडी,Pagawadi,,12,06:00,06:45,OPN,,,,,,,,ORD,118
+24,2,61971,64527,पागावाडी,Pagawadi,सावंतवाडी,Sawantwadi,,12,06:35,07:20,ST,,,,,,,,ORD,119
+24,3,10681,64028,सावंतवाडी,Sawantwadi,बेळगांव,Belgaum,dodamarg BANDA DODAMARAG BHEDSHI TILARINAGAR PATANEPHATA,127.5,08:00,12:30,NOBL,,,,,,,,ORD,120
+24,4,59623,64029,बेळगांव,Belgaum,सावंतवाडी,Sawantwadi,dodamarg PATANEPHATA TILARINAGAR BHEDSHI DODAMARG BANDA,127.5,14:30,18:30,NOBL,,,,,,,,ORD,121
+25,1,45352,64018,सावंतवाडी,Sawantwadi,पणजी,Panjim,,61.7,07:30,09:30,NOBL,,,,,,,,ORD,123
+25,2,11082,64019,पणजी,Panjim,सावंतवाडी,Sawantwadi,,61.7,10:00,12:00,NOBL,,,,,,,,ORD,124
+25,1,10683,64030,सावंतवाडी,Sawantwadi,बेळगांव,Belgaum,Amboli AMBOLI KANUR CHANDGADPHATA,103,13:00,16:30,NOBL,,,,,,,,ORD,125
+25,2,59624,64031,बेळगांव,Belgaum,सावंतवाडी,Sawantwadi,Amboli PATANEPHATA TILARINAGAR BHEDSHI DODAMARG BANDA,103,16:01,20:30,NOBL,,,,,,,,ORD,126
+26,1,11151,64034,सावंतवाडी,Sawantwadi,कुंभेश्वर,Kumbheshwar Gpo,DANOLI KESARI,20.8,06:00,06:40,OPN,,,,,,,,ORD,128
+26,2,18444,64035,कुंभेश्वर,Kumbheshwar Gpo,सावंतवाडी,Sawantwadi,DANOLI KESARI,15,06:50,07:20,ST,,,,,,,,ORD,129
+26,3,18619,4507,सावंतवाडी,Sawantwadi,रत्नागिरी,Ratnagiri,KUDAL KANKAVALI TALERE RAJAPUR LANJA PALI HATKHAMBA,184.8,07:30,12:25,NOBL,,,,,,,,MLD,130
+,1,11101,4508,रत्नागिरी,Ratnagiri,सावंतवाडी,Sawantwadi,HATKHAMBA PALI LANJA RAJAPUR KANKAVALI KUDAL,184.8,17:00,21:50,NOBL,,,,,,,,MLD,132
+27,1,60484,4502,देवरुख,Deorukh,सावंतवाडी,Sawantwadi,SAKHARPA BHAMBED WATULTITHA RAJAPUR KANKAVALI KUDAL,186.1,08:00,14:15,NOBL,,,,,,,,MLD,134
+,7,118485,64174,सावंतवाडी,Sawantwadi,केर निडली,Ker,BANDA KALANE WANOSHI BHEDSHI TILARI,62.5,16:00,18:30,ST,,,,,,,,ORD,136
+28,1,11112,64168,सावंतवाडी,Sawantwadi,आंबेगांव,Ambegaon,,11.5,07:15,07:45,ST,,,,,,,,ORD,138
+28,2,17336,64169,आंबेगांव,Ambegaon,सावंतवाडी,Sawantwadi,,11.5,07:55,08:25,ST,,,,,,,,ORD,139
+28,3,11161,64170,सावंतवाडी,Sawantwadi,ओटवणे,Otavane Kasar Dukan,,12.4,08:40,09:10,ST,,,,,,,,ORD,140
+28,4,18611,64171,ओटवणे,Otavane Kasar Dukan,सावंतवाडी,Sawantwadi,,12.4,09:20,09:50,ST,,,,,,,,ORD,141
+,2,11200,64624,सावंतवाडी,Sawantwadi,वेर्ले,Verle Temple,SANGELI KALAMBIST,24,09:45,11:00,ST,,,,,,,,ORD,143
+,3,18787,64625,वेर्ले,Verle Temple,सावंतवाडी,Sawantwadi,KALAMBIST SANGELI,24,10:55,12:10,ST,,,,,,,,ORD,144
+,1,11126,4501,सावंतवाडी,Sawantwadi,देवरुख,Deorukh,KUDAL KANKAVALI RAJAPUR WATULTITHA  BHAMBED SAKHARPA,186.1,12:30,18:45,NOBL,,,,,,,,MLD,146
+29,1,11101,4512,रत्नागिरी,Ratnagiri,सावंतवाडी,Sawantwadi,HATKHAMBA PALI LANJA RAJAPUR KANKAVALI KUDAL,184.8,06:00,11:15,NOBL,,,,,,,,MLD,148
+,1,18619,4511,सावंतवाडी,Sawantwadi,रत्नागिरी,Ratnagiri,KUDAL KANKAVALI TALERE RAJAPUR LANJA PALI HATKHAMBA,184.8,13:00,18:15,NOBL,,,,,,,,MLD,150
+30,1,11101,4516,रत्नागिरी,Ratnagiri,सावंतवाडी,Sawantwadi,HATKHAMBA PALI LANJA RAJAPUR KANKAVALI KUDAL,184.8,07:00,13:00,NOBL,,,,,,,,MLD,152
+,1,18619,4515,सावंतवाडी,Sawantwadi,रत्नागिरी,Ratnagiri,KUDAL KANKAVALI TALERE RAJAPUR LANJA PALI HATKHAMBA,184.8,14:30,19:45,NOBL,,,,,,,,MLD,154
+31,1,18786,64041,फौजदारवाडी,Foujdarwadi,सावंतवाडी,Sawantwadi,KALAMBIST SANGELI,25.1,05:45,06:50,ST,,,,,,,,ORD,156
+31,2,11130,64042,सावंतवाडी,Sawantwadi,,Footbridge,MANGAON WADOS upto Malai,33.6,07:00,08:15,OBL,,,,,,,,ORD,157
+31,3,17792,64043,,Footbridge,सावंतवाडी,Sawantwadi,From Malai WADOS  MANGAON,33.6,08:20,09:40,OBL,,,,,,,,ORD,158
+,1,11150,64306,सावंतवाडी,Sawantwadi,कुडासा,Kudasa,BANDA KUMBRAL BHARPAL,40.2,12:15,13:35,ST,,,,,,,,ORD,160
+,2,18445,64307,कुडासा,Kudasa,सावंतवाडी,Sawantwadi,KUMBRAL BANDA,40.2,13:40,15:25,ST,,,,,,,,ORD,161
+,3,11200,64038,सावंतवाडी,Sawantwadi,वेर्ले,Verle Temple,SANGELI   KALAMBIST,24,16:10,17:10,ST,,,,,,,,ORD,162
+,4,18787,64039,वेर्ले,Verle Temple,सावंतवाडी,Sawantwadi,KALAMBIST SANGELI,24,17:20,18:20,ST,,,,,,,,ORD,163
+,5,11201,64040,सावंतवाडी,Sawantwadi,फौजदारवाडी,Foujdarwadi,SANGELI   KALAMBIST,25.1,18:30,19:35,ST,,,,,,,,ORD,164
+32,1,17378,64065,किरणपाणी,Kiranpani,सावंतवाडी,Sawantwadi,ARONDA MALEWAD,28.4,07:45,08:45,ST,,,,,,,,ORD,166
+32,2,11369,64046,सावंतवाडी,Sawantwadi,बाबरवाडी,Babarwadi,WANOSHI BANDA KALANE WANOSHI BHEDSHI TILARI,57.1,09:15,11:15,OBL,,,,,,,,ORD,167
+32,3,17589,64047,बाबरवाडी,Babarwadi,सावंतवाडी,Sawantwadi,TILARI BHEDSHI DODAMARG KALANE BANDA,59.1,12:00,14:15,OBL,,,,,,,,ORD,168
+,3,11116,64064,सावंतवाडी,Sawantwadi,किरणपाणी,Kiranpani,MALEWAD SHIRODA,35.2,20:00,21:20,ST,,,,,,,,ORD,171
+33,1,17707,64301,पाळये,Palye,सावंतवाडी,Sawantwadi,TILARI BHEDSHI DODAMARG KALANE BANDA,57.1,06:30,08:30,ST,,,,,,,,ORD,173
+33,2,11201,64302,सावंतवाडी,Sawantwadi,फौजदारवाडी,Foujdarwadi,SANGELI   KALAMBIST,25.1,09:10,10:00,ST,,,,,,,,ORD,174
+33,3,18786,64303,फौजदारवाडी,Foujdarwadi,सावंतवाडी,Sawantwadi,KALAMBIST SANGELI,25.1,10:10,11:10,ST,,,,,,,,ORD,175
+33,4,11183,64304,सावंतवाडी,Sawantwadi,सोनुर्ली,Sonurli Sateri Mandir,,14.9,11:15,11:50,ST,,,,,,,,ORD,176
+33,5,18640,64305,सोनुर्ली,Sonurli Sateri Mandir,सावंतवाडी,Sawantwadi,,14.9,11:50,12:40,ST,,,,,,,,ORD,177
+,1,11178,64224,सावंतवाडी,Sawantwadi,शिरशिंगे,Shirshinge Gothavewadi,SANGELI  KALAMBIST,30.2,13:00,14:30,ST,,,,,,,,ORD,179
+,2,18649,64225,शिरशिंगे,Shirshinge Gothavewadi,सावंतवाडी,Sawantwadi,KALAMBIST SANGELI,30.2,14:40,16:10,ST,,,,,,,,ORD,180
+,3,45352,64361,सावंतवाडी,Sawantwadi,पणजी,Panjim,BANDA PATRADEVI MHAPSA,61.7,16:30,18:30,NOBL,,,,,,,,ORD,181
+,4,11082,64362,पणजी,Panjim,सावंतवाडी,Sawantwadi,MHAPSA PATRADEVI BANDA,61.7,19:15,21:00,NOBL,,,,,,,,ORD,182
+34,1,11184,64080,सावंतवाडी,Sawantwadi,,Tata Metalic,RAILSTATION MALEWAD SHIRODA,32.8,06:50,07:50,ST,,,,,,,,ORD,184
+34,2,18774,64081,,Tata Metalic,सावंतवाडी,Sawantwadi,SHIRODA MALEWAD RAILSTATION,32.8,08:30,09:20,ST,,,,,,,,ORD,185
+,1,11134,64072,सावंतवाडी,Sawantwadi,हेवाळे,Hewale,BANDA DODAMARG BHEDSHI TILARI,63.2,11:30,14:00,ST,,,,,,,,ORD,187
+,2,18295,64073,हेवाळे,Hewale,सावंतवाडी,Sawantwadi,TILARI BHEDSHI DODAMARG KALANE BANDA,63.2,14:15,16:40,ST,,,,,,,,ORD,188
+,3,11162,64300,सावंतवाडी,Sawantwadi,पाळये,Palye,BANDA DODAMARG BHEDSHI TILARI,57.1,17:15,19:15,ST,,,,,,,,ORD,189
+35,1,18451,64085,वेळवेवाडी,Velvewadi,सावंतवाडी,Sawantwadi,aros SATARDA AROS GAOTHAN RAILSTATION MALGAON,39.3,05:45,07:15,ST,,,,,,,,ORD,191
+35,2,11164,64086,सावंतवाडी,Sawantwadi,पारपोली,Parpoli,DANOLI DEWSU,21.7,07:30,08:20,ST,,,,,,,,ORD,192
+35,3,18615,64087,पारपोली,Parpoli,सावंतवाडी,Sawantwadi,DEWSU DANOLI,21.7,08:20,09:20,ST,,,,,,,,ORD,193
+35,4,11164,64495,सावंतवाडी,Sawantwadi,पारपोली,Parpoli,DANOLI DEWSU,21.7,09:30,10:20,NOBL,,,,,,,,ORD,194
+35,5,18615,64496,पारपोली,Parpoli,सावंतवाडी,Sawantwadi,DEWSU DANOLI,21.7,10:30,11:20,NOBL,,,,,,,,ORD,195
+,1,11121,64472,सावंतवाडी,Sawantwadi,मुलांडावाडी,Mulandawadi,MADKHOL BAVLAT,18,12:15,12:35,ST,,,,,,,,ORD,197
+,2,17610,64473,मुलांडावाडी,Mulandawadi,सावंतवाडी,Sawantwadi,BAVLAT MADKHOL,18,12:50,13:15,ST,,,,,,,,ORD,198
+,3,11172,64082,सावंतवाडी,Sawantwadi,शिरोडा,Shiroda,RAILSTATION MALEWAD,27.2,13:30,14:30,ST,,,,,,,,ORD,200
+,4,18737,64083,शिरोडा,Shiroda,सावंतवाडी,Sawantwadi,MALEWAD RAILSTATION,27.2,15:00,16:00,ST,,,,,,,,ORD,201
+,5,11190,64084,सावंतवाडी,Sawantwadi,वेळवेवाडी,Velvewadi,malewad RAILSTATION MALEWAD SATARDA,39.3,16:15,17:45,ST,,,,,,,,ORD,202
+36,1,18772,64097,सातार्डा,Satarda,सावंतवाडी,Sawantwadi,giroba mandir AROS GAOTHAN PADLOS BANDA,41,06:45,08:15,ST,,,,,,,,ORD,204
+36,2,11136,64098,सावंतवाडी,Sawantwadi,हिर्लोक,Hirlok,nileli MANGAON NILELI GOTHOS NARUR,35,08:30,09:55,ST,,,,,,MAIL,,ORD,205
+36,3,17799,64099,हिर्लोक,Hirlok,सावंतवाडी,Sawantwadi,nileli NARUR GOTHOS NILELI MANGAON,35,09:55,11:30,ST,,,,,,MAIL,,ORD,206
+,1,11158,64092,सावंतवाडी,Sawantwadi,नेतार्डा,Netarde,BANDA GALEL,23.8,12:30,13:35,ST,,,,,,,,ORD,208
+,2,18606,64093,नेतार्डा,Netarde,सावंतवाडी,Sawantwadi,GALEL BANDA,23.8,13:45,14:45,ST,,,,,,,,ORD,209
+,3,11176,64094,सावंतवाडी,Sawantwadi,शिरोडा,Shiroda,wadkhol TALAWADE WADKHOL ASOLI,33,15:00,16:20,OBL,,,,,,,,ORD,210
+,4,18737,64095,शिरोडा,Shiroda,सावंतवाडी,Sawantwadi,MALEWAD RAILSTATION,27.2,16:30,17:30,OBL,,,,,,,,ORD,211
+,5,11168,64096,सावंतवाडी,Sawantwadi,सातार्डा,Satarda,nigude BANDA NIGUDE MADURA SATOSE,39.8,17:50,19:30,ST,,,,,,,,ORD,212
+37,1,18535,64129,रेडी कनयाळ,Redi Kanyal,सावंतवाडी,Sawantwadi,ARONDA MALEWAD,39.3,05:50,07:15,ST,,,,,,,,ORD,214
+37,2,11200,64130,सावंतवाडी,Sawantwadi,वेर्ले,Verle Temple,SANGELI   KALAMBIST,24,07:20,,NOBL,,,,,,,,ORD,215
+37,3,18787,64131,वेर्ले,Verle Temple,सावंतवाडी,Sawantwadi,KALAMBIST SANGELI,24,08:25,09:25,NOBL,,,,,,,,ORD,216
+37,4,11172,64132,सावंतवाडी,Sawantwadi,शिरोडा,Shiroda,RAILSTATION  MALEWAD,27.2,09:30,01:03,NOBL,,,,,,,,ORD,217
+37,5,18737,64133,शिरोडा,Shiroda,सावंतवाडी,Sawantwadi,MALEWAD RAILSTATION,27.2,10:45,01:14,NOBL,,,,,,,,ORD,218
+,1,11172,64426,सावंतवाडी,Sawantwadi,शिरोडा,Shiroda,,27.2,10:00,13:15,ST,,,,,,,,ORD,220
+,2,18737,64427,शिरोडा,Shiroda,सावंतवाडी,Sawantwadi,PHANASKHOL,31.8,11:45,14:45,ST,,,,,,,,ORD,221
+,3,11110,64126,सावंतवाडी,Sawantwadi,रेडी कनयाळ,Redi Kanyal,shiroda MALEWAD SHIRODA,34.9,15:00,16:15,ST,,,,,,,,ORD,222
+,4,18534,64127,रेडी कनयाळ,Redi Kanyal,सावंतवाडी,Sawantwadi,shiroda SHIRODA MALEWAD RAILSTATION,34.9,16:30,17:45,ST,,,,,,,,ORD,223
+,5,11140,64128,सावंतवाडी,Sawantwadi,रेडी कनयाळ,Redi Kanyal,MALEWAD ARONDA,39.3,18:40,20:30,ST,,,,,,,,ORD,224
+38,1,18779,64141,उपवडे,Upawade Kerdalwadi,सावंतवाडी,Sawantwadi,DUKANWAD WADOS MANGAON,33,06:00,07:15,ST,,,,,,,,ORD,226
+38,2,75211,64142,सावंतवाडी,Sawantwadi,नेमळे,Nemale,akeri AKERI,15,07:25,07:55,ST,,,,,,,,ORD,227
+38,3,75155,64143,नेमळे,Nemale,सावंतवाडी,Sawantwadi,akeri AKERI,15,08:10,08:35,ST,,,,,,,,ORD,228
+38,4,11172,64176,सावंतवाडी,Sawantwadi,शिरोडा,Shiroda,RAILSTATION MALEWAD,27.2,09:00,10:00,ST,,,,,,,,ORD,229
+38,5,18737,64177,शिरोडा,Shiroda,सावंतवाडी,Sawantwadi,MALEWAD RAILSTATION,27.2,10:15,11:15,ST,,,,,,,,ORD,230
+,1,11161,64052,सावंतवाडी,Sawantwadi,ओटवणे,Otavane Kasar Dukan,,12.4,12:00,01:23,ST,,,,,,,,ORD,232
+,2,18611,64053,ओटवणे,Otavane Kasar Dukan,सावंतवाडी,Sawantwadi,,12.4,01:24,01:31,ST,,,,,,,,ORD,233
+,3,11180,64136,सावंतवाडी,Sawantwadi,शिवापूर,Shivapur High School,MANGAON WADOS DUKANWAD WASOLI,38.6,13:30,15:15,ST,,,,,,,,ORD,234
+,4,18773,64137,शिवापूर,Shivapur High School,सावंतवाडी,Sawantwadi,WASOLI DUKANWAD WADOS MANGAON,38.6,15:30,17:10,ST,,,,,,,,ORD,235
+,5,11159,64138,सावंतवाडी,Sawantwadi,,Nirukhewadi,,8.2,17:35,17:55,ST,,,,,,,,ORD,236
+,6,18600,64139,,Nirukhewadi,सावंतवाडी,Sawantwadi,,8.2,18:00,18:20,ST,,,,,,,,ORD,237
+,7,11185,64140,सावंतवाडी,Sawantwadi,उपवडे,Upawade Kerdalwadi,MANGAON WADOS DUKANWAD,33,18:30,20:05,ST,,,,,,,,ORD,238
+39,1,18616,64165,पारपोली,Parpoli,सावंतवाडी,Sawantwadi,OWLIYE  DEWSU  DANOLI,24.7,06:00,06:50,ST,,,,,,,,ORD,240
+39,2,11118,64166,सावंतवाडी,Sawantwadi,बाबरवाडी,Babarwadi,BANDA DODAMARG  BHEDSHI  TILARI,59.1,07:01,09:10,ST,,,,,,,,ORD,241
+39,3,17589,64167,बाबरवाडी,Babarwadi,सावंतवाडी,Sawantwadi,TILARI BHEDSHI DODAMARG KALANE BANDA,59.1,09:15,11:50,ST,,,,,,,,ORD,242
+,3,11117,64357,सावंतवाडी,Sawantwadi,असनिये,Asniye,ZOLAMBE BANDA DEGWE TALKAT ZOLAMBE,33.7,12:30,13:45,ST,,,,,,,,ORD,244
+,4,99613,64358,असनिये,Asniye,सावंतवाडी,Sawantwadi,ZOLAMBE ZOLAMBE  TALKAT  DEGAWE,33.7,14:00,15:15,ST,,,,,,,,ORD,245
+,3,61938,64162,सावंतवाडी,Sawantwadi,,Nanos Konkan Pharma,MALEWAD SHIRODA,32.8,16:20,17:45,ST,,,,,,,,ORD,247
+,4,61939,64163,,Nanos Konkan Pharma,सावंतवाडी,Sawantwadi,SHIRODA MALEWAD RAILSTATION,32.8,17:50,19:05,ST,,,,,,,,ORD,248
+,5,11165,64164,सावंतवाडी,Sawantwadi,पारपोली,Parpoli,DANOLI  DEWSU OWALIYE,24.7,19:15,20:05,ST,,,,,,,,ORD,249
+40,1,118486,64175,,Nidali,सावंतवाडी,Sawantwadi,wanoshi TILARI BHEDSHI WANOSHI KALANE BANDA,62.5,06:00,08:45,ST,,,,,,,,ORD,251
+40,2,11122,64144,सावंतवाडी,Sawantwadi,भटपावणी,Bhatpawani,RAILSTATION MALEWAD ARONDA,33,09:00,10:30,OBL,,,,,,,,ORD,252
+40,3,17609,64145,भटपावणी,Bhatpawani,सावंतवाडी,Sawantwadi,ARONDA MALEWAD,33,10:40,11:45,OBL,,,,,,,,ORD,253
+,1,11115,64261,सावंतवाडी,Sawantwadi,आरोंदा बाजार,Aronda Bazar,MALGAON RAILSTATION AROS KONDURATITHA,28.8,12:00,13:00,ST,,,,,,,,ORD,255
+,2,17376,64262,आरोंदा बाजार,Aronda Bazar,सावंतवाडी,Sawantwadi,KONDURATITHA AROS RAILSTATION MALGAON,28.8,13:10,14:10,ST,,,,,,,,ORD,256
+,3,11140,64263,सावंतवाडी,Sawantwadi,रेडी कनयाळ,Redi Kanyal,MALEWAD ARONDA,39.3,15:45,17:15,ST,,,,,,,,ORD,257
+,4,18535,64264,रेडी कनयाळ,Redi Kanyal,सावंतवाडी,Sawantwadi,ARONDA MALEWAD,39.3,17:30,19:00,ST,,,,,,,,ORD,258
+,5,73183,64265,सावंतवाडी,Sawantwadi,झरेबांबर,Zare Bambar,BANDA DODAMARG,42.1,19:30,21:05,ST,,,,,,,,ORD,259
+41,1,17593,64188,घारपी,Gharpi,बांदा,Banda,ASNIYE TAMBOLI VILAWADE,24.3,05:45,06:45,ST,,,,,,,,ORD,261
+41,2,64232,64189,बांदा,Banda,डिंगणे,Dingane Mandir,PATRADEVI GALEL,7.9,06:50,07:05,ST,,,,,,,,ORD,262
+41,3,64233,64190,डिंगणे,Dingane Mandir,बांदा,Banda,GALEL PATRADEVI,7.9,07:10,07:35,ST,,,,,,,,ORD,263
+41,4,10665,64191,बांदा,Banda,भालावल,Bhalawal Gpo,VILAWADE,9,07:40,08:10,OBL,,,,,,,,ORD,264
+41,5,17588,64192,भालावल,Bhalawal Gpo,बांदा,Banda,VALAWADE,9,08:15,08:50,OBL,,,,,,,,ORD,265
+41,6,10662,64193,बांदा,Banda,घारपी,Gharpi,VILAWADE TAMBOLI ASNIYE,24.3,08:40,10:00,ST,,,,,,,,ORD,266
+41,7,17593,64194,घारपी,Gharpi,बांदा,Banda,ASNIYE TAMBOLI VILAWADE,24.3,09:45,11:10,ST,,,,,,,,ORD,267
+41,8,64232,64195,बांदा,Banda,डिंगणे,Dingane Mandir,PATRADEVI GALEL,7.9,10:50,11:40,ST,,,,,,,,ORD,268
+41,9,64233,64196,डिंगणे,Dingane Mandir,बांदा,Banda,GALEL PATRADEVI,7.9,11:10,12:05,ST,,,,,,,,ORD,269
+41,10,17603,64258,बांदा,Banda,सावंतवाडी,Sawantwadi,,12.6,14:45,12:45,OPN,,,,,,,,ORD,270
+,4,75280,64599,सावंतवाडी,Sawantwadi,नेमळे,Nemale,MALGAON,15,12:30,01:33,ST,,,,,,,,ORD,272
+,5,56665,64600,नेमळे,Nemale,सावंतवाडी,Sawantwadi,malgaon MALGAON,15,13:10,01:41,ST,,,,,,,,ORD,273
+,1,11119,64257,सावंतवाडी,Sawantwadi,बांदा,Banda,,12.6,11:00,11:30,OPN,,,,,,,,ORD,285
+,2,10665,64179,बांदा,Banda,कोनशी,Konshi,WAFOLI SOCI VILAWADE,14.5,11:50,12:10,NOBL,,,,,,,,ORD,286
+,3,17588,64180,कोनशी,Konshi,बांदा,Banda,VILAWADE WAFOLI SOCI,14.5,12:30,13:00,NOBL,,,,,,,,ORD,287
+,4,10662,64181,बांदा,Banda,घारपी,Gharpi,VILAWADE TAMBOLI ASNIYE,24.3,13:10,14:30,ST,,,,,,,,ORD,288
+,5,17593,64182,घारपी,Gharpi,बांदा,Banda,ASNIYE TAMBOLI VILAWADE,24.3,14:15,15:40,ST,,,,,,,,ORD,289
+,6,10662,64209,बांदा,Banda,घारपी,Gharpi,VILAWADE TAMBOLI ASNIYE,24.3,15:40,17:00,ST,,,,,,,,ORD,290
+,7,17593,64210,घारपी,Gharpi,बांदा,Banda,ASNIYE TAMBOLI VILAWADE,24.3,17:20,18:10,ST,,,,,,,,ORD,291
+,8,10662,64187,बांदा,Banda,घारपी,Gharpi,VILAWADE TAMBOLI ASNIYE,24.3,18:30,19:00,ST,,,,,,,,ORD,292
+43,1,64748,64471,दाभिळ,Dabhil,बांदा,Banda,SARMALE VILAWADE,15.9,05:50,06:25,ST,,,,,,,,ORD,294
+43,2,10659,64211,बांदा,Banda,असनिये,Asniye,WAFOLI SOCI VILAWADE TAMBOLI,18.8,06:30,07:10,ST,,,,,,,,ORD,295
+43,3,17585,64212,असनिये,Asniye,बांदा,Banda,TAMBOLI VILAWADE WAFOLI SOCI,18.8,07:20,08:00,ST,,,,,,,,ORD,296
+43,4,10664,64213,बांदा,Banda,कोळमवाडी,Kolambwadi,,18.8,08:10,08:50,OBL,,,,,,,,ORD,297
+43,5,17598,64214,कोळमवाडी,Kolambwadi,बांदा,Banda,,18.8,09:00,09:40,OBL,,,,,,,,ORD,298
+43,6,10659,64215,बांदा,Banda,असनिये,Asniye,WAFOLI SOCI VILAWADE TAMBOLI,18.8,09:50,10:30,ST,,,,,,,,ORD,299
+43,7,17585,64216,असनिये,Asniye,बांदा,Banda,TAMBOLI VILAWADE WAFOLI SOCI,18.8,10:40,11:20,ST,,,,,,,,ORD,300
+43,8,17603,64285,बांदा,Banda,सावंतवाडी,Sawantwadi,,12.6,11:30,12:00,OPN,,,,,,,,ORD,301
+,1,11162,64282,सावंतवाडी,Sawantwadi,पाळये,Palye,BANDA DODAMARG BHEDSHI TILARI,57.1,13:35,15:45,ST,,,,,,,,ORD,303
+,2,98087,64283,पाळये,Palye,दोडामार्ग,Dodamarg,TILARI BHEDSHI WANOSHI KUDASA,21,16:00,16:35,ST,,,,,,,,ORD,304
+,3,63617,64611,दोडामार्ग,Dodamarg,,Parme,,18,17:00,07:45,OBL,,,,,,,,ORD,305
+,4,63618,64612,,Parme,दोडामार्ग,Dodamarg,,18,17:50,18:35,OBL,,,,,,,,ORD,306
+,5,10787,64286,दोडामार्ग,Dodamarg,मांगेली,Mangeli Dewoolwadi,BHEDSHI KHOKRAL,24.3,18:00,19:40,ST,,,,,,,,ORD,307
+44,1,17740,64254,विर्डी,Virdi,दोडामार्ग,Dodamarg,TALEKHOL VAZARE,23.8,06:45,07:45,ST,,,,,,,,ORD,309
+44,2,10788,64255,दोडामार्ग,Dodamarg,,Morle Gaon,BHEDSHI TILARI,23.8,08:00,08:50,NOBL,,,,,,,,ORD,310
+44,3,17702,64256,,Morle Gaon,दोडामार्ग,Dodamarg,TILARI BHEDSHI,23.8,08:50,09:50,NOBL,,,,,,,,ORD,311
+44,4,63617,64606,दोडामार्ग,Dodamarg,,Parme,,18,09:15,10:40,OBL,,,,,,,,ORD,312
+44,5,63618,64607,,Parme,दोडामार्ग,Dodamarg,,18,10:00,11:30,OBL,,,,,,,,ORD,313
+44,6,11313,64259,दोडामार्ग,Dodamarg,,Khokral,,15.3,11:45,12:10,ST,,,,,,,,ORD,314
+44,7,17627,64260,,Khokral,दोडामार्ग,Dodamarg,,18.3,12:20,13:00,ST,,,,,,,,ORD,315
+,1,10787,64398,दोडामार्ग,Dodamarg,मांगेली,Mangeli Dewoolwadi,BHEDSHI KHOKRAL,26,13:15,14:25,ST,,,,,,,,ORD,317
+,2,17628,64399,मांगेली,Mangeli Dewoolwadi,दोडामार्ग,Dodamarg,KHOKRAL  BHEDSHI,26,14:30,15:40,ST,,,,,,,,ORD,318
+,3,60649,64440,दोडामार्ग,Dodamarg,पिकुळे,Pikule Mandir,zare bambar ZAREBAMBAR,12.3,16:00,16:25,ST,,,,,,,,ORD,319
+,4,60648,64441,पिकुळे,Pikule Mandir,दोडामार्ग,Dodamarg,zarebambar ZAREBAMBAR,12.3,16:25,17:05,ST,,,,,,,,ORD,320
+,5,63048,64442,दोडामार्ग,Dodamarg,शिरंगे,Shirange,BHEDSHI,15,17:30,18:05,ST,,,,,,,,ORD,321
+,6,63049,64443,शिरंगे,Shirange,दोडामार्ग,Dodamarg,BHEDSHI,15,18:10,18:45,ST,,,,,,,,ORD,322
+,7,10785,64438,दोडामार्ग,Dodamarg,बिजघर,Bijghar Colony,BHEDSHI TILARI MULAS,31.1,19:00,20:00,ST,,,,,,,,ORD,323
+45,1,74125,64266,झरेबांबर,Zare Bambar,सावंतवाडी,Sawantwadi,DODAMARG  BANDA,42.1,06:15,07:50,ST,,,,,,,,ORD,325
+45,2,72135,64267,सावंतवाडी,Sawantwadi,वर्दे,Varde,sindhudurg KUDAL  SINDHUDURGNAGARI,50.4,08:30,09:30,NOBL,,,,,,,,ORD,326
+45,3,72138,64268,वर्दे,Varde,सावंतवाडी,Sawantwadi,KUDAL,36.2,09:50,11:30,NOBL,,,,,,,,ORD,327
+,3,11140,64365,सावंतवाडी,Sawantwadi,रेडी कनयाळ,Redi Kanyal,RAILSTATION MALEWAD ARONDA,39.3,13:00,14:30,ST,,,,,,,,ORD,329
+,4,18535,64366,रेडी कनयाळ,Redi Kanyal,सावंतवाडी,Sawantwadi,ARONDA MALEWAD RAILSTATION,39.3,14:40,16:10,ST,,,,,,,,ORD,330
+,5,11160,64367,सावंतवाडी,Sawantwadi,निवजे,Nivaje Mandir,MANGAON AMBERI,22.2,17:10,18:10,ST,,,,,,,,ORD,331
+,6,18607,64368,निवजे,Nivaje Mandir,सावंतवाडी,Sawantwadi,AMBERI  MANGAON,22.2,18:10,19:10,ST,,,,,,,,ORD,332
+46,1,107645,64274,आई,Aie,दोडामार्ग,Dodamarg,ambadpal MATNE AMBADGAON,15,06:20,07:00,ST,,,,,,,,ORD,334
+46,2,73297,64510,दोडामार्ग,Dodamarg,तिराळी,Tirali,BHEDSHI,18,07:00,07:45,ST,,,,,,,,ORD,335
+46,3,94440,64511,तिराळी,Tirali,दोडामार्ग,Dodamarg,BHEDSHI KUDASA,21,07:45,08:30,ST,,,,,,CHANGE,,ORD,336
+46,4,118487,64279,दोडामार्ग,Dodamarg,केर निडली,Ker,BHEDSHI TILARI  MORLE,26.5,08:30,09:35,ST,,,,,,,,ORD,337
+46,5,118489,64280,,Nidali,सावंतवाडी,Sawantwadi,MORLE TILARI  BHEDSHI DODAMARG BANDA,62.5,09:40,12:05,ST,,,,,,,,ORD,338
+,1,107675,64269,सावंतवाडी,Sawantwadi,उसप,Usap,ZAREBAMBAR BANDA  DODAMARG ZAREBAMBAR PIKULE,51.4,12:30,14:30,ST,,,,,,,,ORD,340
+,2,17746,64270,उसप,Usap,दोडामार्ग,Dodamarg,zarebambar PIKULE  ZAREBAMBAR,14.5,14:40,15:30,ST,,,,,,,,ORD,341
+,3,10786,64271,दोडामार्ग,Dodamarg,केर,Ker,BHEDSHI TILARI  MORLE,26.5,16:00,16:30,ST,,,,,,,,ORD,342
+,4,17612,64272,केर,Ker,दोडामार्ग,Dodamarg,MORLE TILARI  BHEDSHI,26.5,16:40,17:30,ST,,,,,,,,ORD,343
+,5,10792,64273,दोडामार्ग,Dodamarg,आई,Aie,VAZARE MATNE PARYE,15,18:20,19:00,ST,,,,,,CHANGE,,ORD,344
+47,1,17628,64287,मांगेली,Mangeli Dewoolwadi,दोडामार्ग,Dodamarg,KHOKRAL  BHEDSHI,24.3,06:00,07:10,ST,,,,,,,,ORD,347
+47,2,60649,64288,दोडामार्ग,Dodamarg,पिकुळे,Pikule Mandir,zare bambar ZAREBAMBAR,12.3,07:10,07:45,ST,,,,,,,,ORD,348
+47,3,60648,64289,पिकुळे,Pikule Mandir,दोडामार्ग,Dodamarg,zarebambar ZAREBAMBAR,12.3,07:50,08:20,ST,,,,,,,,ORD,349
+47,4,10789,64290,दोडामार्ग,Dodamarg,पाळये,Palye,kudasa titha BHEDSHI TILARI,21,09:00,09:45,ST,,,,,,,,ORD,350
+47,5,61924,64291,पाळये,Palye,दोडामार्ग,Dodamarg,kudasa TILARI  BHEDSHI KUDASA,31,10:00,11:15,ST,,,,,,,,ORD,351
+47,6,10797,64292,दोडामार्ग,Dodamarg,उसप,Usap,pikule PIKULE,17.3,12:00,12:40,ST,,,,,,,,ORD,352
+47,7,17749,64293,उसप,Usap,दोडामार्ग,Dodamarg,pikule PIKULE,17.3,12:50,13:30,ST,,,,,,,,ORD,353
+47,8,17715,64757,दोडामार्ग,Dodamarg,सावंतवाडी,Sawantwadi,KALNE  BANDA,36.9,13:30,15:00,OPN,,,,,,,,ORD,354
+48,1,18442,64311,कुंब्रल,Kumbral Mandir,सावंतवाडी,Sawantwadi,KOLZAR  TALKAT BANDA,34.2,07:00,08:15,ST,,,,,,,,ORD,360
+48,2,11149,64312,सावंतवाडी,Sawantwadi,कुडासा,Kudasa,BANDA TALKAT KOLZAR KUMBRAL BHARPAL,40.2,08:30,09:55,ST,,,,,,,,ORD,361
+48,3,18445,64313,कुडासा,Kudasa,सावंतवाडी,Sawantwadi,BHARPAL KUMBRAL KOLZAR TALKAT BANDA,40.2,10:10,11:25,ST,,,,,,,,ORD,362
+,1,11185,64036,सावंतवाडी,Sawantwadi,उपवडे,Upawade Kerdalwadi,MANGAON  WADOS  DUKANWAD,33,12:15,13:30,ST,,,,,,,,ORD,364
+,2,18779,64037,उपवडे,Upawade Kerdalwadi,सावंतवाडी,Sawantwadi,DUKANWAD WADOS MANGAON,33,13:40,14:55,ST,,,,,,,,ORD,365
+,3,11178,64308,सावंतवाडी,Sawantwadi,शिरशिंगे,Shirshinge Gothavewadi,SANGELI  KALAMBIST,30.2,16:00,17:20,ST,,,,,,,,ORD,366
+,4,18649,64309,शिरशिंगे,Shirshinge Gothavewadi,सावंतवाडी,Sawantwadi,KALAMBIST SANGELI,30.2,17:30,18:50,ST,,,,,,,,ORD,367
+,5,11153,64310,सावंतवाडी,Sawantwadi,कुंब्रल,Kumbral Mandir,BANDA TALKAT KOLZAR,34.2,19:00,20:25,ST,,,,,,,,ORD,368
+49,1,18446,64320,कुडासा,Kudasa,बांदा,Banda,BHARPAL KUMBRAL KOLZAR TALKAT BANDA,28.1,06:15,07:15,ST,,,,,,,,ORD,370
+49,2,10671,64321,बांदा,Banda,विठठलवाडी,Vitthalwadi,DEGAWE TALKAT ZOLAMBE,18,07:40,08:10,OBL,,,,,,,,ORD,371
+49,3,17604,64322,विठठलवाडी,Vitthalwadi,बांदा,Banda,ZOLAMBE  TALKAT  DEGAWE,18,08:20,08:50,OBL,,,,,,,,ORD,372
+49,4,17603,64759,बांदा,Banda,सावंतवाडी,Sawantwadi,,12.6,09:00,09:30,OPN,,,,,,,,ORD,373
+,4,11160,64456,सावंतवाडी,Sawantwadi,निवजे,Nivaje Mandir,MANGAON AMBERI,22.2,11:40,12:35,ST,,,,,,,,ORD,376
+,5,18607,64457,निवजे,Nivaje Mandir,सावंतवाडी,Sawantwadi,AMBERI MANGAON,22.2,12:35,13:35,ST,,,,,,,,ORD,377
+,1,11141,64060,सावंतवाडी,Sawantwadi,कास,Kas Mauli Mandir,BANDA  SHERLA,25.3,12:00,13:00,ST,,,,,,,,ORD,378
+,2,17596,64061,कास,Kas Mauli Mandir,सावंतवाडी,Sawantwadi,SHERLA  BANDA,25.3,13:10,14:10,ST,,,,,,,,ORD,379
+,3,11127,64062,सावंतवाडी,Sawantwadi,दोडामार्ग,Dodamarg,BANDA KALNE,36.9,14:30,15:50,NOBL,,,,,,,,ORD,380
+,4,17611,64063,दोडामार्ग,Dodamarg,बांदा,Banda,kumbral BHARPAL PANTURLI KUMBRAL KOLZAR TALKAT DEGWE,36,17:00,18:15,NOBL,,,,,,,,ORD,381
+,5,10666,64319,बांदा,Banda,कुडासा,Kudasa,DEGWE TALKAT KOLZAR KUMBRAL BHARPAL,28.1,18:30,19:30,ST,,,,,,,,ORD,382
+50,1,17377,64333,किरणपाणी,Kiranpani,सावंतवाडी,Sawantwadi,shiroda ARONDA SHIRODA MALEWAD RAILSTATION,35.2,06:00,07:20,ST,,,,,,,,ORD,384
+50,2,11174,64334,सावंतवाडी,Sawantwadi,शिरोडा,Shiroda,phanaskhol PHANASKHOL,34.2,07:30,08:45,NOBL,,,,,,,,ORD,385
+50,3,18737,64335,शिरोडा,Shiroda,सावंतवाडी,Sawantwadi,MALEWAD RAILSTATION,27.2,09:00,10:00,NOBL,,,,,,,,ORD,386
+50,4,11178,64158,सावंतवाडी,Sawantwadi,शिरशिंगे,Shirshinge Gothavewadi,SANGELI   KALAMBIST upto Malai,28.2,10:00,11:30,OBL,,,,,,,,ORD,387
+50,5,18649,64159,शिरशिंगे,Shirshinge Gothavewadi,सावंतवाडी,Sawantwadi,From Malai KALAMBIST  SANGELI,28.2,11:10,12:40,OBL,,,,,,,,ORD,388
+,5,109033,64458,सावंतवाडी,Sawantwadi,,Boyache Kerwade Titha,,27,00:13,00:14,ST,,,,,,,,ORD,390
+,6,119034,64459,,Boyache Kerwade Titha,सावंतवाडी,Sawantwadi,,27,01:41,01:51,ST,,,,,,,,ORD,391
+,3,100051,64557,सावंतवाडी,Sawantwadi,वजराट,Vajrath Chavata,AKERI  KAMLAEWEER,15,17:00,17:55,ST,,,,,,,,ORD,393
+,4,100052,64558,वजराट,Vajrath Chavata,सावंतवाडी,Sawantwadi,KAMALEWEER AKERI,15,17:30,18:20,ST,,,,,,,,ORD,394
+,5,11114,64332,सावंतवाडी,Sawantwadi,किरणपाणी,Kiranpani,RAILSTATION MALEWAD ARONDA GOLTUVWADI ARONDA,42.4,17:30,19:15,ST,,,,,,,,ORD,395
+51,1,11161,64338,सावंतवाडी,Sawantwadi,ओटवणे,Otavane Kasar Dukan,,12.4,06:00,06:30,ST,,,,,,,,ORD,397
+51,2,18611,64339,ओटवणे,Otavane Kasar Dukan,सावंतवाडी,Sawantwadi,,12.4,06:40,07:10,ST,,,,,,,,ORD,398
+51,3,11129,64340,सावंतवाडी,Sawantwadi,दोडामार्ग,Dodamarg,"zolambe ZOLAMBE , KUMBRAL",57.9,07:30,09:35,,,,,,,,,,399
+51,4,17715,64341,दोडामार्ग,Dodamarg,सावंतवाडी,Sawantwadi,,36.9,01:03,01:15,,,,,,,,,,400
+51,5,11183,64407,सावंतवाडी,Sawantwadi,सोनुर्ली,Sonurli Sateri Mandir,RAILSTATION NHAWELI,14.9,12:15,12:55,ST,,,,,,,,ORD,401
+51,6,18640,64408,सोनुर्ली,Sonurli Sateri Mandir,सावंतवाडी,Sawantwadi,NHAWELI RAILSTATION,14.9,13:00,13:40,ST,,,,,,,,ORD,402
+,3,11122,64478,सावंतवाडी,Sawantwadi,भटपावणी,Bhatpawani,RAILSTATION MALEWAD  ARONDA,33,13:45,15:05,ST,,,,,,,,ORD,404
+,4,17609,64479,भटपावणी,Bhatpawani,सावंतवाडी,Sawantwadi,ARONDA MALEWAD RAILSTATION,33,15:05,16:25,ST,,,,,,,,ORD,405
+,5,11137,64622,सावंतवाडी,Sawantwadi,कालिकामंदीर,Kalika Mandir,,8.2,16:30,16:50,NOBL,,,,,,,,ORD,406
+,6,18448,64623,कालिकामंदीर,Kalika Mandir,सावंतवाडी,Sawantwadi,,8.2,16:55,17:10,NOBL,,,,,,,,ORD,407
+,7,88386,64591,सावंतवाडी,Sawantwadi,फणसवडे,Phanasawade,,24,14:00,18:45,ST,,,,,,,,ORD,408
+,8,88387,64592,फणसवडे,Phanasawde,सावंतवाडी,Sawantwadi,,24,15:05,19:50,ST,,,,,,,,ORD,409
+52,1,11145,64344,सावंतवाडी,Sawantwadi,खेरवाडी,Kherwadi,MALGAO TALAWADE,13.8,06:00,06:30,ST,,,,,,,,ORD,411
+52,2,18537,64345,खेरवाडी,Kherwadi,सावंतवाडी,Sawantwadi,TALAWADE MALGAON,13.8,06:40,07:05,ST,,,,,,,,ORD,412
+52,3,11137,64346,सावंतवाडी,Sawantwadi,कालिकामंदीर,Kalika Mandir,,8.2,07:20,07:40,NOBL,,,,,,CHECK KMS,,ORD,413
+52,4,18448,64347,कालिकामंदीर,Kalika Mandir,सावंतवाडी,Sawantwadi,,8.2,07:50,08:05,NOBL,,,,,,CHECH KMS,,ORD,414
+52,5,11127,64445,सावंतवाडी,Sawantwadi,दोडामार्ग,Dodamarg,BANDA KALANE,36.9,08:45,10:05,OPN,,,,,,,,ORD,415
+52,6,10798,64349,दोडामार्ग,Dodamarg,पिकुळे,Pikule Mandir,zare bambar ZAREBAMBAR PIKULE,17.3,10:15,10:45,ST,,,,,,,,ORD,416
+52,7,17746,64350,पिकुळे,Pikule Mandir,दोडामार्ग,Dodamarg,zarebambar PIKULE  ZAREBAMBAR,17.3,10:50,11:30,ST,,,,,,,,ORD,417
+52,8,60632,64446,दोडामार्ग,Dodamarg,सावंतवाडी,Sawantwadi,kumbral BHARPAL KUMBRAL KOLZAR TALKAT BANDA  PAGAWADI,57,11:45,14:00,OPN,,,,,,,,ORD,418
+53,1,11159,64369,सावंतवाडी,Sawantwadi,,Nirukhewadi,,8.2,06:30,06:45,ST,,,,,,,,ORD,423
+53,2,18600,64370,,Nirukhewadi,सावंतवाडी,Sawantwadi,,8.2,06:45,07:20,ST,,,,,,,,ORD,424
+53,3,45352,64753,सावंतवाडी,Sawantwadi,पणजी,Panjim,BANDA PATRADEVI MHAPSA,61.7,08:00,10:00,NOBL,,,,,,,,ORD,425
+53,4,10680,64431,पणजी,Panjim,बेळगांव,Belgaum,MHAPSA ASNODA DODAMARG BHEDSHI TILARINAGAR PATNEPHATA,127.5,10:45,15:00,NOBL,,,,,,,,ORD,426
+53,5,59624,64432,बेळगांव,Belgaum,सावंतवाडी,Sawantwadi,PATNEPHATA CHANDGADPHATA KANUR AMBOLI,103,16:00,19:00,NOBL,,,,,,,,ORD,427
+54,1,11137,64433,सावंतवाडी,Sawantwadi,कालिकामंदीर,Kalika Mandir,,8.2,06:10,06:30,ST,,,,,,,,ORD,429
+54,2,18448,64434,कालिकामंदीर,Kalika Mandir,सावंतवाडी,Sawantwadi,,8.2,06:35,06:55,ST,,,,,,,,ORD,430
+54,3,60307,64435,सावंतवाडी,Sawantwadi,,Malgaon,,6.3,07:00,07:15,ST,,,,,,,,ORD,431
+54,4,60308,64436,,Malgaon,सावंतवाडी,Sawantwadi,,6.3,07:25,07:40,ST,,,,,,,,ORD,432
+,1,11177,64363,सावंतवाडी,Sawantwadi,,Dhondwadi,SANGELI  KALAMBIST,28.2,08:00,09:00,ST,,,,,,,,ORD,434
+,2,60300,64364,,Dhondwadi,सावंतवाडी,Sawantwadi,KALAMBIST SANGELI,28.2,09:10,10:10,ST,,,,,,,,ORD,435
+,1,11142,64249,सावंतवाडी,Sawantwadi,केर,Ker,BANDA DODAMARG BHEDSHI TILARI MORLE,62.5,10:30,13:00,ST,,,,,,NOT FOUND IN FORM 4,,ORD,437
+,2,118530,64250,केर,Ker,बांदा,Banda,MORLE TILARI BHEDSHI DODAMARG KALANE,50.8,13:10,14:10,ST,,,,,,,,ORD,438
+,3,10784,64485,बांदा,Banda,दोडामार्ग,Dodamarg,DEGWE TALKAT KOLZAR KUMBRAL BHARPAL,36,16:00,17:15,NOBL,,,,,,,,ORD,439
+,4,17715,64486,दोडामार्ग,Dodamarg,सावंतवाडी,Sawantwadi,KALNE  BANDA,36.9,16:45,18:50,NOBL,,,,,,,,ORD,440
+55,1,60600,64439,बिजघर,Bijghar Colony,दोडामार्ग,Dodamarg,sonaval SONAVAL MULAS TILARI BHEDSHI,31.1,06:45,07:45,ST,,,,,,,,ORD,442
+55,2,10793,64404,दोडामार्ग,Dodamarg,फणसवाडी,Phanaswadi,BHEDSHI KHOKRAL TALEWADI,29,08:00,09:10,NOBL,,,,,,,,ORD,443
+55,3,60668,64405,फणसवाडी,Phanaswadi,दोडामार्ग,Dodamarg,TALEWADI KHOKRAL BHEDSHI,29,09:10,10:10,NOBL,,,,,,,,ORD,444
+55,4,63048,64463,दोडामार्ग,Dodamarg,शिरंगे,Shirange,BHEDSHI,15,12:30,10:40,ST,,,,,,,,ORD,445
+55,5,63049,64464,शिरंगे,Shirange,दोडामार्ग,Dodamarg,BHEDSHI,15,13:10,11:10,ST,,,,,,,,ORD,446
+55,6,17715,64761,दोडामार्ग,Dodamarg,सावंतवाडी,Sawantwadi,KALNE  BANDA,36.9,10:35,13:20,OPN,,,,,,,,ORD,447
+,3,11175,64114,सावंतवाडी,Sawantwadi,शिरोडा,Shiroda,tiroda MALEWAD  TIRODA,35.2,14:20,15:30,OBL,,,,,,,,ORD,449
+,4,18737,64115,शिरोडा,Shiroda,सावंतवाडी,Sawantwadi,MALEWAD RAILSTATION,27.2,15:45,16:40,OBL,,,,,,,,ORD,450
+,5,11166,64116,सावंतवाडी,Sawantwadi,फणसखोल,Phanaskhol Ganesh Mandir,MALEWAD  SHIRODA,35.2,17:00,18:20,ST,,,,,,,,ORD,451
+56,1,117648,64466,सावंतवाडी,Sawantwadi,फणसवाडी,Phanaswadi,BANDA DODAMARG BHEDSHI KHOKRAL TALEWADI,65.9,11:00,01:33,NOBL,,,,,,,,ORD,453
+56,2,60668,64467,फणसवाडी,Phanaswadi,दोडामार्ग,Dodamarg,TALEWADI KHOKRAL BHEDSHI,29,15:20,01:44,NOBL,,,,,,,,ORD,454
+56,3,73297,64501,दोडामार्ग,Dodamarg,भेडशी,Bhedshi,,11.5,15:30,01:52,ST,,,,,,,,ORD,455
+56,4,73298,64502,भेडशी,Bhedshi,दोडामार्ग,Dodamarg,,11.5,16:25,01:55,,,,,,,,,,456
+56,5,10793,64468,दोडामार्ग,Dodamarg,फणसवाडी,Phanaswadi,,29,00:17,18:15,,,,,,,,,,457
+57,1,60668,64469,फणसवाडी,Phanaswadi,दोडामार्ग,Dodamarg,TALEWADI KHOKRAL BHEDSHI,29,06:30,07:45,ST,,,,,,,,ORD,459
+57,2,63048,64461,दोडामार्ग,Dodamarg,शिरंगे,Shirange,BHEDSHI,15,08:30,08:30,ST,,,,,,,,ORD,460
+57,3,63049,64462,शिरंगे,Shirange,दोडामार्ग,Dodamarg,BHEDSHI,15,08:40,09:10,ST,,,,,,,,ORD,461
+57,4,10785,64493,दोडामार्ग,Dodamarg,बिजघर,Bijghar Colony,BHEDSHI TILARI MULAS,31.1,09:30,10:30,ST,,,,,,,,ORD,462
+57,5,63798,64494,बिजघर,Bijghar Colony,सावंतवाडी,Sawantwadi,sonaval MULAS SONAVAL TILARI BHEDSHI DODAMARG KALNE BANDA,68,10:40,13:10,ST,,,,,,,,ORD,463
+58,1,18649,64384,,Dhondwadi,सावंतवाडी,Sawantwadi,KALAMBIST SANGELI,30.2,06:30,07:15,ST,,,,,,,,ORD,467
+58,2,11145,64603,सावंतवाडी,Sawantwadi,तळवडे,Talawade Gate,RAILSTATION,13.8,06:30,08:05,ST,,,,,,,,ORD,468
+58,3,18537,64604,तळवडे,Talawade Gate,सावंतवाडी,Sawantwadi,RAILSTATION,13.8,07:45,08:45,ST,,,,,,,,ORD,469
+58,4,63684,64483,सावंतवाडी,Sawantwadi,मोरे,More Dhangarwadi,MANGAON KANDULI,24,10:00,09:50,OBL,,,,,,,,ORD,470
+58,5,63686,64484,मोरे,More Dhangarwadi,सावंतवाडी,Sawantwadi,KANDULI MANGAON,24,10:50,11:00,OBL,,,,,,,,ORD,471
+,1,11153,64120,सावंतवाडी,Sawantwadi,कुंब्रल,Kumbral Mandir,BANDA,34.2,11:45,13:00,ST,,,,,,,,ORD,473
+,2,18442,64121,कुंब्रल,Kumbral Mandir,सावंतवाडी,Sawantwadi,BANDA,34.2,13:10,14:25,ST,,,,,,,,ORD,474
+,3,11161,64515,सावंतवाडी,Sawantwadi,ओटवणे,Otavane Kasar Dukan,,12.4,15:15,15:40,ST,,,,,,,,ORD,475
+,4,18611,64516,ओटवणे,Otavane Kasar Dukan,सावंतवाडी,Sawantwadi,,12.4,15:50,16:15,ST,,,,,,,,ORD,476
+,5,11164,64601,सावंतवाडी,Sawantwadi,पारपोली,Parpoli,DANOLI DEWSU,21.7,16:15,17:05,ST,,,,,,,,ORD,477
+,6,18615,64602,पारपोली,Parpoli,सावंतवाडी,Sawantwadi,DEWSU DANOLI,21.7,17:05,00:18,ST,,,,,,,,ORD,478
+,7,11178,64383,सावंतवाडी,Sawantwadi,,Dhondwadi,SANGELI  KALAMBIST,30.2,18:30,00:19,ST,,,,,,,,ORD,479
+59,1,17747,64276,उसप,Usap,दोडामार्ग,Dodamarg,bhedshi BHEDSHI DODAMARG BANDA,16.7,06:10,06:50,ST,,,,,,,,ORD,481
+59,2,10792,64277,दोडामार्ग,Dodamarg,प्ार्ये,Parye,VAZARE MATNE AAI,16.1,07:00,07:40,ST,,,,,,,,ORD,482
+59,3,17335,64278,प्ार्ये,Parye,दोडामार्ग,Dodamarg,AAI MATANE VAZARE,16.1,07:50,08:30,ST,,,,,,,,ORD,483
+59,4,10787,64507,दोडामार्ग,Dodamarg,मांगेली,Mangeli Dewoolwadi,BHEDSHI KHOKRAL,26,08:40,09:50,ST,,,,,,,,ORD,484
+59,5,17628,64508,मांगेली,Mangeli Dewoolwadi,दोडामार्ग,Dodamarg,KHOKRAL BHEDSHI,26,09:50,11:25,ST,,,,,,,,ORD,485
+59,6,17715,64765,दोडामार्ग,Dodamarg,सावंतवाडी,Sawantwadi,KALANE BANDA,36.9,12:00,13:20,OPN,,,,,,,,ORD,486
+60,1,72056,64315,पणतुर्ली,Panturli Titha,बांदा,Banda,nabar highschool KUMBRAL KOLZAR TALKAT DEGWE BANDA NABAR HIGHSCHOOL,24,06:45,00:08,ST,,,,,,,,ORD,490
+60,2,104886,64541,बांदा,Banda,कोलझर,Kolzar Mungi Dukan,KALANE BHIKEKONAL,22.2,08:20,09:10,ST,,,,,,CHANGE,,ORD,491
+60,3,104887,64542,कोलझर,Kolzar Mungi Dukan,बांदा,Banda,bhikekonal BHIKEKONAL KALANE,22.2,09:10,10:10,ST,,,,,,CHANGE,,ORD,492
+60,4,60731,64342,बांदा,Banda,शिरोडा,Shiroda,MADURA TITHA AROS KONDURA TITHA MALEWAD,27,01:03,01:13,ST,,,,,,,,ORD,493
+60,5,60730,64343,शिरोडा,Shiroda,बांदा,Banda,MALEWAD KONDURA TITHA AROS MADURA TITHA,27,12:50,01:24,ST,,,,,,,,ORD,494
+60,6,17603,64403,बांदा,Banda,सावंतवाडी,Sawantwadi,,12.6,12:50,13:20,OPN,,,,,,,,ORD,495
+61,1,117645,64518,सावंतवाडी,Sawantwadi,,Madura Titha,PAGAWADI BANDA SHERLA,25,06:00,06:40,ST,,,,,,,,ORD,499
+61,2,75079,64519,,Madura Titha,बांदा,Banda,SHERLA,11.6,07:20,07:10,ST,,,,,,,,ORD,500
+61,3,75165,64563,बांदा,Banda,,Dongarpal,,12,07:15,07:40,OBL,,,,,,,,ORD,501
+61,4,75166,64564,,Dongarpal,बांदा,Banda,,12,07:20,08:10,OBL,,,,,,,,ORD,502
+61,5,97998,64565,बांदा,Banda,,Madura School,NIGUDE,12,09:30,09:55,ST,,,,,,,,ORD,503
+61,6,97999,64566,,Madura School,बांदा,Banda,NIGUDE,12,10:00,10:25,ST,,,,,,,,ORD,504
+61,7,10784,64567,बांदा,Banda,दोडामार्ग,Dodamarg,KUMBRAL DEGWE TALKAT KOLZAR KUMBRAL BHARPAL,36,10:50,12:00,NOBL,,,,,,,,ORD,505
+61,8,102576,64568,दोडामार्ग,Dodamarg,बांदा,Banda,KALNE,24,12:15,13:00,NOBL,,,,,,,,ORD,506
+61,9,77249,64587,बांदा,Banda,,Kalane,nabar highschool NABAR HIGHSCHOOL DEGWE,15.5,13:45,14:15,ST,,,,,,,,ORD,507
+61,10,105609,64588,,Kalane,सावंतवाडी,Sawantwadi,DEGWE BANDA,25.1,14:25,15:35,ST,,,,,,,,ORD,508
+,5,11366,64389,सावंतवाडी,Sawantwadi,सिंधुदूर्गनगरी,Sindhudurgnagari,KUDAL,36.2,16:20,17:20,NOBL,,,,,,,,ORD,510
+,6,18609,64390,सिंधुदूर्गनगरी,Sindhudurgnagari,सावंतवाडी,Sawantwadi,NONSTOP,36.2,18:00,19:00,NOBL,,,,,,,,ORD,511
+62,1,11121,64412,सावंतवाडी,Sawantwadi,मुलांडावाडी,Mulandawadi,MADKHOL BAVLAT,18,05:30,06:00,ST,,,,,,,,ORD,513
+62,2,17610,64413,मुलांडावाडी,Mulandawadi,सावंतवाडी,Sawantwadi,BAVLAT MADKHOL,18,07:00,06:35,ST,,,,,,,,ORD,514
+62,3,11145,64531,सावंतवाडी,Sawantwadi,खेरवाडी,Kherwadi,RAILSTATION,13.8,07:00,07:10,ST,,,,,,,,ORD,515
+62,4,18537,64532,खेरवाडी,Kherwadi,सावंतवाडी,Sawantwadi,RAILSTATION,13.8,07:35,07:45,ST,,,,,,,,ORD,516
+62,5,11137,64616,सावंतवाडी,Sawantwadi,कालिकामंदीर,Kalika Mandir,,8.2,09:00,09:00,NOBL,,,,,,,,ORD,517
+62,6,18448,64617,कालिकामंदीर,Kalika Mandir,सावंतवाडी,Sawantwadi,,8.2,09:30,09:25,NOBL,,,,,,,,ORD,518
+,4,61563,64044,सावंतवाडी,Sawantwadi,सातोसे,Satose Dewoolwada,madura titha BANDA  MADURATITHA,24,09:45,10:45,ST,,,,,,MAIL,,ORD,520
+,5,61561,64045,सातोसे,Satose Dewoolwada,सावंतवाडी,Sawantwadi,madura titha MADURATITHA  BANDA,24,11:00,11:55,ST,,,,,,MAIL,,ORD,521
+,1,11142,64503,सावंतवाडी,Sawantwadi,केर,Ker,BANDA DODAMARG BHEDSHI TILARI MORLE,62.5,12:30,15:30,ST,,,,,,,,ORD,523
+,2,63544,64504,केर,Ker,सावंतवाडी,Sawantwadi,tirali MORLE TILARI BHEDSHI DODAMARG BANDA,62.5,15:40,16:10,ST,,,,,,,,ORD,524
+,3,74168,64275,सावंतवाडी,Sawantwadi,उसप,Usap,BANDA DODAMARG BHEDSHI,53.6,18:00,20:00,ST,,,,,,,,ORD,525
+63,1,117643,64474,सावंतवाडी,Sawantwadi,,Kalane,pagawadi PAGAWADI BANDA DEGWE,25.1,06:15,07:00,ST,,,,,,,,ORD,527
+63,2,105608,64475,,Kalane,बांदा,Banda,nabar highschool DEGWE NABAR HIGHSCHOOL,15.5,07:30,07:40,ST,,,,,,,,ORD,528
+63,3,10659,64584,बांदा,Banda,असनिये,Asniye,WAFOLI SOCI  BHALAWAL TAMBOLI,18.8,08:00,08:40,ST,,,,,,,,ORD,529
+63,4,17585,64585,असनिये,Asniye,बांदा,Banda,TAMBOLI BHALAWAL WAFOLI SOCI  BANDA,18.8,09:00,10:00,ST,,,,,,,,ORD,530
+63,5,10663,64533,बांदा,Banda,कास,Kas Mauli Mandir,SHERLA,12.7,00:10,01:03,ST,,,,,,,,ORD,531
+63,6,17595,64534,कास,Kas Mauli Mandir,बांदा,Banda,SHERLA,12.7,10:50,01:11,ST,,,,,,,,ORD,532
+63,7,94441,64543,बांदा,Banda,तिराळी,Tirali,KALANE WANOSHI BHEDSH kudasa,36,12:00,13:35,ST,,,,,,,,ORD,533
+63,8,117644,64544,तिराळी,Tirali,बांदा,Banda,BHEDSHI WANOSHI KALANE,24,13:35,15:00,ST,,,,,,,,ORD,534
+63,9,10663,64571,बांदा,Banda,कास,Kas Mauli Mandir,SHERLA,12.7,16:00,16:30,NOBL,,,,,,,,ORD,535
+63,10,17595,64572,कास,Kas Mauli Mandir,बांदा,Banda,SHERLA,12.7,16:40,17:10,NOBL,,,,,,,,ORD,536
+63,11,75165,64573,बांदा,Banda,,Dongarpal,,12,17:20,17:50,OBL,,,,,,,,ORD,537
+63,12,75166,64574,,Dongarpal,बांदा,Banda,,12,18:00,18:30,OBL,,,,,,,,ORD,538
+63,13,17603,64767,बांदा,Banda,सावंतवाडी,Sawantwadi,,12.6,18:35,19:00,OPN,,,,,,,,ORD,539
+64,1,18754,64117,फणसखोल,Phanaskhol Ganesh Mandir,सावंतवाडी,Sawantwadi,SHIRODA MALEWAD RAILSTATION,35.2,06:15,07:35,ST,,,,,,,,ORD,541
+64,2,61938,64118,सावंतवाडी,Sawantwadi,,Nanos Konkan Pharma,RAILSTATION MALEWAD SHIRODA,32.3,08:00,09:10,NOBL,,,,,,,,ORD,542
+64,3,61939,64119,,Nanos Konkan Pharma,सावंतवाडी,Sawantwadi,SHIRODA MALEWAD RAILSTATION,32.3,09:25,10:30,NOBL,,,,,,,,ORD,543
+64,4,11172,64088,सावंतवाडी,Sawantwadi,शिरोडा,Shiroda,RAILSTATION MALEWAD,27.2,11:30,11:45,NOBL,,,,,,,,ORD,544
+64,5,18737,64089,शिरोडा,Shiroda,सावंतवाडी,Sawantwadi,MALEWAD RAILSTATION,27.2,12:00,13:20,NOBL,,,,,,,,ORD,545
+,3,11186,64200,सावंतवाडी,Sawantwadi,उसप,Usap,usap titha BANDA DODAMARG USAPTITHA,54.1,15:00,17:00,ST,,,,,,,,ORD,547
+,4,17748,64201,उसप,Usap,दोडामार्ग,Dodamarg,usap titha USAPTITHA,14.5,17:10,17:40,ST,,,,,,,,ORD,548
+,5,10794,64202,दोडामार्ग,Dodamarg,पिकुळे,Pikule Mandir,usap titha USAPTITHA,12.3,18:15,18:30,ST,,,,,,,,ORD,549
+65,1,17703,64203,पिकुळे,Pikule Mandir,दोडामार्ग,Dodamarg,usap titha USAPTITHA,12.3,06:50,07:15,ST,,,,,,,,ORD,551
+65,2,10795,64204,दोडामार्ग,Dodamarg,उसप,Usap,usap titha USAPTITHA,14.5,07:20,07:50,NOBL,,,,,,,,ORD,552
+65,3,18781,64205,उसप,Usap,सावंतवाडी,Sawantwadi,USAPTITHA,54.1,08:00,10:00,OPN,,,,,,,,ORD,553
+65,4,11172,64172,सावंतवाडी,Sawantwadi,शिरोडा,Shiroda,MALEWAD,27.2,10:30,11:30,ST,,,,,,,,ORD,554
+65,5,18738,64173,शिरोडा,Shiroda,सावंतवाडी,Sawantwadi,phanaskhol PHANASKHOL,31.8,11:40,13:00,ST,,,,,,,,ORD,555
+66,1,88347,64105,कुंभवडे,Kumbhawade,सावंतवाडी,Sawantwadi,CHOUKUL  AMBOLI  DANOLI,54.1,07:00,09:05,ST,,,,,,,,ORD,559
+66,2,11121,64106,सावंतवाडी,Sawantwadi,मुलांडावाडी,Mulandawadi,BAVLAT,18,09:20,09:45,ST,,,,,,,,ORD,560
+66,3,17610,64107,मुलांडावाडी,Mulandawadi,सावंतवाडी,Sawantwadi,BAVLAT,18,09:55,10:25,ST,,,,,,,,ORD,561
+,1,88344,64100,सावंतवाडी,Sawantwadi,कुंभवडे,Kumbhawade,DANOLI  AMBOLI  NENEWADI  CHOUKUL,54.1,13:30,15:40,ST,,,,,,,,ORD,563
+,2,88346,64101,कुंभवडे,Kumbhawade,आंबोली,Amboli,,24.5,15:40,16:50,ST,,,,,,,,ORD,564
+,3,10654,64102,आंबोली,Amboli,गेळे,Gele Gawthan,,9,17:00,17:35,ST,,,,,,,,ORD,565
+,4,17369,64103,गेळे,Gele Gawthan,आंबोली,Amboli,,9,17:35,18:15,ST,,,,,,,,ORD,566
+,5,88345,64104,आंबोली,Amboli,भेकुर्ली,Bhekurli,CHOUKUL,24.5,18:15,19:50,ST,,,,,,,,ORD,567
+67,1,18773,64049,शिवापूर,Shivapur High School,सावंतवाडी,Sawantwadi,WASOLI DUKANWAD WADOS MANGAON,38.6,06:30,08:15,ST,,,,,,,,ORD,569
+67,2,11178,64050,सावंतवाडी,Sawantwadi,शिरशिंगे,Shirshinge Gothavewadi,SANGELI   KALAMBIST,30.2,08:30,10:00,MAIL,,,,,,,,ORD,570
+67,3,18649,64051,शिरशिंगे,Shirshinge Gothavewadi,सावंतवाडी,Sawantwadi,KALAMBIST SANGELI,30.2,10:10,11:40,MAIL,,,,,,,,ORD,571
+67,4,11120,64409,सावंतवाडी,Sawantwadi,बांदा,Banda,pagawadi PAGAWADI,14.6,12:00,12:45,OPN,,,,,,,,ORD,572
+67,5,60321,64410,बांदा,Banda,सावंतवाडी,Sawantwadi,PAGAWADI,14.6,12:50,13:30,,,,,,,,,,573
+,3,11164,64220,सावंतवाडी,Sawantwadi,पारपोली,Parpoli,DANOLI  DEWASU,21.7,14:30,15:20,ST,,,,,,,,ORD,575
+,4,18615,64221,पारपोली,Parpoli,सावंतवाडी,Sawantwadi,DEWASU DANOLI,21.7,15:30,16:20,ST,,,,,,,,ORD,576
+,5,11180,64048,सावंतवाडी,Sawantwadi,शिवापूर,Shivapur High School,MANGAON WADOS DUKANWAD WASOLI,38.6,17:15,18:15,ST,,,,,,,,ORD,577
+68,1,18536,64075,रेडी कनयाळ,Redi Kanyal,सावंतवाडी,Sawantwadi,goltuvwadi BHATPAWNI  GOLTUVWADI ARONDA MALEWAD,42.4,06:10,07:50,ST,,,,,,,,ORD,579
+68,2,11185,64076,सावंतवाडी,Sawantwadi,उपवडे,Upawade Kerdalwadi,MANGAON  WADOS  DUKANWAD,33,08:00,09:15,NOBL,,,,,,,,ORD,580
+68,3,18779,64077,उपवडे,Upawade Kerdalwadi,सावंतवाडी,Sawantwadi,DUKANWAD WADOS MANGAON,33,09:25,10:40,NOBL,,,,,,,,ORD,581
+68,4,11201,64326,सावंतवाडी,Sawantwadi,फौजदारवाडी,Foujdarwadi,SANGELI  KALAMBIST,25.1,11:30,12:35,ST,,,,,,,,ORD,582
+68,5,18786,64327,फौजदारवाडी,Foujdarwadi,सावंतवाडी,Sawantwadi,KALAMBIST SANGELI,25.1,12:40,13:45,ST,,,,,,,,ORD,583
+,3,11113,64375,सावंतवाडी,Sawantwadi,किरणपाणी,Kiranpani,RAILSTATION MALEWAD,27.2,15:30,16:45,NOBL,,,,,,,,ORD,585
+,4,17378,64376,किरणपाणी,Kiranpani,सावंतवाडी,Sawantwadi,MALEWAD RAILSTATION,27.2,17:00,18:10,NOBL,,,,,,,,ORD,586
+,5,11110,64074,सावंतवाडी,Sawantwadi,रेडी कनयाळ,Redi Kanyal,shiroda RAILSTATION  MALEWAD SHIRODA,34.9,18:00,19:40,ST,,,,,,,,ORD,587
+69,7,18771,64227,सातार्डा,Satarda,सावंतवाडी,Sawantwadi,nigude SATOSE MADURATITHA NIGUDE  BANDA,41,06:15,07:40,ST,,,,,,,,ORD,589
+69,8,61970,64447,सावंतवाडी,Sawantwadi,पागावाडी,Pagawadi,MAJGAON CHARATA,12.3,08:45,08:45,NOBL,,,,,,,,ORD,590
+69,9,61971,64448,पागावाडी,Pagawadi,सावंतवाडी,Sawantwadi,CHARATA MAJGAON,12.3,09:25,09:20,NOBL,,,,,,,,ORD,591
+,1,11182,64295,सावंतवाडी,Sawantwadi,सोनावल,Sonaval,BANDA  DODAMARG  BHEDSHI  TILARI,58.9,09:45,11:40,ST,,,,,,,,ORD,593
+,2,56687,64296,सोनावल,Sonaval,दोडामार्ग,Dodamarg,TILARI  BHEDSHI,22,12:00,12:40,ST,,,,,,,,ORD,594
+,3,10792,64297,दोडामार्ग,Dodamarg,प्ार्ये,Parye,VAZARE  MATNE  AAI,16.1,12:55,13:25,ST,,,,,,,,ORD,595
+,4,17335,64298,प्ार्ये,Parye,दोडामार्ग,Dodamarg,AAI  MATNE  VAZARE,16.1,13:35,14:15,ST,,,,,,,,ORD,596
+,5,17715,64769,दोडामार्ग,Dodamarg,सावंतवाडी,Sawantwadi,KALNE  BANDA,36.9,14:15,15:45,ST,,,,,,,,ORD,597
+,6,11169,64226,सावंतवाडी,Sawantwadi,सातार्डा,Satarda,giroba mandir NIGUDE  MADURA  PADLOS  AROS GAOTHAN,41.6,16:30,18:30,ST,,,,,,,,ORD,598
+70,1,18649,64155,गोठवेवाडी,Gothawewadi,सावंतवाडी,Sawantwadi,SHIRSHINGE KALAMBIST SANGELI,30.2,06:00,07:30,ST,,,,,,,,ORD,600
+70,2,11160,64156,सावंतवाडी,Sawantwadi,निवजे,Nivaje Mandir,MANGAON,22.2,07:40,08:30,MAIL,,,,,,,,ORD,601
+70,3,18607,64157,निवजे,Nivaje Mandir,सावंतवाडी,Sawantwadi,MANGAON,22.2,08:40,09:30,MAIL,,,,,,,,ORD,602
+70,4,11172,64422,सावंतवाडी,Sawantwadi,शिरोडा,Shiroda,SARAL,27.2,10:00,11:00,ST,,,,,,,,ORD,603
+70,5,18737,64423,शिरोडा,Shiroda,सावंतवाडी,Sawantwadi,SARAL,27.2,01:11,12:10,ST,,,,,,,,ORD,604
+,1,11119,64402,सावंतवाडी,Sawantwadi,बांदा,Banda,,12.6,06:00,13:15,OPN,,,,,,,,ORD,606
+,2,72059,64569,बांदा,Banda,पणतुर्ली कुडासा,Panturli Kudasa,nabar highschool NABAR HIGHSCHOOL DEGWE TALKAT KOLZAR KUMBRAL,24,13:45,14:15,ST,,,,,,,,ORD,607
+,3,18446,64570,पणतुर्ली,Panturli Titha,बांदा,Banda,KUMBRAL KOLZAR TALKAT DEGWE,24,14:40,15:15,ST,,,,,,,,ORD,608
+,4,104886,64545,बांदा,Banda,कोलझर,Kolzar Mungi Dukan,KALANE BHIKEKONAL,22.2,16:40,17:10,ST,,,,,,,,ORD,609
+,5,104887,64546,कोलझर,Kolzar Mungi Dukan,बांदा,Banda,bhikekonal BHIKEKONAL KALANE,22.2,17:20,17:55,ST,,,,,,,,ORD,610
+,6,10666,64314,बांदा,Banda,पणतुर्ली कुडासा,Panturli Kudasa,DEGWE TALKAT KOLZAR KUMBRAL,24,18:10,19:00,ST,,,,,,,,ORD,611
+71,1,17376,64429,आरोंदा बाजार,Aronda Bazar,सावंतवाडी,Sawantwadi,KONDURATITHA AROS RAILSTATION MALGAON,28.8,06:30,07:40,ST,,,,,,,,ORD,613
+71,2,11190,64058,सावंतवाडी,Sawantwadi,वेळवेवाडी,Velvewadi,malewad MALGAON RAILSSTATION MALEWAD SATARDA,39.3,07:40,09:20,ST,,,,,,,,ORD,614
+71,3,18449,64059,वेळवेवाडी,Velvewadi,सावंतवाडी,Sawantwadi,malewad SATARDA MALEWAD RAILSTATION MALGAON,39.3,09:20,10:50,ST,,,,,,,,ORD,615
+71,4,75415,64491,सावंतवाडी,Sawantwadi,धवडकी,Dhawadaki Datta Mandir,bamanadevi BAMNADEVI MADKHOL,15.6,09:50,01:13,ST,,,,,,,,ORD,616
+71,5,75416,64492,धवडकी,Dhawadaki Datta Mandir,सावंतवाडी,Sawantwadi,,11.5,10:30,01:22,ST,,,,,,,,ORD,617
+,1,11172,64450,सावंतवाडी,Sawantwadi,शिरोडा,Shiroda,,27.2,12:45,13:45,,,,,,,,,,619
+,2,18737,64451,शिरोडा,Shiroda,सावंतवाडी,Sawantwadi,,27.2,00:14,00:15,,,,,,,,,,620
+,3,11154,64068,सावंतवाडी,Sawantwadi,कुणकेश्वर,Kunkeshwar,KUDAL NERURPAR MALVAN ACHARA POYARE HINDALE MITHBAV,104,15:45,19:25,NOBL,,,,,,,,ORD,621
+72,1,18542,64069,कुणकेश्वर,Kunkeshwar,सावंतवाडी,Sawantwadi,MITHBAV HINDALE POYARE ACHARA MALVAN NERURPAR KUDAL,104,07:00,10:30,NOBL,,,,,,,,ORD,623
+72,2,117646,64487,सावंतवाडी,Sawantwadi,दुकानवाड,Dukanwad,,27,11:00,00:12,,,,,,,,,,624
+72,3,117647,64488,दुकानवाड,Dukanwad,सावंतवाडी,Sawantwadi,,27,14:10,01:31,,,,,,,,,,625
+,3,11183,64206,सावंतवाडी,Sawantwadi,सोनुर्ली,Sonurli Sateri Mandir,MALGAO RAILSTATION,14.9,14:00,14:40,ST,,,,,,,,ORD,627
+,4,18640,64207,सोनुर्ली,Sonurli Sateri Mandir,सावंतवाडी,Sawantwadi,RAILSTATION MALGAON,14.9,14:40,15:25,ST,,,,,,,,ORD,628
+,5,11119,64284,सावंतवाडी,Sawantwadi,बांदा,Banda,,12.6,15:20,16:00,OPN,,,,,,,,ORD,629
+,6,62557,64183,बांदा,Banda,कोनशी,Konshi,kuderanwadi WAFOLI KUDERAN VILAWADE BHALAWAL,14.5,16:00,16:35,ST,,,,,,,,ORD,630
+,7,62556,64184,कोनशी,Konshi,बांदा,Banda,kuderanwadi BHALAWAL VILAWADE WAFOLI KUDERAN,14.5,16:40,17:15,ST,,,,,,,,ORD,631
+,8,64232,64185,बांदा,Banda,डिंगणे,Dingane Mandir,PATRADEVI GALEL,7.9,17:45,17:50,ST,,,,,,,,ORD,632
+,9,64233,64186,डिंगणे,Dingane Mandir,बांदा,Banda,GALEL PATRADEVI,7.9,18:10,18:15,ST,,,,,,,,ORD,633
+,10,105546,64470,बांदा,Banda,दाभिळ,Dabhil,VILAWADE  SARMALE,15.9,18:40,19:10,ST,,,,,,,,ORD,634
+73,1,17592,64240,फुकेरी,Fukeri,बांदा,Banda,ZOLAMBE  TALKAT  DEGAWE,22.6,06:00,06:45,ST,,,,,,,,ORD,636
+73,2,10663,64241,बांदा,Banda,कास,Kas Mauli Mandir,SHERLA,12.7,06:50,07:20,NOBL,,,,,,,,ORD,637
+73,3,17595,64242,कास,Kas Mauli Mandir,बांदा,Banda,SHERLA,12.7,07:30,08:00,NOBL,,,,,,,,ORD,638
+73,4,64232,64243,बांदा,Banda,डिंगणे,Dingane Mandir,PATRADEVI GALEL,7.9,08:10,08:30,NOBL,,,,,,,,ORD,639
+73,5,64233,64244,डिंगणे,Dingane Mandir,बांदा,Banda,GALEL PATRADEVI,7.9,08:40,09:00,NOBL,,,,,,,,ORD,640
+73,6,64747,64245,बांदा,Banda,सरमळे दाभिळ,Sarmale,KUDERANWADI KUDERANWADI VILAWADE  SARMALE,14.1,09:10,09:40,OBL,,,,,,,,ORD,641
+73,7,105547,64246,सरमळे दाभिळ,Sarmale,बांदा,Banda,kuderanwadi SARMALE  VILAWADE KUDERANWADI,14.1,09:50,10:00,OBL,,,,,,,,ORD,642
+73,8,10659,64247,बांदा,Banda,असनिये,Asniye,WAFOLI SOCI VILAWADE TAMBOLI,18.8,11:00,11:10,ST,,,,,,,,ORD,643
+73,9,61579,64248,असनिये,Asniye,सावंतवाडी,Sawantwadi,TAMBOLI VILAWADE WAFOLI SOCI  BANDA,31.4,11:15,12:30,ST,,,,,,,,ORD,644
+,7,11112,64124,सावंतवाडी,Sawantwadi,आंबेगांव,Ambegaon,,11.5,13:05,13:30,NOBL,,,,,,,,ORD,646
+,8,17336,64125,आंबेगांव,Ambegaon,सावंतवाडी,Sawantwadi,,11.5,13:40,14:00,NOBL,,,,,,,,ORD,647
+,9,87165,64373,सावंतवाडी,Sawantwadi,म्हारकाटेवाडी,Mharkatewadi,,13.5,14:01,14:40,NOBL,,,,,,,,ORD,648
+,10,87166,64374,म्हारकाटेवाडी,Mharkatewadi,सावंतवाडी,Sawantwadi,,13.5,14:30,15:20,NOBL,,,,,,,,ORD,649
+,11,11112,64330,सावंतवाडी,Sawantwadi,आंबेगांव,Ambegaon,,11.5,15:30,16:00,NOBL,,,,,,,,ORD,650
+,12,17336,64331,आंबेगांव,Ambegaon,सावंतवाडी,Sawantwadi,,11.5,16:10,16:30,NOBL,,,,,,,,ORD,651
+,13,87165,64480,सावंतवाडी,Sawantwadi,म्हारकाटेवाडी,Mharkatewadi,,13.5,16:30,17:10,NOBL,,,,,,,,ORD,652
+,14,87166,64481,म्हारकाटेवाडी,Mharkatewadi,सावंतवाडी,Sawantwadi,,13.5,17:10,18:00,NOBL,,,,,,,,ORD,653
+,15,11112,64377,सावंतवाडी,Sawantwadi,आंबेगांव,Ambegaon,,11.5,18:10,18:50,NOBL,,,,,,,,ORD,654
+,16,17336,64378,आंबेगांव,Ambegaon,सावंतवाडी,Sawantwadi,,11.5,18:50,19:20,NOBL,,,,,,,,ORD,655
+74,1,18295,64223,हेवाळे,Hewale,सावंतवाडी,Sawantwadi,MULAS  TILARI  BHEDSHI  DODAMARG  BANDA,63.2,07:20,09:50,ST,,,,,,7.2,,ORD,657
+,1,11137,64090,सावंतवाडी,Sawantwadi,कालिकामंदीर,Kalika Mandir,BHAIRAVWADI,8.2,10:10,10:30,ST,,,,,,,,ORD,659
+,2,18448,64091,कालिकामंदीर,Kalika Mandir,सावंतवाडी,Sawantwadi,BHAIRAVWADI,8.2,10:40,11:00,ST,,,,,,,,ORD,660
+,3,11189,64328,सावंतवाडी,Sawantwadi,वेळवेवाडी,Velvewadi,aros RAILSTATION AROS GAOTHAN SATARDA,39.3,12:00,13:30,ST,,,,,,,,ORD,661
+,4,18449,64329,वेळवेवाडी,Velvewadi,सावंतवाडी,Sawantwadi,malewad SATARDA KONDURATITHA MALEWAD RAILSTATION,39.3,13:40,15:10,ST,,,,,,,,ORD,662
+,5,11134,64222,सावंतवाडी,Sawantwadi,हेवाळे,Hewale,BANDA  DODAMARG BHEDSHI  TILARI  MULAS,63.2,16:45,19:00,ST,,,,,,,,ORD,663
+75,1,11139,64352,सावंतवाडी,Sawantwadi,कणकवली,Kankavli,oros SINDHUDURGNAGARI,58.7,06:30,,NOBL,,,,,,,,ORD,665
+75,2,18297,64353,कणकवली,Kankavli,सावंतवाडी,Sawantwadi,,55.7,08:30,,NOBL,,,,,,,,ORD,666
+75,3,11139,64391,सावंतवाडी,Sawantwadi,कणकवली,Kankavli,SINDHUDURGNAGARI,58.7,00:10,01:14,NOBL,,,,,,,,ORD,667
+75,4,18297,64392,कणकवली,Kankavli,सावंतवाडी,Sawantwadi,,55.7,12:05,01:33,NOBL,,,,,,,,ORD,668
+,1,11138,64452,सावंतवाडी,Sawantwadi,कणकवली,Kankavli,kasal,55.7,00:14,01:53,NOBL,,,,,,,,ORD,670
+,2,18298,64453,कणकवली,Kankavli,सावंतवाडी,Sawantwadi,sindhudurg SINDHUDURGNAGARI,58.7,15:30,,NOBL,,,,,,,,ORD,671
+,3,11139,64454,सावंतवाडी,Sawantwadi,कणकवली,Kankavli,sindhudurg SINDHUDURGNAGARI,58.7,00:18,,NOBL,,,,,,,,ORD,672
+,4,18297,64455,कणकवली,Kankavli,सावंतवाडी,Sawantwadi,kasal,55.7,00:20,02:13,NOBL,,,,,,,,ORD,673
+76,1,11138,64371,सावंतवाडी,Sawantwadi,कणकवली,Kankavli,,55.7,00:07,,NOBL,,,,,,,,ORD,675
+76,2,18297,64372,कणकवली,Kankavli,सावंतवाडी,Sawantwadi,,55.7,00:09,01:03,NOBL,,,,,,,,ORD,676
+76,3,11138,64354,सावंतवाडी,Sawantwadi,कणकवली,Kankavli,,55.7,00:11,01:23,NOBL,,,,,,,,ORD,677
+76,4,18297,64355,कणकवली,Kankavli,सावंतवाडी,Sawantwadi,,55.7,00:13,01:43,NOBL,,,,,,,,ORD,678
+,7,11138,64393,सावंतवाडी,Sawantwadi,कणकवली,Kankavli,,55.7,15:00,00:17,NOBL,,,,,,,,ORD,680
+,8,18298,64394,कणकवली,Kankavli,सावंतवाडी,Sawantwadi,SINDHUDURGNAGARI,58.7,00:18,00:20,NOBL,,,,,,,,ORD,681
+77,1,11112,64420,सावंतवाडी,Sawantwadi,आंबेगांव,Ambegaon,,11.5,10:00,00:07,NOBL,,,,,,,,ORD,683
+77,2,17336,64421,आंबेगांव,Ambegaon,सावंतवाडी,Sawantwadi,,11.5,10:40,,NOBL,,,,,,,,ORD,684
+77,3,11112,64078,सावंतवाडी,Sawantwadi,आंबेगांव,Ambegaon,,11.5,11:00,,NOBL,,,,,,,,ORD,685
+77,4,17336,64079,आंबेगांव,Ambegaon,सावंतवाडी,Sawantwadi,,11.5,11:40,09:05,NOBL,,,,,,,,ORD,686
+77,5,87165,64134,सावंतवाडी,Sawantwadi,म्हारकाटेवाडी,Mharkatewadi,,13.5,12:00,,NOBL,,,,,,,,ORD,687
+77,6,87166,64135,म्हारकाटेवाडी,Mharkatewadi,सावंतवाडी,Sawantwadi,,13.5,12:35,10:35,NOBL,,,,,,,,ORD,688
+,1,11135,64148,सावंतवाडी,Sawantwadi,हिर्लोक,Hirlok,MANGAON WADOS GOTHOS NARUR,35,11:30,12:45,ST,,,,,,,,ORD,690
+,2,17800,64149,हिर्लोक,Hirlok,सावंतवाडी,Sawantwadi,NARUR GOTHOS WADOS MANGAON,35,12:55,14:10,ST,,,,,,,,ORD,691
+78,1,75280,64593,सावंतवाडी,Sawantwadi,नेमळे,Nemale,MALGAON,15,06:30,07:00,ST,,,,,,,,ORD,693
+78,2,56665,64594,नेमळे,Nemale,सावंतवाडी,Sawantwadi,malgaon MALGAON,15,07:10,07:35,ST,,,,,,,,ORD,694
+78,3,11112,64228,सावंतवाडी,Sawantwadi,आंबेगांव,Ambegaon,,11.5,08:00,08:30,NOBL,,,,,,,,ORD,695
+78,4,17336,64229,आंबेगांव,Ambegaon,सावंतवाडी,Sawantwadi,,11.5,08:40,09:10,NOBL,,,,,,,,ORD,696
+78,5,87165,64004,सावंतवाडी,Sawantwadi,म्हारकाटेवाडी,Mharkatewadi,,13.5,09:20,09:55,NOBL,,,,,,,,ORD,697
+78,6,87166,64005,म्हारकाटेवाडी,Mharkatewadi,सावंतवाडी,Sawantwadi,,13.5,10:05,10:40,NOBL,,,,,,,,ORD,698
+,1,11205,64316,सावंतवाडी,Sawantwadi,विर्डी,Virdi,BANDA DODAMARG VAZARE TALEKHOL,57.9,12:00,13:00,ST,,,,,,,,ORD,700
+,2,17740,64317,विर्डी,Virdi,दोडामार्ग,Dodamarg,TALEKHOL VAZARE,21,14:20,14:10,ST,,,,,,,,ORD,701
+,3,10783,64251,दोडामार्ग,Dodamarg,बाबरवाडी,Babarwadi,BHEDSHI TILARI,27,16:30,17:30,ST,,,,,,,,ORD,702
+,4,17590,64252,बाबरवाडी,Babarwadi,दोडामार्ग,Dodamarg,ZAREBAMBAR TILARI BHEDSHI,24,17:40,18:20,ST,,,,,,,,ORD,703
+,5,10799,64253,दोडामार्ग,Dodamarg,विर्डी,Virdi,VAZARE TALEKHOL,23.8,18:30,19:30,ST,,,,,,,,ORD,704
+79,1,11366,64385,सावंतवाडी,Sawantwadi,सिंधुदूर्गनगरी,Sindhudurgnagari,NONSTOP,36.2,09:10,10:00,NOBL,,,,,,,,ORD,706
+79,2,18609,64386,सिंधुदूर्गनगरी,Sindhudurgnagari,सावंतवाडी,Sawantwadi,OROSPHATA KUDAL,36.2,10:15,11:20,NOBL,,,,,,,,ORD,707
+79,3,11145,64513,सावंतवाडी,Sawantwadi,खेरवाडी,Kherwadi,RAILSTATION TALAWADE,13.8,12:30,13:00,ST,,,,,,,,ORD,708
+79,4,18537,64514,खेरवाडी,Kherwadi,सावंतवाडी,Sawantwadi,TALAWADE RAILSTATION,13.8,13:10,13:40,ST,,,,,,,,ORD,709
+,3,11130,64150,सावंतवाडी,Sawantwadi,,Footbridge,MANGAON WADOS upto Malai,33.6,16:00,16:15,OBL,,,,,,,,ORD,711
+,4,17792,64151,,Footbridge,सावंतवाडी,Sawantwadi,From Malai WADOS  MANGAON,33.6,16:15,17:40,OBL,,,,,,,,ORD,712
+,5,11137,64152,सावंतवाडी,Sawantwadi,कालिकामंदीर,Kalika Mandir,,8.2,18:00,18:20,ST,,,,,,,,ORD,713
+,6,18448,64153,कालिकामंदीर,Kalika Mandir,सावंतवाडी,Sawantwadi,,8.2,18:20,18:45,ST,,,,,,,,ORD,714
+,7,11178,64154,सावंतवाडी,Sawantwadi,गोठवेवाडी,Gothawewadi,SANGELI   KALAMBIST SHIRSHINGE,30.2,19:00,20:30,ST,,,,,,,,ORD,715
+80,1,11140,64418,सावंतवाडी,Sawantwadi,रेडी कनयाळ,Redi Kanyal,RAILSTATION MALEWAD  ARONDA,39.3,06:30,08:00,ST,,,,,,,,ORD,717
+80,2,18535,64419,रेडी कनयाळ,Redi Kanyal,सावंतवाडी,Sawantwadi,ARONDA MALEWAD RAILSTATION,39.3,08:10,09:40,ST,,,,,,,,ORD,718
+,5,11180,64160,सावंतवाडी,Sawantwadi,शिवापूर,Shivapur High School,MANGAON WADOS DUKANWAD WASOLI,38.6,10:00,11:45,ST,,,,,,,,ORD,720
+,6,18773,64161,शिवापूर,Shivapur High School,सावंतवाडी,Sawantwadi,WASOLI DUKANWAD WADOS MANGAON,38.6,12:00,13:45,ST,,,,,,,,ORD,721
+,3,11200,64400,सावंतवाडी,Sawantwadi,,Verle Temple,verle temple SANGELI  KALAMBIST,25.1,14:15,15:15,ST,,,,,,,,ORD,723
+,4,18786,64401,,Verle Temple,सावंतवाडी,Sawantwadi,verle temple KALAMBIST SANGELI,25.1,15:25,16:25,ST,,,,,,,,ORD,724
+,5,11115,64428,सावंतवाडी,Sawantwadi,आरोंदा बाजार,Aronda Bazar,MALGAON RAILSTATION AROS KONDURATITHA,28.8,16:30,17:45,ST,,,,,,,,ORD,726
+81,1,18639,64490,गेळे,Gele Gawthan,सावंतवाडी,Sawantwadi,AMBOLI  DANOLI,39,06:00,07:30,ST,,,,,,,,ORD,728
+81,2,11163,64414,सावंतवाडी,Sawantwadi,,Parabwadi,TALAWADE,13.8,08:20,08:30,ST,,,,,,,,ORD,729
+81,3,18777,64415,,Parabwadi,सावंतवाडी,Sawantwadi,TALAWADE,13.8,09:00,09:10,ST,,,,,,,,ORD,730
+81,4,11160,64416,सावंतवाडी,Sawantwadi,निवजे,Nivaje Mandir,MANGAON AMBERI,22.2,09:20,10:15,ST,,,,,,,,ORD,731
+81,5,18607,64417,निवजे,Nivaje Mandir,सावंतवाडी,Sawantwadi,AMBERI  MANGAON,22.2,10:15,11:20,ST,,,,,,,,ORD,732
+81,6,102577,64576,सावंतवाडी,Sawantwadi,असनिये,Asniye,BANDA  WAFOLI SOCI  TAMBOLI,30.4,12:15,13:15,ST,,,,,,,,ORD,733
+81,7,61579,64577,असनिये,Asniye,सावंतवाडी,Sawantwadi,TAMBOLI WAFOLI SOCI BANDA,30.4,13:25,14:25,ST,,,,,,,,ORD,734
+,1,73438,64520,सावंतवाडी,Sawantwadi,धवडकी,Dhawadaki Datta Mandir,MADKHOL,11.5,16:30,16:50,ST,,,,,,,,ORD,736
+,2,73439,64521,धवडकी,Dhawadaki Datta Mandir,सावंतवाडी,Sawantwadi,bamanadevi MADKHOL BAMANADEVI,15.6,17:00,17:30,ST,,,,,,,,ORD,737
+,3,11132,64489,सावंतवाडी,Sawantwadi,गेळे,Gele Gawthan,MULANDAWADI  DANOLI AMBOLI,62.5,18:00,20:00,ST,,,,,,,,ORD,739
+82,10,11115,64230,सावंतवाडी,Sawantwadi,आरोंदा बाजार,Aronda Bazar,RAILSTATION  AROS KONDURATITHA,28.8,09:30,10:30,ST,,,,,,,,ORD,741
+82,11,17376,64231,आरोंदा बाजार,Aronda Bazar,सावंतवाडी,Sawantwadi,KONDURATITHA AROS RAILSTATION MALGAON,28.8,10:45,11:40,ST,,,,,,,,ORD,742
+,1,11119,64771,सावंतवाडी,Sawantwadi,बांदा,Banda,PAGAWADI,15,13:00,12:45,ST,,,,,,,,ORD,744
+,2,64232,64233,बांदा,Banda,डिंगणे,Dingane Mandir,PATRADEVI GALEL,7.9,13:00,13:20,ST,,,,,,,,ORD,745
+,3,64233,64234,डिंगणे,Dingane Mandir,बांदा,Banda,GALEL PATRADEVI,7.9,13:30,13:50,ST,,,,,,,,ORD,746
+,4,64747,64235,बांदा,Banda,दाभिळ,Dabhil,KUDERANWADI KUDERANWADI VILAWADE  SARMALE,14.1,14:00,14:30,ST,,,,,,,,ORD,747
+,5,105547,64236,दाभिळ,Dabhil,बांदा,Banda,SARMALE  VILAWADE KUDERANWADI,14.1,14:40,15:10,ST,,,,,,,,ORD,748
+,6,10659,64237,बांदा,Banda,असनिये,Asniye,WAFOLI SOCI VILAWADE TAMBOLI,18.8,15:10,16:30,ST,,,,,,,,ORD,749
+,7,17585,64238,असनिये,Asniye,बांदा,Banda,TAMBOLI VILAWADE WAFOLI SOCI,18.8,15:50,17:10,ST,,,,,,,,ORD,750
+,8,10661,64239,बांदा,Banda,फुकेरी,Fukeri,DEGWE  TALKAT ZOLAMBE,22.6,17:30,18:30,ST,,,,,,,,ORD,751
+83,1,88386,64589,सावंतवाडी,Sawantwadi,फणसवडे,Phanasawade,,24,07:30,10:00,ST,,,,,,,,ORD,753
+83,2,88387,64590,फणसवडे,Phanasawde,सावंतवाडी,Sawantwadi,,24,08:35,11:10,ST,,,,,,,,ORD,754
+,1,11164,64112,सावंतवाडी,Sawantwadi,पारपोली,Parpoli,OWALIYE DANOLI DEWASU OWALIYE,25.2,12:00,12:50,ST,,,,,,,,ORD,756
+,2,18615,64113,पारपोली,Parpoli,सावंतवाडी,Sawantwadi,DEWASU DANOLI,21.7,13:10,13:45,ST,,,,,,,,ORD,757
+,1,11140,64336,सावंतवाडी,Sawantwadi,रेडी कनयाळ,Redi Kanyal,RAILSTATION MALEWAD ARONDA,39.3,10:15,11:45,ST,,,,,,,,ORD,764
+,2,18535,64337,रेडी कनयाळ,Redi Kanyal,सावंतवाडी,Sawantwadi,ARONDA MALEWAD,39.3,12:00,13:25,ST,,,,,,,,ORD,765
+,7,11137,64381,सावंतवाडी,Sawantwadi,कालिकामंदीर,Kalika Mandir,,8.2,14:00,13:50,ST,,,,,,,,ORD,767
+,8,18448,64382,कालिकामंदीर,Kalika Mandir,सावंतवाडी,Sawantwadi,,8.2,14:30,14:20,ST,,,,,,,,ORD,768
+,6,11147,64528,सावंतवाडी,Sawantwadi,कोनशी,Konshi,BANDA WAFOLI SOCI VILAWADE BHALAWAL,26.9,12:50,13:30,ST,,,,,,,,ORD,776
+,7,19984,64529,कोनशी,Konshi,सावंतवाडी,Sawantwadi,BHALAWAL VILAWADE WAFOLI SOCI BANDA,26.9,14:00,14:40,ST,,,,,,,,ORD,777
+,7,11171,64387,सावंतवाडी,Sawantwadi,सातोसे,Satose Dewoolwada,nigude BANDA NIGUDE MADURA,32.8,12:45,13:20,ST,,,,,,,,ORD,779
+,8,18764,64388,सातोसे,Satose Dewoolwada,सावंतवाडी,Sawantwadi,nigude MADURA NIGUDE BANDA,32.8,14:00,14:35,ST,,,,,,,,ORD,780
+,4,11172,64108,सावंतवाडी,Sawantwadi,शिरोडा,Shiroda,RAILSTATION MALEWAD,27.2,10:45,12:30,ST,,,,,,,,ORD,783
+,5,18736,64109,शिरोडा,Shiroda,सावंतवाडी,Sawantwadi,nanos NANOS MALEWAD RAILSTATION,31.8,12:40,13:50,ST,,,,,,,,ORD,784
+,1,11200,64198,सावंतवाडी,Sawantwadi,वेर्ले,Verle Temple,SANGELI   KALAMBIST,24,12:30,13:30,ST,,,,,,,,ORD,787
+,2,18787,64199,वेर्ले,Verle Temple,सावंतवाडी,Sawantwadi,KALAMBIST SANGELI,24,13:40,14:40,ST,,,,,,,,ORD,788
+,1,11178,64218,सावंतवाडी,Sawantwadi,,Shirshinge Gothavewadi,SANGELI  KALAMBIST,28.2,12:00,13:00,ST,,,,,,,,ORD,790
+,2,18649,64219,,Shirshinge Gothavewadi,सावंतवाडी,Sawantwadi,KALAMBIST SANGELI,28.2,13:10,14:10,ST,,,,,,,,ORD,791

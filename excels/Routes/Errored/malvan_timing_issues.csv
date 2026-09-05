@@ -1,0 +1,10 @@
+﻿route_no,route_name,stop_span_km,source_minutes,implied_kmh,problem
+415,"Malvan To Barshi",433,325,80,"stop distances exceed the trip distance — stop list may include the return leg"
+120525,"Malvan To Nigadi Via Phonda",428.7,240,107,"stop distances exceed the trip distance — stop list may include the return leg"
+2331,"Malvan To Mumbai Central",505,405,75,"stop distances exceed the trip distance — stop list may include the return leg"
+127003,"Nigadi To Malvan Via Phonda",428,380,68,"stop distances exceed the trip distance — stop list may include the return leg"
+75682,"Malvan To Tuljapur",465.8,275,102,"stop distances exceed the trip distance — stop list may include the return leg"
+61461,"Malvan To Nigadi Via Tarla",422,255,99,"stop distances exceed the trip distance — stop list may include the return leg"
+85543,Tuljapur-Malvan,465.8,460,61,"stop distances exceed the trip distance — stop list may include the return leg"
+10672,Barshi-Malvan,430,345,75,"stop distances exceed the trip distance — stop list may include the return leg"
+426,"Mumbai Central-Malvan",505,440,69,"stop distances exceed the trip distance — stop list may include the return leg"

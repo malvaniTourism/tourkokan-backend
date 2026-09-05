@@ -1,0 +1,13 @@
+﻿reason,Route_No,Old_Route_No,Duty_No,Source_English,Destination_English,Departure_Time
+"route_no not in master",195926A,,36,Duragnagar,"Kudal St Depot",06:40
+"no route number",,,10,"Kudal St Depot",,07:40
+"no route number",,,10,,Sawantwadi,08:45
+"no route number",,,10,Sawantwadi,,11:30
+"no route number",,,10,,"Kudal St Depot",13:30
+"no route number",,,15,"Kudal St Depot",,18:00
+"no route number",,,83,Sawantwadi,,
+"no route number",,,83,,,
+"no route number",,,84,,,
+"no route number",,,85,,,
+"no route number",,,86,,,
+"no route number",,,86,,Sawantwadi,

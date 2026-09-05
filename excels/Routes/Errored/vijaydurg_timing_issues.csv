@@ -1,0 +1,12 @@
+﻿route_no,route_name,stop_span_km,source_minutes,implied_kmh,problem
+430,"Mumbai Central To Vijaydurg Via Tarala",499,440,68,"stop distances exceed the trip distance — stop list may include the return leg"
+2349,"Vijaydurg To Mumbai Central Via Tarala",499,425,70,"stop distances exceed the trip distance — stop list may include the return leg"
+10782,"Devgad To Waghotan Bandar",45,30,90,"stop distances exceed the trip distance — stop list may include the return leg"
+84237,"Borivali Nancy Colony To Vijaydurg Via Tarla",527,325,97,"stop distances exceed the trip distance — stop list may include the return leg"
+128451,"Vijaydurg To Devgad Via Anpur",36.5,10,219,"stop distances exceed the trip distance — stop list may include the return leg"
+100221,"Chinchwad To Vijaydurg",397.4,385,62,"stop distances exceed the trip distance — stop list may include the return leg"
+150816,"Vijaydurg To Chinchwad Via Kharepatan",410.3,295,83,"stop distances exceed the trip distance — stop list may include the return leg"
+121817,"Chinchwad To Vijaydurg Via Mutat High School",383.2,300,77,"stop distances exceed the trip distance — stop list may include the return leg"
+100220,"Vijaydurg To Chinchwad",397.4,270,88,"stop distances exceed the trip distance — stop list may include the return leg"
+91529,"Vijaydurag To Borivali Nancy Colony Via Ratnagiri",491.2,325,91,"stop distances exceed the trip distance — stop list may include the return leg"
+128452,"Anpur To Vijaydurg",6.1,80,5,"duration too long for the distance — check departure/arrival"

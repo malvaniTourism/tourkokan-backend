@@ -1,0 +1,10 @@
+﻿reason,Route_No,Old_Route_No,Duty_No,Source_English,Destination_English,Departure_Time
+"route_no not in master",150714,,53,Achara,Malvan,12:20
+"route_no not in master",121030,,58,Malvan,"Kudal St Depot",19:45
+"no route number",,,250,Malvan,Dangmode,16:30
+"no route number",,,272,Malvan,Panjim,09:50
+"no route number",,,273,Panjim,Malvan,15:10
+"no route number",,,24,Malvan,Bijapur,09:30
+"no route number",,,25,Bijapur,Malvan,11:30
+"no route number",,,,Malvan,Panjim,05:10
+"no route number",,,,Panjim,Malvan,09:25

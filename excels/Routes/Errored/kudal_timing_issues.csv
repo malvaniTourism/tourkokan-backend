@@ -1,0 +1,7 @@
+﻿route_no,route_name,stop_span_km,source_minutes,implied_kmh,problem
+141701,"Panjim To Akkalkot Via Radhanagari",546.3,120,273,"stop distances exceed the trip distance — stop list may include the return leg"
+144136,"Bijapur To Kudal",329.9,285,69,"stop distances exceed the trip distance — stop list may include the return leg"
+146971,"Panjim To Pune Rly. Stn. Via Gaganbawda",473.5,125,227,"stop distances exceed the trip distance — stop list may include the return leg"
+81145,"Kudal St Depot To Bijapur",333.1,265,75,"stop distances exceed the trip distance — stop list may include the return leg"
+141700,"Akkalkot To Panjim Via Radhanagari",546.3,120,273,"stop distances exceed the trip distance — stop list may include the return leg"
+107454,"Pune Rly. Stn. To Kudal Via Gaganbawda",392.1,330,71,"stop distances exceed the trip distance — stop list may include the return leg"

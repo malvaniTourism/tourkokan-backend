@@ -1,0 +1,16 @@
+﻿reason,Route_No,Old_Route_No,Duty_No,Source_English,Destination_English,Departure_Time
+"route_no not in master",40756,,14,Sawantwadi,"Pune Rly. Stn.",08:30
+"route_no not in master",17336,,28,Ambegaon,Sawantwadi,07:55
+"route_no not in master",18649,,,"Shirshinge Gothavewadi",Sawantwadi,14:40
+"route_no not in master",11165,,,Sawantwadi,Parpoli,19:15
+"route_no not in master",107645,,46,Aie,Dodamarg,06:20
+"route_no not in master",109033,,,Sawantwadi,"Boyache Kerwade Titha",00:13
+"route_no not in master",11163,,81,Sawantwadi,Parabwadi,08:20
+"no route number",,,1,Kolhapur,Sawantwadi,03:00
+"no route number",,,,Kolhapur,Nigadi,23:45
+"no route number",,,3,Sawantwadi,Ratnagiri,10:00
+"no route number",,,,"Ratnagiri Sawantwadi",Panjim,10:45
+"no route number",,,,Kolhapur,Sawantwadi,23:15
+"no route number",,,10,Kolhapur,Tuljapur,14:00
+"no route number",,,11,Kolhapur,Sawantwadi,17:00
+"no route number",,,,Kolhapur,Nigadi,21:50
