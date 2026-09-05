@@ -1,0 +1,16 @@
+﻿reason,Route_No,Old_Route_No,Duty_No,Source_English,Destination_English,Departure_Time
+"route_no not in master",11839,,257,Bholewadi,Tarle,05:50
+"route_no not in master",216445,,,,,11:55
+"route_no not in master",115852,,65,Kankavali,Bhatwadi,13:45
+"no route number",,,314,Latur,Sangola,09:30
+"no route number",,,,Sangola,Kankavali,15:25
+"no route number",,,,Kankavali,Pandharpur,12:00
+"no route number",,,,Pandharpur,Kankavali,05:15
+"no route number",,,,"Kankavali (Latur)",Banda,07:00
+"no route number",,,,Banda,Sawantwadi,08:50
+"no route number",,,,Sawantwadi,Banda,15:15
+"no route number",,,,Banda,"Kankavali (Latur)",15:45
+"no route number",,,,"Kankavali (Banda)",Miraj,18:15
+"no route number",,,,Miraj,Latur,23:00
+"no route number",,,,Latur,Miraj,18:15
+"no route number",,,,Miraj,"Kankavali (Banda)",02:40

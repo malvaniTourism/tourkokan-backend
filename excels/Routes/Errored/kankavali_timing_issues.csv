@@ -1,0 +1,10 @@
+﻿route_no,route_name,stop_span_km,source_minutes,implied_kmh,problem
+444,"Borivali Nancy Colony To Kankavli",475.5,440,65,"stop distances exceed the trip distance — stop list may include the return leg"
+2369,"Kankavli To Borivali Nancy Colony",475.5,305,94,"stop distances exceed the trip distance — stop list may include the return leg"
+59608,"Kankavli To Tarla Via Phonda",34.1,660,3,"duration too long for the distance — check departure/arrival"
+145115,"Kankavli To Latur Via Tarla Miraj",493.3,395,75,"stop distances exceed the trip distance — stop list may include the return leg"
+147516,"Latur To Kankavli Via Radhanagari",497.9,360,83,"stop distances exceed the trip distance — stop list may include the return leg"
+144304,"Kankavli To Latur Via Radhanagari",497.9,395,76,"stop distances exceed the trip distance — stop list may include the return leg"
+145116,"Latur To Kankavli Via Miraj Tarala",493.3,365,81,"stop distances exceed the trip distance — stop list may include the return leg"
+11095,"Ratnagiri To Sawantwadi Via Phonda",203.4,40,305,"stop distances exceed the trip distance — stop list may include the return leg"
+153502,"Kankavli To Latur Via Rdhn Mrj Brs",493,375,79,"stop distances exceed the trip distance — stop list may include the return leg"

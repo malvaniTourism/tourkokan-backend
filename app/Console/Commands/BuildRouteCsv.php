@@ -124,7 +124,8 @@ class BuildRouteCsv extends Command
     /**
      * Depot sheets are hand-built and don't share a column vocabulary: Devgad
      * has Remark / School_Trip / Rest_Remark, Vengurla folds all three into
-     * Halt_Note. Read whichever the sheet actually has.
+     * Halt_Note, Kankavali splits them into Rest / Via_Remark. Read whichever
+     * the sheet actually has.
      *
      * @param  array<string, string>  $trip
      */
@@ -136,19 +137,30 @@ class BuildRouteCsv extends Command
             return $trip[$canonical];
         }
 
+        // The first alias the sheet actually carries wins.
         $aliases = [
-            'Remark'      => 'Halt_Note',
-            'Rest_Remark' => 'Halt_Note',
+            'Remark'      => ['Halt_Note', 'Via_Remark'],
+            'Rest_Remark' => ['Halt_Note', 'Rest'],
         ];
 
-        if (isset($aliases[$canonical]) && array_key_exists($aliases[$canonical], $trip)) {
-            return $trip[$aliases[$canonical]];
+        foreach ($aliases[$canonical] ?? [] as $alias) {
+            if (array_key_exists($alias, $trip)) {
+                return $trip[$alias];
+            }
         }
 
         // Only where the sheet has no School_Trip column at all: these sheets
-        // mark school runs with शालेय in the halt note.
+        // mark school runs with शालेय in a note column. Trip_Type is not a
+        // substitute — in Devgad, where both exist, 68 of its 107 SC trips are
+        // not school runs, so reading SC as SCHOOL would mislabel most of them.
         if ($canonical === 'School_Trip') {
-            return str_contains($trip['Halt_Note'] ?? '', 'शालेय') ? 'SCHOOL' : '';
+            foreach (['Halt_Note', 'Rest', 'Via_Remark'] as $note) {
+                if (str_contains($trip[$note] ?? '', 'शालेय')) {
+                    return 'SCHOOL';
+                }
+            }
+
+            return '';
         }
 
         return '';
