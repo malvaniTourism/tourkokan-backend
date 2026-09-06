@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User\V2;
 
 use App\Http\Controllers\BaseController;
+use App\Http\Middleware\VendorMiddleware;
 use App\Models\Roles;
 use App\Models\UserRoleRequest;
 use Illuminate\Http\Request;
@@ -35,6 +36,13 @@ class UserRoleRequestController extends BaseController
         $restricted = ['superadmin', 'admin'];
         if (in_array($role->code, $restricted)) {
             return $this->sendError('You cannot request this role.', '', 403);
+        }
+
+        // Buyers must be able to reach a vendor, so the same contact details the
+        // vendor routes require are checked here — approving someone who would
+        // then be blocked by VendorMiddleware just wastes an admin review.
+        if ($role->code === 'vendor' && $missing = VendorMiddleware::missingContactFields($user)) {
+            return response()->json(VendorMiddleware::incompleteProfileResponse($missing), 403);
         }
 
         // User already has this role

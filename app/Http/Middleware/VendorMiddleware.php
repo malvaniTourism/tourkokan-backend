@@ -9,34 +9,54 @@ class VendorMiddleware
 {
     /** Buyers need a way to reach the vendor, so both are mandatory. */
     private const REQUIRED_CONTACT = [
-        'email'  => 'email address',
         'mobile' => 'mobile number',
+        'email'  => 'email address',
     ];
 
     public function handle(Request $request, Closure $next)
     {
         $user = auth()->user();
 
-        if (!$user || !$user->hasRole('vendor')) {
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        // Profile completeness is checked before the role: an incomplete profile
+        // blocks the vendor role too, so telling someone to request a role they
+        // cannot be granted yet just sends them round a loop.
+        if ($missing = self::missingContactFields($user)) {
+            return response()->json(self::incompleteProfileResponse($missing), 403);
+        }
+
+        if (!$user->hasRole('vendor')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Access denied. You need the Vendor role to perform this action. Please request the Vendor role from your profile.',
             ], 403);
         }
 
-        $missing = $this->missingContactFields($user);
-
-        if ($missing) {
-            $labels = array_map(fn($field) => self::REQUIRED_CONTACT[$field], $missing);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Add your ' . implode(' and ', $labels) . ' to your profile before using vendor features.',
-                'data'    => ['missing_profile_fields' => $missing],
-            ], 403);
-        }
-
         return $next($request);
+    }
+
+    /**
+     * Shared with UserRoleRequestController so the wording and the
+     * machine-readable field list stay identical wherever the rule is enforced.
+     *
+     * @param  array<int, string>  $missing
+     * @return array<string, mixed>
+     */
+    public static function incompleteProfileResponse(array $missing): array
+    {
+        $labels = array_map(fn($field) => self::REQUIRED_CONTACT[$field], $missing);
+
+        return [
+            'success' => false,
+            'message' => 'Fill your ' . implode(' and ', $labels) . ' first to use vendor features.',
+            'data'    => ['missing_profile_fields' => $missing],
+        ];
     }
 
     /**
@@ -48,7 +68,7 @@ class VendorMiddleware
      *
      * @return array<int, string>
      */
-    private function missingContactFields($user): array
+    public static function missingContactFields($user): array
     {
         $missing = [];
 
