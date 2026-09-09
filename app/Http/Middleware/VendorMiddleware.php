@@ -9,7 +9,7 @@ class VendorMiddleware
 {
     /** Buyers need a way to reach the vendor, so both are mandatory. */
     private const REQUIRED_CONTACT = [
-        'mobile' => 'mobile number',
+        'mobile' => 'WhatsApp mobile number',
         'email'  => 'email address',
     ];
 

@@ -345,11 +345,18 @@ class AuthController extends BaseController
                 'password' => 'sometimes|nullable|string|confirmed|min:6',
                 'profile_picture' => 'sometimes|nullable|string',
                 'language' => 'sometimes|required|in:mr,en',
+                // `sometimes|required`: editing only your name never touches mobile, but the
+                // moment `mobile` is in the payload it must be a real 10-digit number —
+                // sending it empty or null is rejected, so a vendor cannot blank out the
+                // WhatsApp number buyers reach them on. See VendorMiddleware.
                 'mobile' => 'sometimes|required|digits:10',
                 'dob' => 'sometimes|nullable|date_format:Y-m-d',
                 'gender' => 'sometimes|nullable|string',
                 'latitude' => 'sometimes|nullable|numeric|required_with:longitude',
                 'longitude' => 'sometimes|nullable|numeric|required_with:latitude',
+            ], [
+                'mobile.required' => 'WhatsApp mobile number is required.',
+                'mobile.digits'   => 'WhatsApp mobile number must be 10 digits.',
             ]);
 
             if ($validator->fails()) {
