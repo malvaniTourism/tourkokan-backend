@@ -70,8 +70,31 @@ class GroupStopLocalities extends Command
             return self::SUCCESS;
         }
 
-        // Only multi-member groups become a locality; singletons stay null (exact match).
-        $multi = array_filter($groups, fn($ids) => count($ids) >= 2);
+        $nameById = $sites->pluck('name', 'id');
+
+        // A group is only a real locality if a stop with the bare base name exists — the
+        // village itself. "Are" exists, so Are School/Mandir group under it; there is no bare
+        // "Ambedkar" stop, so Ambedkar Chowk/Nagar/College are a shared namesake, not one
+        // place, and must not merge. This also drops surnames (Chavan Wadi vs Chavan Dukan)
+        // and namesakes (Sai Mandir vs Sai Nagar).
+        $hasBareAnchor = function (string $key, array $ids) use ($nameById): bool {
+            $base = explode(', ', $key)[0];
+            foreach ($ids as $id) {
+                if (trim(explode(',', $nameById[$id])[0]) === $base) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        // Only multi-member groups with a bare anchor become a locality; everything else
+        // stays null (exact match), which is the safe direction — under-group, never
+        // falsely merge distinct places.
+        $multi = array_filter(
+            $groups,
+            fn($ids, $key) => count($ids) >= 2 && $hasBareAnchor($key, $ids),
+            ARRAY_FILTER_USE_BOTH
+        );
 
         $localities = count($multi);
         $stops = array_sum(array_map('count', $multi));
