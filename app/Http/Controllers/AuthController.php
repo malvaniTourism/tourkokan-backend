@@ -70,7 +70,7 @@ class AuthController extends BaseController
 
         $columns = $request->apitype === 'dropdown'
             ? ['id', 'name', 'mobile', 'email', 'profile_picture']
-            : ['id', 'name', 'mobile', 'email', 'gender', 'dob', 'profile_picture', 'isVerified', 'created_at'];
+            : ['id', 'name', 'mobile', 'email', 'gender', 'dob', 'profile_picture', 'isVerified', 'registered_from', 'created_at'];
 
         $query = User::select($columns);
 
