@@ -70,7 +70,7 @@ class AuthController extends BaseController
 
         $columns = $request->apitype === 'dropdown'
             ? ['id', 'name', 'mobile', 'email', 'profile_picture']
-            : ['id', 'name', 'mobile', 'email', 'gender', 'dob', 'profile_picture', 'isVerified', 'created_at'];
+            : ['id', 'name', 'mobile', 'email', 'gender', 'dob', 'profile_picture', 'isVerified', 'registered_from', 'created_at'];
 
         $query = User::select($columns);
 
@@ -243,6 +243,11 @@ class AuthController extends BaseController
 
             #considering uid as coupon code
             $input['uid'] = Str::random(10);
+
+            // Where did this signup come from — the Android app or the web. The app sends the
+            // X-App-Source: mobile header; its native networking also puts "okhttp" in the
+            // user agent. Anything else is the website. Stored once, at registration.
+            $input['registered_from'] = $this->signupSource($request);
 
             $joiningBonus = BonusTypes::where(['code' => 'joining_bonus_coins'])->first();
 
@@ -556,6 +561,25 @@ class AuthController extends BaseController
         $user->wallets_sum_amount = $walletsSum;
 
         return $this->sendResponse($user, 'User Fetched..!');
+    }
+
+    /**
+     * Where a signup originated: 'android' or 'web'.
+     *
+     * The app is identified by the X-App-Source: mobile header it sends, with the "okhttp"
+     * user agent from React Native's native networking as a fallback. Everything else is the
+     * website. Only Android ships today; when iOS lands, extend this rather than the callers.
+     */
+    private function signupSource(Request $request): string
+    {
+        $source = strtolower($request->header('X-App-Source', ''));
+        $agent  = strtolower($request->userAgent() ?? '');
+
+        $isApp = $source === 'mobile'
+            || str_contains($agent, 'okhttp')
+            || str_contains($agent, 'expo');
+
+        return $isApp ? 'android' : 'web';
     }
 
     /**
