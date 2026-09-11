@@ -134,6 +134,39 @@ php artisan queue:work
 # Admin → Routes → Import → upload cleaned_routes.xlsx
 ```
 
+### Updating routes after first import — use `routes:sync`, NOT `routes:import`
+
+`routes:import` / `ProcessRouteImport` is **create-only**. On a route_no it already has, it
+skips the route (fields never refresh) and *appends* any renamed stop at the end with a new
+serial_no. Re-importing an edited CSV over live data therefore duplicates and misorders stops.
+It is for the **first** import only.
+
+To change routes that already exist — fix a stop name, reorder, add or drop a stop — **edit the
+`Final/<taluka>_prod_routes.csv` and run `routes:sync`:**
+
+```bash
+# Dry run first — prints what would change, writes nothing:
+php artisan routes:sync devgad
+php artisan routes:sync --all
+
+# Commit once the dry-run diff looks right:
+php artisan routes:sync devgad --apply
+php artisan routes:sync --all --apply
+```
+
+Per route, in one transaction, `routes:sync`:
+- upserts the route by `route_no` (name, times, distance, source/dest, meta refreshed);
+- rebuilds its stops to **exactly** match the CSV order, collapsing consecutive duplicates and
+  renumbering `serial_no` from 1;
+- re-interpolates stop arrival/departure times (skip with `--no-times`).
+
+The route **row** (and its id, so anything keyed to it) is preserved — only its stop rows are
+replaced. It is idempotent: running it twice on an unchanged CSV changes nothing. **This is why
+a corrected CSV can be dropped back into `Final/` and re-synced safely.**
+
+After syncing, regenerate offline route files (`GenerateOfflineRoute`) since those are built
+from `route_stops`.
+
 ---
 
 ## Sanitization Script

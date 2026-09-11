@@ -101,14 +101,20 @@ class RouteController extends BaseController
             DB::raw('(SELECT COUNT(*) FROM route_stops WHERE route_id = routes.id) AS route_stops_count')
         );
 
-        $sourceId = $request->source_place_id;
+        // Expand each endpoint to its locality: "Are", "Are School", "Are Mandir" are the same
+        // village, so a search for one finds a route that stops at any of them. A stop with no
+        // locality resolves to just itself, so unmatched stops behave exactly as before.
+        // Junctions ("Are Fata") sit in their own locality and are deliberately not included.
+        $sourceIds = $this->localitySiteIds($request->source_place_id);
+        $destIds   = $this->localitySiteIds($request->destination_place_id);
+        $sourceId  = $request->source_place_id;
 
         if ($request->filled('source_place_id') && $request->filled('destination_place_id')) {
-            // Self-join on route_stops: find routes where source serial_no < destination serial_no
+            // Self-join on route_stops: find routes where a source stop precedes a dest stop.
             $routeIds = DB::table('route_stops as rs1')
                 ->join('route_stops as rs2', 'rs1.route_id', '=', 'rs2.route_id')
-                ->where('rs1.site_id', $request->source_place_id)
-                ->where('rs2.site_id', $request->destination_place_id)
+                ->whereIn('rs1.site_id', $sourceIds)
+                ->whereIn('rs2.site_id', $destIds)
                 ->whereColumn('rs1.serial_no', '<', 'rs2.serial_no')
                 ->distinct()
                 ->pluck('rs1.route_id');
@@ -119,13 +125,15 @@ class RouteController extends BaseController
         // Departure is ordered from the stop the traveller actually boards at, not from the
         // route's origin. A bus that starts at 06:00 two districts away may reach this stop
         // after one that started at 08:00 nearby, so ordering on routes.start_time would show
-        // a timetable in the wrong order for anyone boarding mid-route.
+        // a timetable in the wrong order for anyone boarding mid-route. Uses the earliest of
+        // the source-locality stops on each route.
         if ($sourceId) {
+            $placeholders = implode(',', array_fill(0, count($sourceIds), '?'));
             $query->addSelect(DB::raw(
-                '(SELECT rs.dept_time FROM route_stops rs
-                   WHERE rs.route_id = routes.id AND rs.site_id = ?
-                   ORDER BY rs.serial_no LIMIT 1) AS source_dept_time'
-            ))->addBinding([$sourceId], 'select');
+                "(SELECT rs.dept_time FROM route_stops rs
+                   WHERE rs.route_id = routes.id AND rs.site_id IN ({$placeholders})
+                   ORDER BY rs.serial_no LIMIT 1) AS source_dept_time"
+            ))->addBinding($sourceIds, 'select');
         }
 
         // Stops with no recorded time sort last rather than leading the list. An
@@ -148,6 +156,32 @@ class RouteController extends BaseController
 
         return $this->sendResponse($routes, 'available routes successfully Retrieved...!');
     }
+
+    /**
+     * A site id expanded to every stop in its locality.
+     *
+     * When the picked stop belongs to a locality ("Are"), returns all stops in it
+     * ("Are", "Are School", "Are Mandir", …) so a route stopping at any of them matches.
+     * When it has no locality — or none was given — returns just the id itself, i.e. the
+     * previous exact-match behaviour. Read only here; no other endpoint is affected.
+     *
+     * @return array<int, int>
+     */
+    private function localitySiteIds($siteId): array
+    {
+        if (!$siteId) {
+            return [];
+        }
+
+        $locality = \App\Models\Site::where('id', $siteId)->value('locality');
+
+        if (!$locality) {
+            return [(int) $siteId];
+        }
+
+        return \App\Models\Site::where('locality', $locality)->pluck('id')->map(fn($id) => (int) $id)->all();
+    }
+
     /**
      * Show the form for creating a new resource.
      *
