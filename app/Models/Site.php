@@ -37,6 +37,7 @@ class Site extends Model
      */
     protected $fillable = [
         'name',
+        'locality',
         'parent_id',
         'user_id',
         'is_primary',
