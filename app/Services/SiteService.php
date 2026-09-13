@@ -6,6 +6,7 @@ use App\Models\Favourite;
 use App\Models\Site;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class SiteService
@@ -20,7 +21,31 @@ class SiteService
      * @param  int|null  $siteId  parent site ID from request
      * @return array<string, Collection>  keyed by plural category code
      */
+    /** How long the shared trending lists stay cached. */
+    private const TRENDING_TTL_MINUTES = 5;
+
     public function getTrending(?int $siteId): array
+    {
+        // The lists themselves are identical for every user, so they are built once
+        // and shared. Only is_favorite differs, and that is layered on per request —
+        // caching it with the rest would show one user another user's favourites.
+        $result = Cache::remember(
+            'trending:' . ($siteId ?? 'all'),
+            now()->addMinutes(self::TRENDING_TTL_MINUTES),
+            fn() => $this->buildTrending($siteId)
+        );
+
+        $this->applyFavourites($result);
+
+        return $result;
+    }
+
+    /**
+     * The shared, user-independent half of the trending lists.
+     *
+     * @return array<string, EloquentCollection>
+     */
+    private function buildTrending(?int $siteId): array
     {
         $categoryCodes = $this->categoryService->getTrendingCodes();
         $result        = [];
@@ -33,14 +58,12 @@ class SiteService
                     $query->where('code', $code)->whereStatus(true);
                 })
                 ->when($siteId, fn($q) => $q->where('parent_id', $siteId))
-                ->selectSub(function ($query) {
-                    $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
-                        ->from('favourites')
-                        ->whereColumn('sites.id', 'favourites.favouritable_id')
-                        ->where('favourites.favouritable_type', (new Site)->getMorphClass())
-                        ->where('favourites.user_id', auth()->id());
-                }, 'is_favorite')
+                // created_at alone is not a stable sort here: the imported sites share
+                // timestamps in bulk (810 on one second), so latest() alone let MySQL
+                // return a different 5 each time and the trending list shuffled between
+                // identical requests. id breaks the tie deterministically.
                 ->latest()
+                ->orderByDesc('id')
                 ->limit(5)
                 ->get()
                 ->map(function ($site) {
@@ -60,6 +83,34 @@ class SiteService
         self::loadSiteEngagement($merged);
 
         return $result;
+    }
+
+    /**
+     * Stamp is_favorite onto shared sites for the current user, in one query
+     * rather than the correlated subselect that used to run per row. Written as
+     * an int because that is what the subselect returned and the app compares
+     * against it.
+     *
+     * @param  array<string, EloquentCollection>  $result
+     */
+    private function applyFavourites(array $result): void
+    {
+        $sites = collect($result)->flatten(1);
+
+        if ($sites->isEmpty()) {
+            return;
+        }
+
+        $favourited = Favourite::query()
+            ->where('user_id', auth()->id())
+            ->where('favouritable_type', (new Site)->getMorphClass())
+            ->whereIn('favouritable_id', $sites->pluck('id'))
+            ->pluck('favouritable_id')
+            ->flip();
+
+        foreach ($sites as $site) {
+            $site->is_favorite = isset($favourited[$site->id]) ? 1 : 0;
+        }
     }
 
     /**
