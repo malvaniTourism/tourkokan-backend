@@ -31,9 +31,14 @@ class PreMiddleware
             $request->attributes->set('language',     $user->language ?? 'en');
         }
 
-        $appVersion = Cache::has('app_version')
-            ? Cache::get('app_version')->version_number
-            : optional(AppVersion::latest()->first())->version_number;
+        // Read-then-fall-back never populated the key, so this queried on every
+        // request. remember() writes it; AppVersionController already forgets the
+        // key on create/update, so edits still show up immediately.
+        $appVersion = optional(Cache::remember(
+            'app_version',
+            now()->addHours(6),
+            fn() => AppVersion::latest()->first()
+        ))->version_number;
 
         $request->attributes->set('app_version', $appVersion);
 

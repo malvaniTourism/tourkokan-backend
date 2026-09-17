@@ -279,6 +279,9 @@ Route::group(['middleware' => ['auth:api', 'premiddleware', 'admin', 'throttle:a
     Route::post('analytics/loginHistory',      [AnalyticsController::class, 'loginHistory']);
     Route::post('analytics/activeUsers',       [AnalyticsController::class, 'activeUsers']);
     Route::post('analytics/dashboardStats',    [AnalyticsController::class, 'dashboardStats']);
+    Route::post('analytics/globalTotals',      [AnalyticsController::class, 'globalTotals']);
+    Route::post('analytics/activityTimeseries',   [AnalyticsController::class, 'activityTimeseries']);
+    Route::post('analytics/userGrowthTimeseries', [AnalyticsController::class, 'userGrowthTimeseries']);
     Route::post('analytics/eventTypeSummary',  [AnalyticsController::class, 'eventTypeSummary']);
     Route::post('analytics/platformBreakdown', [AnalyticsController::class, 'platformBreakdown']);
     Route::post('analytics/favouriteActivity', [AnalyticsController::class, 'favouriteActivity']);

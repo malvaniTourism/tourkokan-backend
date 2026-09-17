@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\V2;
 use App\Http\Controllers\BaseController;
 use App\Models\User;
 use App\Models\UserActivityLog;
+use App\Support\AnalyticsPeriod;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -183,6 +184,23 @@ class AnalyticsController extends BaseController
             ->orderByDesc('search_count')
             ->limit($request->input('limit', 20))
             ->get();
+
+        // Resolve the site names in one lookup so the dashboard can label the chart
+        // instead of rendering bare ids (the ids stay, for linking).
+        $siteIds = $results->pluck('source_id')->merge($results->pluck('destination_id'))
+            ->filter()->unique()->values();
+        $names   = DB::table('sites')->whereIn('id', $siteIds)->pluck('name', 'id');
+
+        $results = $results->map(function ($row) use ($names) {
+            // JSON_EXTRACT yields the string "null" for a JSON null — casting that
+            // straight to int would report site 0 and never resolve a name.
+            $asId = fn ($v) => ($v === null || $v === 'null' || $v === '') ? null : (int) $v;
+            $row->source_id        = $asId($row->source_id);
+            $row->destination_id   = $asId($row->destination_id);
+            $row->source_name      = $names[$row->source_id]      ?? null;
+            $row->destination_name = $names[$row->destination_id] ?? null;
+            return $row;
+        });
 
         return $this->sendResponse($results, 'Top routes retrieved successfully');
     }
@@ -404,4 +422,133 @@ class AnalyticsController extends BaseController
 
         return $this->sendResponse($logs, 'Favourite activity retrieved successfully');
     }
+    // ── All-time headline totals + pending-work counters ─────────────────────
+
+    /**
+     * dashboardStats is deliberately today-only; this is the all-time companion
+     * that powers the KPI tiles and the "needs attention" counters.
+     */
+    public function globalTotals(Request $request)
+    {
+        $byRole = fn (string $code) => User::whereHas('roles', fn ($q) => $q->where('code', $code))->count();
+
+        $sites = DB::table('sites')
+            ->selectRaw("COUNT(*) total, "
+                . "SUM(submission_status = 'approved') approved, "
+                . "SUM(submission_status = 'pending') pending")
+            ->first();
+
+        $products = DB::table('products')
+            ->selectRaw("COUNT(*) total, "
+                . "SUM(status = 'approved') approved, "
+                . "SUM(status = 'pending') pending")
+            ->first();
+
+        $banners = DB::table('banners')
+            ->selectRaw('COUNT(*) total, SUM(is_active = 1) active')
+            ->first();
+
+        return $this->sendResponse([
+            'total_users'          => User::count(),
+            'total_vendors'        => $byRole('vendor'),
+            'total_tourists'       => $byRole('tourist'),
+            'total_sites'          => (int) $sites->total,
+            'approved_sites'       => (int) $sites->approved,
+            'pending_sites'        => (int) $sites->pending,
+            'total_events'         => DB::table('events')->count(),
+            'total_products'       => (int) $products->total,
+            'approved_products'    => (int) $products->approved,
+            'pending_products'     => (int) $products->pending,
+            'active_subscriptions' => DB::table('vendor_subscriptions')->where('status', 'active')->count(),
+            'total_banners'        => (int) $banners->total,
+            'active_banners'       => (int) $banners->active,
+            // The vendor funnel chart reads these rather than needing its own endpoint.
+            'pending_role_requests' => DB::table('user_role_requests')->where('status', 'pending')->count(),
+        ], 'Global totals retrieved successfully');
+    }
+
+    // ── Time-series: traffic and user growth ─────────────────────────────────
+
+    /**
+     * The main dashboard trend chart. One row per bucket across the whole range,
+     * zero-filled, so the line has no gaps.
+     */
+    public function activityTimeseries(Request $request)
+    {
+        $validator = Validator::make($request->all(), AnalyticsPeriod::rules());
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        $period = AnalyticsPeriod::fromRequest($request->all());
+        $bucket = $period->bucketExpression();
+        [$from, $to] = $period->bounds();
+
+        $rows = DB::table('user_activity_logs')
+            ->selectRaw("{$bucket} as bucket")
+            ->selectRaw("SUM(event_type = 'login') as logins")
+            ->selectRaw('COUNT(*) as api_calls')
+            ->selectRaw("SUM(event_type = 'site_view') as site_views")
+            ->selectRaw("SUM(event_type = 'event_view') as event_views")
+            ->selectRaw('COUNT(DISTINCT user_id) as active_users')
+            ->whereBetween('created_at', [$from, $to])
+            ->groupByRaw($bucket)
+            ->orderByRaw($bucket)
+            ->get()
+            ->keyBy('bucket');
+
+        $data = array_map(fn ($date) => [
+            'date'         => $date,
+            'logins'       => (int) ($rows[$date]->logins ?? 0),
+            'api_calls'    => (int) ($rows[$date]->api_calls ?? 0),
+            'site_views'   => (int) ($rows[$date]->site_views ?? 0),
+            'event_views'  => (int) ($rows[$date]->event_views ?? 0),
+            'active_users' => (int) ($rows[$date]->active_users ?? 0),
+        ], $period->buckets());
+
+        return $this->sendResponse($data, 'Activity timeseries retrieved successfully');
+    }
+
+    /**
+     * New users per bucket plus a running total. The cumulative figure counts every
+     * user created before the range too, otherwise the area chart would restart at
+     * zero each time the range changes.
+     */
+    public function userGrowthTimeseries(Request $request)
+    {
+        $validator = Validator::make($request->all(), AnalyticsPeriod::rules());
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 200);
+        }
+
+        $period = AnalyticsPeriod::fromRequest($request->all());
+        $bucket = $period->bucketExpression();
+        [$from, $to] = $period->bounds();
+
+        $rows = DB::table('users')
+            ->selectRaw("{$bucket} as bucket")
+            ->selectRaw('COUNT(*) as new_users')
+            ->whereBetween('created_at', [$from, $to])
+            ->groupByRaw($bucket)
+            ->get()
+            ->keyBy('bucket');
+
+        $running = DB::table('users')->where('created_at', '<', $from)->count();
+
+        $data = [];
+        foreach ($period->buckets() as $date) {
+            $new      = (int) ($rows[$date]->new_users ?? 0);
+            $running += $new;
+            $data[]   = [
+                'date'             => $date,
+                'new_users'        => $new,
+                'cumulative_users' => $running,
+            ];
+        }
+
+        return $this->sendResponse($data, 'User growth timeseries retrieved successfully');
+    }
+
 }

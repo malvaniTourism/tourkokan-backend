@@ -133,6 +133,19 @@ class User extends Authenticatable implements JWTSubject
     }
 
     /**
+     * A guest account — signed in without a verified identity.
+     *
+     * `isVerified` is authoritative: regular login is refused until a user verifies (see
+     * AuthController::login), so the only account that can hold a token while unverified is a
+     * guest created through the guest-registration path. An authenticated, unverified request
+     * is therefore always a guest.
+     */
+    public function isGuest(): bool
+    {
+        return ! (bool) $this->isVerified;
+    }
+
+    /**
      * Get all of the comments for the User
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany

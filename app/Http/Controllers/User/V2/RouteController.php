@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Validator;
 
 class RouteController extends BaseController
 {
+    /** Guests can page through only the first two pages of route lists; then sign up. */
+    private const GUEST_PAGE_LIMIT = 2;
+
     /**
      * Create a new AuthController instance.
      *
@@ -19,6 +22,27 @@ class RouteController extends BaseController
     public function __construct()
     {
         $this->middleware('auth:api');
+    }
+
+    /**
+     * Stop a guest reading past the guest page limit — a signup nudge, not an error.
+     *
+     * Returns a response to send back when the wall is hit, or null to carry on. Applied to
+     * both route listings; a registered user (any email or mobile on file) is never limited.
+     */
+    private function guestPageWall(Request $request)
+    {
+        $page = (int) $request->input('page', 1);
+
+        if ($page > self::GUEST_PAGE_LIMIT && optional(auth()->user())->isGuest()) {
+            return $this->sendError(
+                'Sign up to see more bus routes.',
+                ['requires_signup' => true, 'guest_page_limit' => self::GUEST_PAGE_LIMIT],
+                200
+            );
+        }
+
+        return null;
     }
 
     /**
@@ -34,6 +58,10 @@ class RouteController extends BaseController
 
         if ($validator->fails()) {
             return $this->sendError($validator->errors(), '', 200);
+        }
+
+        if ($wall = $this->guestPageWall($request)) {
+            return $wall;
         }
 
         $routes = Route::withCount(['routeStops'])
@@ -79,6 +107,10 @@ class RouteController extends BaseController
 
         if ($validator->fails()) {
             return $this->sendError($validator->errors(), '', 200);
+        }
+
+        if ($wall = $this->guestPageWall($request)) {
+            return $wall;
         }
 
         $query = Route::with([

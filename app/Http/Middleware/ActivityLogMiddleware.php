@@ -63,6 +63,11 @@ class ActivityLogMiddleware
 
         $payload = array_merge([
             'user_id'          => auth('api')->id(),
+            // Stamped here, not when the job runs: the queue can lag by minutes or
+            // hours, and letting Eloquent fill created_at at insert time dated every
+            // request to whenever the worker happened to drain — collapsing weeks of
+            // traffic onto a single point in the dashboard charts.
+            'created_at'       => now(),
             'route'            => '/' . $path,
             'method'           => $request->method(),
             'ip_address'       => $request->ip(),

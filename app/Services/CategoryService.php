@@ -45,7 +45,13 @@ class CategoryService
 
         $query = Category::with($with)
             ->select($fields)
-            ->withCount(['liveSites as sites_count', 'subCategories'])
+            // subCategories is counted with the SAME filter the eager load applies,
+            // otherwise the badge counts children the response never returns — the
+            // app showed "Kokan View (18)" and opened to 6.
+            ->withCount([
+                'liveSites as sites_count',
+                'subCategories' => fn($q) => $q->when(!$include_empty, fn($sub) => $sub->has('liveSites')),
+            ])
             ->whereNotIn('code', self::LOCATION_CODES)
             ->whereStatus(true)
             ->latest()

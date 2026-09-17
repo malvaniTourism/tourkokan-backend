@@ -24,6 +24,8 @@ class UserActivityLog extends Model
         'success',
         'response_time_ms',
         'meta_data',
+        // Set by the middleware at request time — see ActivityLogMiddleware.
+        'created_at',
     ];
 
     protected $casts = [
