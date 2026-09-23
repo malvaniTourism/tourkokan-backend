@@ -29,13 +29,13 @@ panel / backend should validate against the rules at the bottom.
 
 | # | Image type | Used in | Aspect ratio | **Upload size (px)** | Minimum (px) | Max file size |
 |---|------------|---------|--------------|----------------------|--------------|---------------|
-| 1 | Home hero banner (`HOME_TOP`) | Home screen top carousel | **1.35 : 1** | **1620 × 1200** | 1080 × 800 | 400 KB |
-| 2 | Site detail hero | Site/place detail page top | **4 : 3** | **1600 × 1200** | 1080 × 810 | 400 KB |
-| 3 | Ad banners (`HOME_MIDDLE`, `SITE_*`, `CITY_MIDDLE`, Routes) | Mid-page carousels | **2.5 : 1** | **1500 × 600** | 1080 × 432 | 400 KB |
-| 4 | Gallery images | Gallery grid (3-col squares) + full-screen viewer | **1 : 1** | **1080 × 1080** | 720 × 720 | 500 KB |
-| 5 | Event images | Events list cards | **16 : 9** | **1280 × 720** | 960 × 540 | 250 KB |
-| 6 | Site/place card thumbnails | Package/Place/City cards | **3 : 2** | **900 × 600** | 600 × 400 | 250 KB |
-| 7 | Category icons | Category list circles | **1 : 1** | **256 × 256** (PNG) | 128 × 128 | 50 KB |
+| 1 | Home hero banner (`HOME_TOP`) | Home screen top carousel | **1.35 : 1** | **1620 × 1200** | 1080 × 800 | 1 MB |
+| 2 | Site detail hero | Site/place detail page top | **4 : 3** | **1600 × 1200** | 1080 × 810 | 1 MB |
+| 3 | Ad banners (`HOME_MIDDLE`, `SITE_*`, `CITY_MIDDLE`, Routes) | Mid-page carousels | **2.5 : 1** | **1500 × 600** | 1080 × 432 | 1 MB |
+| 4 | Gallery images | Gallery grid (3-col squares) + full-screen viewer | **1 : 1** | **1080 × 1080** | 720 × 720 | 1 MB |
+| 5 | Event images | Events list cards | **16 : 9** | **1280 × 720** | 960 × 540 | 1 MB |
+| 6 | Site/place card thumbnails | Package/Place/City cards | **3 : 2** | **900 × 600** | 600 × 400 | 1 MB |
+| 7 | Category icons | Category list circles | **1 : 1** | **256 × 256** (PNG) | 128 × 128 | 1 MB |
 
 ### Behaviour notes per type
 
@@ -73,13 +73,13 @@ rejecting. Reject only when too small or wrong ratio.
 ```js
 // Admin panel (JS) validation config
 const IMAGE_RULES = {
-  hero_home: {ratio: 1.35,   minW: 1080, maxKB: 400},
-  hero_site: {ratio: 4 / 3,  minW: 1080, maxKB: 400},
-  ad_banner: {ratio: 2.5,    minW: 1080, maxKB: 400},
-  gallery:   {ratio: 1,      minW: 720,  maxKB: 500},
-  event:     {ratio: 16 / 9, minW: 960,  maxKB: 250},
-  card:      {ratio: 1.5,    minW: 600,  maxKB: 250},
-  icon:      {ratio: 1,      minW: 128,  maxKB: 50},
+  hero_home: {ratio: 1.35,   minW: 1080, maxKB: 1024},
+  hero_site: {ratio: 4 / 3,  minW: 1080, maxKB: 1024},
+  ad_banner: {ratio: 2.5,    minW: 1080, maxKB: 1024},
+  gallery:   {ratio: 1,      minW: 720,  maxKB: 1024},
+  event:     {ratio: 16 / 9, minW: 960,  maxKB: 1024},
+  card:      {ratio: 1.5,    minW: 600,  maxKB: 1024},
+  icon:      {ratio: 1,      minW: 128,  maxKB: 1024},
   ratioTolerance: 0.10,
 };
 ```
