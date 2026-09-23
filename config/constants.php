@@ -6,14 +6,16 @@ return [
         'max'     => 30,
     ],
     // Mirror of docs/IMAGE_GUIDELINES.md — keep both in sync
+    // max_kb raised to a 1 MB floor so normal photos/exports upload without being rejected
+    // for size (they were 250–500 KB). Aspect ratio / min width are unchanged.
     'image_rules' => [
-        'hero_home' => ['ratio' => 1.35,   'min_width' => 1080, 'max_kb' => 400],
-        'hero_site' => ['ratio' => 4 / 3,  'min_width' => 1080, 'max_kb' => 400],
-        'ad_banner' => ['ratio' => 2.5,    'min_width' => 1080, 'max_kb' => 400],
-        'gallery'   => ['ratio' => 1,      'min_width' => 720,  'max_kb' => 500],
-        'event'     => ['ratio' => 16 / 9, 'min_width' => 960,  'max_kb' => 250],
-        'card'      => ['ratio' => 1.5,    'min_width' => 600,  'max_kb' => 250],
-        'icon'      => ['ratio' => 1,      'min_width' => 128,  'max_kb' => 50],
+        'hero_home' => ['ratio' => 1.35,   'min_width' => 1080, 'max_kb' => 1024],
+        'hero_site' => ['ratio' => 4 / 3,  'min_width' => 1080, 'max_kb' => 1024],
+        'ad_banner' => ['ratio' => 2.5,    'min_width' => 1080, 'max_kb' => 1024],
+        'gallery'   => ['ratio' => 1,      'min_width' => 720,  'max_kb' => 1024],
+        'event'     => ['ratio' => 16 / 9, 'min_width' => 960,  'max_kb' => 1024],
+        'card'      => ['ratio' => 1.5,    'min_width' => 600,  'max_kb' => 1024],
+        'icon'      => ['ratio' => 1,      'min_width' => 128,  'max_kb' => 1024],
         'ratio_tolerance' => 0.10,
     ],
     'upload_path' => [
