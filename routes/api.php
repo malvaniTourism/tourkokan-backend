@@ -48,6 +48,7 @@ use App\Http\Controllers\User\V2\{
     HealthCheckController,
     MessageController,
     UserRoleRequestController,
+    VendorOnboardController,
     RouteStopsController,
     ProductCategoryController,
     ProductController,
@@ -346,6 +347,11 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('parseMapUrl', [SiteController::class, 'parseMapUrl']);
     Route::post('mySubmissions', [SiteController::class, 'mySubmissions']);
 
+    // Outside the vendor group on purpose: the web onboarding wizard (M5) resolves
+    // product categories from chosen business categories before the vendor role exists.
+    // Exposes taxonomy only; the site_id path still checks ownership.
+    Route::post('allowedProductCategories', [ProductCategoryController::class, 'allowedProductCategories']);
+
     Route::middleware(['vendor', 'throttle:writes'])->group(function () {
         Route::post('addSite', [SiteController::class, 'submitSite'])
             ->middleware('plan.limit:max_sites');
@@ -357,7 +363,6 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
         Route::post('setPrimarySite', [SiteController::class, 'setPrimarySite']);
 
         // ── Product taxonomy lookups (drive the app's Add-Product form) ──
-        Route::post('allowedProductCategories', [ProductCategoryController::class, 'allowedProductCategories']);
         Route::post('categoryAttributeSchema', [ProductCategoryController::class, 'categoryAttributeSchema']);
 
         // ── Vendor catalog ──────────────────────────────────────────────
@@ -399,6 +404,12 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     // ── Role Requests ───────────────────────────────────────────────
     Route::post('requestRole', [UserRoleRequestController::class, 'store']);
     Route::get('myRoleRequests', [UserRoleRequestController::class, 'index']);
+
+    // ── First-time vendor onboarding (web wizard, M5) ───────────────
+    // Deliberately outside the vendor middleware: the submitter is not a vendor yet.
+    // The controller guards it instead — web source header + zero existing sites.
+    Route::post('vendorOnboard', [VendorOnboardController::class, 'store'])
+        ->middleware('throttle:writes');
 });
 
 use Illuminate\Support\Facades\Mail;

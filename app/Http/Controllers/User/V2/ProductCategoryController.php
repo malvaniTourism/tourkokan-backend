@@ -35,24 +35,32 @@ class ProductCategoryController extends BaseController
     public function allowedProductCategories(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'site_id' => 'required|numeric|exists:sites,id',
+            // Either an owned site, or — for the web onboarding wizard (M5), where no
+            // site exists yet — the business categories being chosen right now.
+            'site_id'        => 'required_without:category_ids|nullable|numeric|exists:sites,id',
+            'category_ids'   => 'required_without:site_id|nullable|array|min:1',
+            'category_ids.*' => 'exists:categories,id',
         ]);
 
         if ($validator->fails()) {
             return $this->sendError($validator->errors(), '', 422);
         }
 
-        // Pending sites included — a vendor builds their catalog while the business is
-        // under review. See docs/VENDOR_PRODUCTS_DESIGN.md §2.6.
-        $site = Site::ownedBy(auth()->id())
-            ->whereIn('submission_status', ['pending', 'approved'])
-            ->find($request->site_id);
+        if ($request->filled('site_id')) {
+            // Pending sites included — a vendor builds their catalog while the business is
+            // under review. See docs/VENDOR_PRODUCTS_DESIGN.md §2.6.
+            $site = Site::ownedBy(auth()->id())
+                ->whereIn('submission_status', ['pending', 'approved'])
+                ->find($request->site_id);
 
-        if (!$site) {
-            return $this->sendError('Site not found, not yours, or was rejected.', '', 404);
+            if (!$site) {
+                return $this->sendError('Site not found, not yours, or was rejected.', '', 404);
+            }
+
+            $siteCategoryIds = $site->categories()->pluck('categories.id');
+        } else {
+            $siteCategoryIds = collect($request->input('category_ids'));
         }
-
-        $siteCategoryIds = $site->categories()->pluck('categories.id');
 
         if ($siteCategoryIds->isEmpty()) {
             return $this->sendResponse([], 'This site has no categories, so no products can be listed yet.');
