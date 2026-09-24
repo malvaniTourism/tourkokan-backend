@@ -126,6 +126,29 @@ class VendorOnboardTest extends ApiTestCase
             ->assertJsonPath('data.missing_profile_fields.0', 'mobile');
     }
 
+    /**
+     * Assigning '' through the encrypted cast stores real ciphertext, so the raw
+     * column looks filled. The gate must still read it as missing — while a value
+     * that cannot be decrypted at all (foreign APP_KEY) must still count as present.
+     */
+    public function test_an_encrypted_empty_mobile_is_still_gated(): void
+    {
+        [$category] = $this->taxonomy();
+        $user = User::factory()->create(['mobile' => '']);
+
+        $this->assertNotSame('', $user->getRawOriginal('mobile'), 'precondition: the empty string was encrypted');
+
+        $this->actingAs($user, 'api')
+            ->withHeader('X-App-Source', 'web')
+            ->postJson('/api/v2/vendorOnboard', $this->payload($category))
+            ->assertStatus(403)
+            ->assertJsonPath('data.missing_profile_fields.0', 'mobile');
+
+        \DB::table('users')->where('id', $user->id)->update(['mobile' => 'not-real-ciphertext']);
+
+        $this->assertSame([], \App\Http\Middleware\VendorMiddleware::missingContactFields($user->fresh()));
+    }
+
     public function test_an_admin_decides_the_verification(): void
     {
         [$category, $productCategory] = $this->taxonomy();
