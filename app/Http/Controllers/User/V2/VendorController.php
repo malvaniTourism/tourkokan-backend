@@ -116,6 +116,7 @@ class VendorController extends BaseController
                 'id', 'name', 'mr_name', 'tag_line', 'mr_tag_line', 'description', 'mr_description',
                 'logo', 'image', 'is_primary', 'parent_id',
                 'latitude', 'longitude', 'pin_code', 'domain_name', 'phone', 'whatsapp', 'social_media',
+                'verification_status',
             ]);
 
         if ($sites->isEmpty()) {
@@ -156,6 +157,8 @@ class VendorController extends BaseController
                 'social_media'  => $primary->social_media,
                 'domain_name'   => $primary->domain_name,
                 'member_since'  => $vendor->created_at,
+                // M4 — the badge follows the primary business's verification
+                'verified_business' => $primary->verification_status === 'verified',
                 'outlet_count'  => $sites->count(),
                 'product_count' => $products->total(),
                 'categories'    => $sites->pluck('categories')->flatten()->unique('id')->values(),
