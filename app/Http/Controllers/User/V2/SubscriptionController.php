@@ -46,6 +46,7 @@ class SubscriptionController extends BaseController
                 'days_remaining' => $subscription->days_remaining,
                 'status'         => $subscription->status,
                 'auto_renew'     => $subscription->auto_renew,
+                'early_adopter'  => (bool) ($subscription->meta_data['early_adopter'] ?? false),
             ] : null,
             'usage' => $this->plans->usageSummary($user),
         ], 'Subscription fetched.');

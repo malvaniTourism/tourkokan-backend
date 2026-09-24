@@ -114,6 +114,10 @@ class PlanLimitTest extends ApiTestCase
         $this->assertNotNull($subscription);
         $this->assertSame('free', $subscription->plan->code);
         $this->assertNotNull($subscription->ends_at, 'the free period is dated, not indefinite');
+
+        // Launch promo (M6): 3 free months, marked early_adopter for later feature gates.
+        $this->assertTrue((bool) ($subscription->meta_data['early_adopter'] ?? false));
+        $this->assertEqualsWithDelta(3, now()->diffInMonths($subscription->ends_at), 1);
     }
 
     public function test_enrolling_twice_does_not_stack_subscriptions(): void
