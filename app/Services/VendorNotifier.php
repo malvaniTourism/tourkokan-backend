@@ -103,6 +103,28 @@ class VendorNotifier
         );
     }
 
+    public function siteVerified(Site $site): void
+    {
+        $this->send(
+            $site->user_id,
+            'site_verified',
+            'Business verified',
+            "\"{$site->name}\" now carries the Verified business badge.",
+            ['site_id' => $site->id]
+        );
+    }
+
+    public function siteVerificationRejected(Site $site, string $reason): void
+    {
+        $this->send(
+            $site->user_id,
+            'site_verification_rejected',
+            'Verification not approved',
+            "We could not verify the registration details for \"{$site->name}\". Reason: {$reason}. Your listing stays live — update the details to try again.",
+            ['site_id' => $site->id]
+        );
+    }
+
     public function vendorRoleGranted(User $user): void
     {
         $this->send(

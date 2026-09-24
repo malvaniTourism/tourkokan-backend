@@ -13,7 +13,7 @@ class Site extends Model
 {
     use HasFactory, Hashidable, Notifiable, HasStorageFiles;
 
-    protected array $fileFields = ['logo', 'icon', 'image'];
+    protected array $fileFields = ['logo', 'icon', 'image', 'reg_doc'];
 
     /**
      * Clean up polymorphic children the FK cascade cannot reach.
@@ -63,6 +63,11 @@ class Site extends Model
         'meta_data',
         'submission_status',
         'rejection_reason',
+        'reg_type',
+        'reg_number',
+        'reg_doc',
+        'verification_status',
+        'verified_at',
     ];
 
     /**
@@ -74,6 +79,10 @@ class Site extends Model
         'mr_name',
         'mr_tag_line',
         'mr_description',
+        // Government registration details — owner PII. Public payloads carry only
+        // verification_status; admin endpoints makeVisible() these two explicitly.
+        'reg_number',
+        'reg_doc',
     ];
 
     /**
@@ -87,7 +96,25 @@ class Site extends Model
         'social_media' => 'array',
         'meta_data' => 'array',
         'is_primary' => 'boolean',
+        // Government registration number — encrypted at rest like users' PII.
+        // The column is TEXT so the ciphertext is never truncated.
+        'reg_number' => 'encrypted',
+        'verified_at' => 'datetime',
     ];
+
+    /**
+     * Same guard as User::castAttribute — a reg_number encrypted under a different
+     * APP_KEY decrypts to null instead of throwing, so one bad row cannot 500 an
+     * admin list.
+     */
+    protected function castAttribute($key, $value)
+    {
+        try {
+            return parent::castAttribute($key, $value);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException) {
+            return null;
+        }
+    }
 
     /**
      * Sites owned by a given user — a vendor's business outlets.

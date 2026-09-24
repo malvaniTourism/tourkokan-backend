@@ -225,6 +225,10 @@ Route::group(['middleware' => ['auth:api', 'premiddleware', 'admin', 'throttle:a
     Route::post('approveSite', [SiteController::class, 'approveSite']);
     Route::post('rejectSite', [SiteController::class, 'rejectSite']);
 
+    // ── Business Verification Review (M3) ─────────────────────────────────────
+    Route::post('pendingVerifications', [SiteController::class, 'pendingVerifications']);
+    Route::post('verifySiteRegistration', [SiteController::class, 'verifySiteRegistration']);
+
     // ── User Role Requests ────────────────────────────────────────────────────
     Route::post('userRoleRequests', [AdminUserRoleRequestController::class, 'index']);
     Route::post('approveRoleRequest', [AdminUserRoleRequestController::class, 'approve']);

@@ -41,6 +41,9 @@ return [
         'event_banner'      => env('APP_ENV', 'other').'/events/banners',
         'event_gallery'     => env('APP_ENV', 'other').'/events/gallery',
         'site_gallery'      => env('APP_ENV', 'other').'/sites/gallery',
+        // Registration certificates — owner documents, not public site media. Keep the
+        // S3 prefix access-restricted; only admin review reads these.
+        'site_docs'         => env('APP_ENV', 'other').'/sites/docs',
     ],
     'models' => [
         'City' => 'App\Models\City',
