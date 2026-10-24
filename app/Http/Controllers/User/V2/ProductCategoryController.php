@@ -83,6 +83,12 @@ class ProductCategoryController extends BaseController
                 'icon'               => $pc->icon,
                 'booking_type'       => $pc->booking_type,
                 'has_attributes'     => !empty($pc->attribute_schema),
+                // The schema itself, not just the flag: a client has to render a
+                // field per attribute to fill them in. Returning only
+                // has_attributes left required attributes (activity_ticket's
+                // duration_min, say) impossible to supply, so every submission in
+                // one of those categories was rejected by validateAttributes.
+                'attribute_schema'   => $pc->attribute_schema ?: null,
             ]);
 
         return $this->sendResponse($allowed, 'Allowed product categories fetched.');
