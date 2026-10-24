@@ -123,6 +123,10 @@ class SiteController extends BaseController
             ->limit(5)
             ->find($request->id);
 
+        // Registration details are hidden from public payloads; the admin reviewing a
+        // verification is the one reader who needs them.
+        $city?->makeVisible(['reg_number', 'reg_doc']);
+
         return $this->sendResponse($city, 'Site successfully Retrieved...!');
     }
 
@@ -408,5 +412,78 @@ class SiteController extends BaseController
         app(VendorNotifier::class)->siteRejected($site, $request->rejection_reason);
 
         return $this->sendResponse($site, 'Site rejected. User has been notified of the reason.');
+    }
+
+    /**
+     * Businesses awaiting a verification decision (M3).
+     * POST /admin/v2/pendingVerifications
+     *
+     * Separate from pendingSubmissions on purpose: listing approval and verification are
+     * independent decisions — a live site can still be waiting on its badge.
+     */
+    public function pendingVerifications(Request $request)
+    {
+        $sites = Site::where('verification_status', 'pending')
+            ->with(['categories:id,name,code', 'user:id,name,email'])
+            ->latest('updated_at')
+            ->paginateSafe();
+
+        $sites->getCollection()->each->makeVisible(['reg_number', 'reg_doc']);
+
+        return $this->sendResponse($sites, 'Pending verifications fetched.');
+    }
+
+    /**
+     * Decide a business verification — grants or refuses the Verified badge (M3).
+     * POST /admin/v2/verifySiteRegistration  {id, decision: verified|rejected, note?}
+     *
+     * Manual review: there is no free official Udyam API, so an admin checks the
+     * certificate against the number. Rejecting verification does NOT touch the listing
+     * itself — submission_status is a separate axis.
+     */
+    public function verifySiteRegistration(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id'       => 'required|numeric|exists:sites,id',
+            'decision' => 'required|in:verified,rejected',
+            'note'     => 'required_if:decision,rejected|nullable|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), '', 422);
+        }
+
+        $site = Site::find($request->id);
+
+        if ($site->verification_status !== 'pending') {
+            return $this->sendError('Only pending verifications can be decided.', '', 422);
+        }
+
+        if ($request->decision === 'verified') {
+            $site->update([
+                'verification_status' => 'verified',
+                'verified_at'         => now(),
+            ]);
+            app(VendorNotifier::class)->siteVerified($site);
+        } else {
+            $site->update([
+                'verification_status' => 'rejected',
+                'verified_at'         => null,
+                'meta_data'           => array_merge($site->meta_data ?? [], [
+                    'verification' => array_merge(($site->meta_data['verification'] ?? []), [
+                        'rejected_at'   => now()->toDateTimeString(),
+                        'rejected_note' => $request->note,
+                    ]),
+                ]),
+            ]);
+            app(VendorNotifier::class)->siteVerificationRejected($site, $request->note);
+        }
+
+        return $this->sendResponse(
+            $site->fresh()->makeVisible(['reg_number', 'reg_doc']),
+            $request->decision === 'verified'
+                ? 'Business verified. The badge is now live.'
+                : 'Verification rejected. The vendor has been notified.'
+        );
     }
 }

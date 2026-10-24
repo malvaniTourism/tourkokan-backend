@@ -63,7 +63,7 @@ class PlanService
      * Idempotent — calling it for someone who already has a live subscription returns that
      * one rather than stacking a second.
      */
-    public function enrolOnFree(User $user, int $months = 12): ?VendorSubscription
+    public function enrolOnFree(User $user, int $months = 12, array $meta = []): ?VendorSubscription
     {
         if ($existing = $this->subscriptionFor($user)) {
             return $existing;
@@ -85,6 +85,9 @@ class PlanService
             'status'     => 'active',
             'price_paid' => 0,
             'auto_renew' => false,
+            // meta_data carries promo markers (e.g. early_adopter) — a flag on the
+            // subscription row, not a new column. See vendor-onboarding-plan.md M6.
+            'meta_data'  => $meta ?: null,
         ]);
     }
 

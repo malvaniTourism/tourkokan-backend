@@ -90,7 +90,7 @@ class CatalogController extends BaseController
         $product = Product::live()
             ->with([
                 'productCategory:id,name,mr_name,code,booking_type',
-                'site:id,name,mr_name,logo,image,latitude,longitude,pin_code,social_media,domain_name,phone,whatsapp,parent_id',
+                'site:id,name,mr_name,logo,image,latitude,longitude,pin_code,social_media,domain_name,phone,whatsapp,parent_id,verification_status',
                 'site.site:id,name',
                 'variants' => fn($q) => $q->active(),
                 'gallery',
@@ -279,7 +279,7 @@ class CatalogController extends BaseController
                     'products.currency', 'products.unit', 'products.status',
                 ])
                 ->with([
-                    'site:id,name,mr_name,logo,phone,whatsapp',
+                    'site:id,name,mr_name,logo,phone,whatsapp,verification_status',
                     'defaultVariant:id,product_id,price,sale_price,stock',
                     'cover',
                 ]),
@@ -319,7 +319,7 @@ class CatalogController extends BaseController
             ])
             ->with([
                 'productCategory:id,name,mr_name,code,booking_type',
-                'site:id,name,mr_name,logo,latitude,longitude,phone,whatsapp',
+                'site:id,name,mr_name,logo,latitude,longitude,phone,whatsapp,verification_status',
                 'defaultVariant:id,product_id,price,sale_price,stock',
                 'cover',
             ])

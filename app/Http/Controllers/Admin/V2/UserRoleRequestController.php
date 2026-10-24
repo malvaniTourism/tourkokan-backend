@@ -65,9 +65,14 @@ class UserRoleRequestController extends BaseController
 
         // A new vendor starts on the free plan straight away, so quota checks always find a
         // subscription rather than falling back. Idempotent.
-        // See docs/VENDOR_PRODUCTS_DESIGN.md §9.
+        // Launch promo (M6): 3 free months, and the subscription is marked early_adopter —
+        // the flag later feature-gates early-access perks the app promises at sign-up.
+        // See docs/VENDOR_PRODUCTS_DESIGN.md §9 and vendor-onboarding-plan.md M6.
         if (($roleRequest->role->code ?? '') === 'vendor') {
-            app(PlanService::class)->enrolOnFree($roleRequest->user);
+            app(PlanService::class)->enrolOnFree($roleRequest->user, 3, [
+                'early_adopter' => true,
+                'promo'         => 'launch_free_3m',
+            ]);
         }
 
         $roleRequest->update([

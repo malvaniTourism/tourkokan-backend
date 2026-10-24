@@ -60,11 +60,12 @@ class VendorMiddleware
     }
 
     /**
-     * Read the stored value, not the decrypted one. These columns are encrypted
-     * and User::castAttribute returns null when a row cannot be decrypted (data
-     * migrated under a different APP_KEY) — reading the cast value would lock
-     * out vendors whose details are present but unreadable, which is a key
-     * problem, not a missing-profile problem.
+     * A field is missing when nothing is stored, or when what is stored decrypts
+     * to an empty string — assigning '' through the encrypted cast produces real
+     * ciphertext, so the raw column alone cannot tell "empty" from "filled".
+     * A row that cannot be decrypted (data migrated under a different APP_KEY,
+     * User::castAttribute returns null) still counts as present: that is a key
+     * problem, not a missing-profile problem, and must not lock a vendor out.
      *
      * @return array<int, string>
      */
@@ -73,7 +74,10 @@ class VendorMiddleware
         $missing = [];
 
         foreach (array_keys(self::REQUIRED_CONTACT) as $field) {
-            if (trim((string) $user->getRawOriginal($field)) === '') {
+            $raw = trim((string) $user->getRawOriginal($field));
+            $decrypted = $user->{$field};
+
+            if ($raw === '' || ($decrypted !== null && trim((string) $decrypted) === '')) {
                 $missing[] = $field;
             }
         }

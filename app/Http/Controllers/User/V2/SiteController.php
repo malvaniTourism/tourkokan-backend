@@ -300,16 +300,40 @@ class SiteController extends BaseController
             'social_media' => 'nullable|json',
             'speciality'   => 'nullable|json',
             'rules'        => 'nullable|json',
+            // ── Government verification (optional — "Verified" vs "Basic" tier, M3) ──
+            'reg_type'     => 'nullable|in:udyam,gstin,shop_act',
+            'reg_number'   => 'required_with:reg_type|nullable|string|max:30|regex:/^[A-Za-z0-9\-\/]+$/',
+            'reg_doc'      => 'nullable|mimes:jpeg,jpg,png,webp,pdf|max:4096',
+            // DPDP consent — storing a registration number is processing personal data,
+            // so it may only happen with explicit consent recorded alongside it.
+            'consent'      => $request->filled('reg_type') ? 'accepted' : 'nullable',
         ]);
 
         if ($validator->fails()) {
             return $this->sendError($validator->errors(), '', 422);
         }
 
-        $input = $request->except('categories');
+        // verification fields are server-controlled — never mass-assigned from the client
+        $input = $request->except(['categories', 'reg_type', 'reg_number', 'reg_doc', 'consent', 'verification_status', 'verified_at']);
         $input['user_id']           = $userId;
         $input['status']            = false;
         $input['submission_status'] = 'pending';
+
+        if ($request->filled('reg_type')) {
+            $input['reg_type']            = $request->reg_type;
+            $input['reg_number']          = trim($request->reg_number);
+            $input['verification_status'] = 'pending';
+            $input['meta_data']           = array_merge($input['meta_data'] ?? [], [
+                'verification' => [
+                    'consent_at'   => now()->toDateTimeString(),
+                    'submitted_at' => now()->toDateTimeString(),
+                ],
+            ]);
+
+            if ($doc = $request->file('reg_doc')) {
+                $input['reg_doc'] = uploadFile($doc, config('constants.upload_path.site_docs'))['path'];
+            }
+        }
 
         foreach (['logo', 'image'] as $field) {
             if ($file = $request->file($field)) {
@@ -330,7 +354,7 @@ class SiteController extends BaseController
     {
         $submissions = Site::ownedBy(auth()->id())
             ->with('categories:id,name,code')
-            ->select('id', 'name', 'image', 'is_primary', 'status', 'submission_status', 'rejection_reason', 'created_at', 'updated_at')
+            ->select('id', 'name', 'image', 'is_primary', 'status', 'submission_status', 'rejection_reason', 'reg_type', 'verification_status', 'verified_at', 'created_at', 'updated_at')
             ->latest()
             ->paginateSafe();
 
@@ -356,7 +380,7 @@ class SiteController extends BaseController
             ->whereIn('submission_status', ['pending', 'approved'])
             ->with('categories:id,name,code')
             ->withCount('products')
-            ->select('id', 'name', 'image', 'logo', 'is_primary', 'parent_id', 'status', 'submission_status', 'latitude', 'longitude', 'pin_code', 'phone', 'whatsapp', 'created_at')
+            ->select('id', 'name', 'image', 'logo', 'is_primary', 'parent_id', 'status', 'submission_status', 'verification_status', 'latitude', 'longitude', 'pin_code', 'phone', 'whatsapp', 'created_at')
             ->orderByDesc('is_primary')
             ->latest()
             ->paginateSafe();
@@ -437,6 +461,11 @@ class SiteController extends BaseController
             'social_media' => 'nullable|json',
             'speciality'   => 'nullable|json',
             'rules'        => 'nullable|json',
+            // ── Government verification (optional, M3) ──
+            'reg_type'     => 'nullable|in:udyam,gstin,shop_act',
+            'reg_number'   => 'required_with:reg_type|nullable|string|max:30|regex:/^[A-Za-z0-9\-\/]+$/',
+            'reg_doc'      => 'nullable|mimes:jpeg,jpg,png,webp,pdf|max:4096',
+            'consent'      => $request->filled('reg_type') ? 'accepted' : 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -452,7 +481,8 @@ class SiteController extends BaseController
             return $this->sendError('Submission not found or cannot be edited.', '', 404);
         }
 
-        $input          = $request->except(['id', 'categories']);
+        // verification fields are server-controlled — never mass-assigned from the client
+        $input          = $request->except(['id', 'categories', 'reg_type', 'reg_number', 'reg_doc', 'consent', 'verification_status', 'verified_at']);
         $previousStatus = $site->submission_status;
 
         if (in_array($previousStatus, ['rejected', 'approved'])) {
@@ -478,6 +508,29 @@ class SiteController extends BaseController
                     Storage::delete($rawPath);
                 }
                 $input[$field] = uploadFile($file, config('constants.upload_path.site'))['path'];
+            }
+        }
+
+        // Changed registration details invalidate an earlier decision — back to the
+        // verification queue. Absent reg_type leaves verification untouched.
+        if ($request->filled('reg_type')) {
+            $input['reg_type']            = $request->reg_type;
+            $input['reg_number']          = trim($request->reg_number);
+            $input['verification_status'] = 'pending';
+            $input['verified_at']         = null;
+            $input['meta_data']           = array_merge($input['meta_data'] ?? ($site->meta_data ?? []), [
+                'verification' => [
+                    'consent_at'   => now()->toDateTimeString(),
+                    'submitted_at' => now()->toDateTimeString(),
+                ],
+            ]);
+
+            if ($doc = $request->file('reg_doc')) {
+                $rawDoc = $site->getRawOriginal('reg_doc');
+                if ($rawDoc && Storage::exists($rawDoc)) {
+                    Storage::delete($rawDoc);
+                }
+                $input['reg_doc'] = uploadFile($doc, config('constants.upload_path.site_docs'))['path'];
             }
         }
 
