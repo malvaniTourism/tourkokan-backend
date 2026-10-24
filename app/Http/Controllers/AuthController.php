@@ -848,9 +848,35 @@ class AuthController extends BaseController
             return $this->sendError('Google authentication failed: ' . $reason, '', 200);
         }
 
+        // Google's tokeninfo only proves the token is a genuine, unexpired Google
+        // id_token — not that it was minted for us. Without this check an
+        // id_token issued to ANY other app would log its owner in here, so an
+        // app that gets a user to sign in with Google could replay the token and
+        // take over that account. Confirm the audience is one of our clients.
+        $allowedAudiences = (array) config('services.google.allowed_audiences', []);
+        $audience = $googleUser['aud'] ?? null;
+
+        if (empty($allowedAudiences)) {
+            // Misconfiguration — refuse rather than silently accept anything.
+            Log::error('[googleAuth] No allowed audiences configured; rejecting', ['aud' => $audience]);
+            return $this->sendError('Google authentication is not configured correctly.', '', 200);
+        }
+
+        if (!is_string($audience) || !in_array($audience, $allowedAudiences, true)) {
+            // If a legitimate client id is missing here, it shows up in this log
+            // line and can be added via GOOGLE_ALLOWED_AUDIENCES without a deploy.
+            Log::warning('[googleAuth] Token rejected: audience is not one of ours', [
+                'aud'     => $audience,
+                'allowed' => $allowedAudiences,
+                'email'   => $googleUser['email'] ?? null,
+            ]);
+            return $this->sendError('Google authentication failed: unrecognised client.', '', 200);
+        }
+
         Log::info('[googleAuth] Token verified by Google', [
             'sub'   => $googleUser['sub'],
             'email' => $googleUser['email'] ?? null,
+            'aud'   => $audience,
         ]);
 
         try {

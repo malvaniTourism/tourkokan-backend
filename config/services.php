@@ -34,6 +34,25 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('APP_URL') . env('GOOGLE_REDIRECT_PATH'),
+
+        /*
+         * OAuth client ids a Google id_token may be issued for ("aud").
+         * googleAuth trusts Google's signature check but must also confirm the
+         * token was minted for one of OUR clients — otherwise an id_token from
+         * any unrelated app would log its owner in here.
+         *
+         * Android and iOS sign-in live in separate Google projects, so each has
+         * its own web client; the website reuses the Android project's. Set
+         * GOOGLE_ALLOWED_AUDIENCES (comma separated) to override without a
+         * deploy if a client id is ever added or rotated.
+         */
+        'allowed_audiences' => array_values(array_filter(array_map('trim', explode(
+            ',',
+            (string) env(
+                'GOOGLE_ALLOWED_AUDIENCES',
+                '203571229982-e04hpgiu5k11ff4qg8oamlm6hruvqj2i.apps.googleusercontent.com,941471956439-bbglsl9ok9o1h2cr82hv9uob1cc7he0d.apps.googleusercontent.com'
+            )
+        )))),
     ],
 
     'firebase' => [
