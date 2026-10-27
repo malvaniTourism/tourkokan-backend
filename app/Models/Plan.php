@@ -17,6 +17,18 @@ class Plan extends Model
     /** The plan every vendor starts on. */
     public const FREE = 'free';
 
+    /**
+     * Months of cover each billing period buys. The subscription's end date is derived from
+     * this, not hard-coded at enrolment — so setting a plan's billing_period in admin is what
+     * controls how long a subscription lasts. A period not listed here (e.g. 'free') has no
+     * fixed length: the subscription never expires (null end date).
+     */
+    public const BILLING_MONTHS = [
+        'monthly'   => 1,
+        'quarterly' => 3,
+        'yearly'    => 12,
+    ];
+
     protected $fillable = [
         'code', 'name', 'mr_name', 'description',
         'price', 'currency', 'billing_period',
@@ -49,5 +61,14 @@ class Plan extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * How many months a subscription on this plan runs, from its billing period.
+     * Null means it never expires (e.g. a 'free' period, or any unrecognised value).
+     */
+    public function durationMonths(): ?int
+    {
+        return self::BILLING_MONTHS[$this->billing_period] ?? null;
     }
 }

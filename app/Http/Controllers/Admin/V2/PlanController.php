@@ -115,13 +115,23 @@ class PlanController extends BaseController
             ->where('status', 'active')
             ->update(['status' => 'cancelled']);
 
+        $plan = Plan::find($request->plan_id);
+
+        // An explicit months value wins; otherwise the length comes from the plan's billing
+        // period (e.g. quarterly → 3 months). Omitting months no longer silently produces a
+        // never-expiring subscription — only a 'free' billing period (durationMonths() null)
+        // does that, which is deliberate.
+        $months = $request->filled('months')
+            ? (int) $request->months
+            : $plan->durationMonths();
+
         $subscription = VendorSubscription::create([
             'user_id'    => $request->user_id,
             'plan_id'    => $request->plan_id,
             'starts_at'  => now(),
-            'ends_at'    => $request->filled('months') ? now()->addMonths((int) $request->months) : null,
+            'ends_at'    => $months !== null ? now()->addMonths($months) : null,
             'status'     => 'active',
-            'price_paid' => Plan::find($request->plan_id)->price,
+            'price_paid' => $plan->price,
         ]);
 
         return $this->sendResponse(

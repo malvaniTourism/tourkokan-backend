@@ -63,7 +63,7 @@ class PlanService
      * Idempotent — calling it for someone who already has a live subscription returns that
      * one rather than stacking a second.
      */
-    public function enrolOnFree(User $user, int $months = 12, array $meta = []): ?VendorSubscription
+    public function enrolOnFree(User $user, ?int $months = null, array $meta = []): ?VendorSubscription
     {
         if ($existing = $this->subscriptionFor($user)) {
             return $existing;
@@ -75,13 +75,18 @@ class PlanService
             return null;
         }
 
+        // Length follows the plan's billing period (e.g. quarterly → 3 months) unless the
+        // caller passes an explicit override, such as a fixed-length launch promo. A null
+        // result — from an override of null or a 'free' billing period — never expires.
+        $months = $months ?? $free->durationMonths();
+
         return VendorSubscription::create([
             'user_id'    => $user->id,
             'plan_id'    => $free->id,
             'starts_at'  => now(),
             // A dated free period means the first renewal decision has a deadline attached
             // rather than drifting indefinitely.
-            'ends_at'    => now()->addMonths($months),
+            'ends_at'    => $months !== null ? now()->addMonths($months) : null,
             'status'     => 'active',
             'price_paid' => 0,
             'auto_renew' => false,
