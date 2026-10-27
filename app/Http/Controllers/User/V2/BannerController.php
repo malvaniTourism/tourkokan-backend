@@ -61,7 +61,7 @@ class BannerController extends BaseController
     private function record(Request $request, string $type)
     {
         $validator = Validator::make($request->all(), [
-            'id'        => 'required|numeric|exists:banners,id',
+            'id'        => 'required|numeric',
             'placement' => 'nullable|string|max:60',
             'platform'  => 'nullable|string|max:20',
         ]);
@@ -72,10 +72,16 @@ class BannerController extends BaseController
 
         // Only a live banner accrues numbers. An expired or unpublished creative must not
         // keep reporting, or an advertiser is shown activity from outside their campaign.
+        //
+        // But this is fire-and-forget telemetry: a banner that is simply not live right now
+        // — expired between being shown and the impression firing, unpublished, or an id the
+        // caller no longer has a live creative for — is a benign miss, not a client error.
+        // We return a 200 no-op ("counted:false", same contract as a deduped impression)
+        // rather than a 404 so the app does not log normal misses as failed requests.
         $banner = Banner::active()->find($request->id);
 
         if (!$banner) {
-            return $this->sendError('Banner not found.', '', 404);
+            return $this->sendResponse(['id' => (int) $request->id, 'counted' => false], 'Not an active banner.');
         }
 
         $placement = $request->placement;
