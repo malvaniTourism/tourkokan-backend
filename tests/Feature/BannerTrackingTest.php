@@ -153,10 +153,13 @@ class BannerTrackingTest extends ApiTestCase
             'end_date'   => now()->subDay()->toDateString(),
         ]);
 
-        $this->assertApiFailure(
+        // Fire-and-forget telemetry: a miss on an inactive banner is a no-op success,
+        // not a client-facing error — but it must still accrue nothing.
+        $response = $this->assertApiSuccess(
             $this->fire('recordBannerImpression', ['id' => $banner->id, 'placement' => 'HOME_HERO'])
         );
 
+        $this->assertFalse($response->json('data.counted'));
         $this->assertSame(0, $banner->fresh()->impressions);
     }
 
@@ -164,10 +167,11 @@ class BannerTrackingTest extends ApiTestCase
     {
         $banner = $this->makeBanner(['is_active' => false]);
 
-        $this->assertApiFailure(
+        $response = $this->assertApiSuccess(
             $this->fire('recordBannerClick', ['id' => $banner->id, 'placement' => 'HOME_HERO'])
         );
 
+        $this->assertFalse($response->json('data.counted'));
         $this->assertSame(0, $banner->fresh()->clicks);
     }
 
@@ -182,9 +186,13 @@ class BannerTrackingTest extends ApiTestCase
         $this->assertSame(1, $banner->fresh()->impressions);
     }
 
-    public function test_an_unknown_banner_is_rejected(): void
+    public function test_an_unknown_banner_is_a_silent_no_op(): void
     {
-        $this->assertApiFailure($this->fire('recordBannerImpression', ['id' => 999999]));
+        // An id with no live creative behind it is treated like any other inactive banner:
+        // a 200 no-op, so fire-and-forget tracking never surfaces as a failed request.
+        $response = $this->assertApiSuccess($this->fire('recordBannerImpression', ['id' => 999999]));
+
+        $this->assertFalse($response->json('data.counted'));
     }
 
     public function test_both_endpoints_require_authentication(): void
