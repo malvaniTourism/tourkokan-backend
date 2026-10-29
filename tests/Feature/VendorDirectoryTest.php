@@ -133,6 +133,48 @@ class VendorDirectoryTest extends ApiTestCase
         $this->assertNotContains($quiet->id, $ids);
     }
 
+    public function test_admin_can_search_vendors_by_business_name(): void
+    {
+        $other = $this->userWithRole('vendor');
+        $this->site('Malvan Beach Shack', [], $other);
+        $this->site('Sagar Resort');
+
+        $response = $this->actingAs($this->admin, 'api')
+            ->postJson('/admin/v2/listVendors', ['search' => 'Beach']);
+
+        $ids = collect($response->json('data.data'))->pluck('id');
+
+        $this->assertContains($other->id, $ids);
+        $this->assertNotContains($this->vendor->id, $ids);
+    }
+
+    /**
+     * email / mobile are encrypted, so they are only reachable by whole value through the
+     * blind index — pasting an address finds its owner, half of one finds nobody.
+     */
+    public function test_admin_can_search_vendors_by_exact_email_or_mobile(): void
+    {
+        $this->site('Sagar Resort');
+
+        foreach ([$this->vendor->email, $this->vendor->mobile] as $term) {
+            $ids = collect(
+                $this->actingAs($this->admin, 'api')
+                    ->postJson('/admin/v2/listVendors', ['search' => $term])
+                    ->json('data.data')
+            )->pluck('id');
+
+            $this->assertContains($this->vendor->id, $ids, "searching '{$term}' should find its owner");
+        }
+
+        $partial = collect(
+            $this->actingAs($this->admin, 'api')
+                ->postJson('/admin/v2/listVendors', ['search' => substr($this->vendor->email, 0, 4)])
+                ->json('data.data')
+        )->pluck('id');
+
+        $this->assertNotContains($this->vendor->id, $partial);
+    }
+
     public function test_admin_vendor_detail_carries_sites_categories_products_and_plan(): void
     {
         $head = $this->site('Sagar Resort', ['is_primary' => true]);

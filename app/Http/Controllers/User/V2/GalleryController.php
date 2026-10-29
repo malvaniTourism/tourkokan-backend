@@ -40,7 +40,8 @@ class GalleryController extends BaseController
             ])->where('status', true);
 
         if (!empty($siteId)) {
-            $gallery->where('galleryable_type', Site::class)
+            // Site is in the morph map, so rows store 'site' rather than the FQCN.
+            $gallery->where('galleryable_type', (new Site())->getMorphClass())
                     ->where('galleryable_id', $siteId);
         }
 

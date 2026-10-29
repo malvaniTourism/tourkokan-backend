@@ -97,8 +97,10 @@ class SiteGalleryController extends BaseController
         }
 
         try {
+            // Site is in the morph map (AppServiceProvider), so rows store 'site', not the
+            // FQCN — getMorphClass() returns whichever is actually stored.
             $gallery = Gallery::where('id', $request->gallery_id)
-                ->where('galleryable_type', Site::class)
+                ->where('galleryable_type', (new Site())->getMorphClass())
                 ->firstOrFail();
 
             if (!$gallery->is_url && $gallery->path) {

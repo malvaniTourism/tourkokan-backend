@@ -30,6 +30,13 @@ class VendorController extends BaseController
      * POST /admin/v2/listVendors
      *
      * Filters: search, plan_code, has_pending_products, has_no_sites
+     *
+     * `search` is deliberately asymmetric, because name/email/mobile are encrypted at
+     * rest and only reachable through their HMAC blind index: those three match the whole
+     * value exactly, while the business name — plain text on `sites` — matches partially.
+     * So an admin can paste an email or phone to find its owner, or type part of a shop
+     * name, but cannot type half an email. A LIKE over the ciphertext would silently
+     * match nothing, which is worse than this.
      */
     public function listVendors(Request $request)
     {
@@ -52,6 +59,17 @@ class VendorController extends BaseController
                 'sites as pending_sites_count'  => fn($q) => $q->where('submission_status', 'pending'),
             ])
             ->with(['sites' => fn($q) => $q->select('id', 'user_id', 'name', 'logo', 'is_primary', 'submission_status')])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $term  = trim($request->search);
+                $index = User::makeBlindIndex($term);
+
+                $q->where(function ($w) use ($term, $index) {
+                    $w->where('email_hash', $index)
+                        ->orWhere('mobile_hash', $index)
+                        ->orWhere('name_hash', $index)
+                        ->orWhereHas('sites', fn($s) => $s->where('name', 'like', "%{$term}%"));
+                });
+            })
             ->when($request->boolean('has_no_sites'), fn($q) => $q->whereDoesntHave('sites'))
             ->when($request->filled('plan_code'), fn($q) => $q->whereHas(
                 'vendorSubscriptions',
