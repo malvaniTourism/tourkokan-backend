@@ -66,4 +66,16 @@ return [
         'route'     => env('MSG91_ROUTE'),
         'sender_id' => env('MSG91_SENDER_ID'),
     ],
+
+    /*
+     | Trip planner. The driver defaults to `fake` so the pipeline runs in CI
+     | and on a fresh checkout with no key and no spend; `ai_driver` in
+     | ai_configs overrides this at runtime, so an admin can switch without a
+     | deploy. The key is read from the environment only — it must never reach
+     | the mobile app or the admin panel.
+     */
+    'ai' => [
+        'driver' => env('AI_DRIVER', 'fake'),
+        'key'    => env('ANTHROPIC_API_KEY'),
+    ],
 ];

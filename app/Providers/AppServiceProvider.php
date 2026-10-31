@@ -18,7 +18,24 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // Trip planner model client. `ai_configs.ai_driver` wins when the table
+        // is reachable, so an admin can switch driver without a deploy; the
+        // env value is the fallback for a fresh checkout, for CI, and for the
+        // window during `migrate` when the table does not exist yet.
+        $this->app->bind(\App\Services\Trip\Ai\AiClient::class, function () {
+            try {
+                $driver = \App\Models\AiConfig::get('ai_driver')
+                    ?? config('services.ai.driver', 'fake');
+            } catch (\Throwable) {
+                $driver = config('services.ai.driver', 'fake');
+            }
+
+            return match ($driver) {
+                // 'claude' arrives in Phase 2; until then the fake driver is
+                // the only implementation and nothing can spend money.
+                default => new \App\Services\Trip\Ai\FakeClient(),
+            };
+        });
     }
 
     public function boot(): void
