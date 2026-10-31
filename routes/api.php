@@ -44,6 +44,7 @@ use App\Http\Controllers\User\V2\{
     EventGalleryController,
     SiteGalleryController,
     TripCartController,
+    TripPlannerController,
     EventInteractionController,
     NotificationController,
     HealthCheckController,
@@ -367,6 +368,14 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
         ->middleware('throttle:writes');
     Route::post('trip/updateCart', [TripCartController::class, 'updateCart'])
         ->middleware('throttle:writes');
+
+    // ── Generation ──────────────────────────────────────────────────
+    // The only route that costs money per call, so it carries both gates:
+    // verified.email because a guest holds a working JWT and is not an
+    // identity, and throttle:trip because a credit check alone does not
+    // bound how fast someone burns through what they have.
+    Route::post('trip/planFromCart', [TripPlannerController::class, 'planFromCart'])
+        ->middleware(['verified.email', 'throttle:trip']);
 
     Route::middleware(['vendor', 'throttle:writes'])->group(function () {
         Route::post('addSite', [SiteController::class, 'submitSite'])

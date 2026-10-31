@@ -34,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin'         => \App\Http\Middleware\AdminAccessMiddleware::class,
             'vendor'        => \App\Http\Middleware\VendorMiddleware::class,
             'plan.limit'    => \App\Http\Middleware\CheckPlanLimit::class,
+            'verified.email' => \App\Http\Middleware\VerifiedEmailMiddleware::class,
             'premiddleware' => \App\Http\Middleware\PreMiddleware::class,
             'throttle'      => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         ]);

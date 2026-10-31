@@ -6,6 +6,8 @@ use App\Models\AiConfig;
 use App\Models\AiLog;
 use App\Models\SavedTrip;
 use App\Models\Site;
+use App\Models\TripPlacement;
+use App\Services\Credits\CreditLedger;
 use App\Services\Trip\Ai\AiClient;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -24,6 +26,7 @@ class TripPlanner
         private ItineraryPrompt $prompts,
         private ItineraryAssembler $assembler,
         private AiClient $ai,
+        private CreditLedger $credits,
     ) {
     }
 
@@ -43,6 +46,13 @@ class TripPlanner
         }
 
         $days = max(1, (int) $trip->days);
+        $user = $trip->user;
+
+        // One credit buys one trip, re-plans included — the ledger keys the
+        // spend by trip, so this is free the second time round.
+        if (!$this->credits->spend($user, (int) $trip->id)) {
+            return $this->refuse('insufficient_credits');
+        }
 
         // Fill the gaps around what they chose, anchored on their base town if
         // they named one, otherwise on the first place they picked.
@@ -55,7 +65,7 @@ class TripPlanner
             $picked->pluck('id')->all(),
         );
 
-        return $this->run(
+        $result = $this->run(
             picked: $picked,
             suggested: $suggested,
             days: $days,
@@ -64,6 +74,61 @@ class TripPlanner
             type: 'cart',
             filters: (array) $trip->filters,
         );
+
+        if (!$result['ok']) {
+            // A failure must never cost someone a plan. They see a retry, not
+            // a smaller balance.
+            $this->credits->refund($user, (int) $trip->id);
+
+            return $result;
+        }
+
+        $this->persist($trip, $result['itinerary']);
+
+        return $result;
+    }
+
+    /**
+     * Save the plan and record who appeared in it.
+     *
+     * The placement rows are the entire vendor sales conversation later on
+     * ("your homestay appeared in 40 itineraries"), and they cannot be
+     * back-filled, which is why they are written here with the first itinerary
+     * rather than added when the vendor dashboard is built.
+     */
+    private function persist(SavedTrip $trip, array $itinerary): void
+    {
+        $trip->forceFill([
+            'status'    => 'generated',
+            'itinerary' => $itinerary,
+            'title'     => $trip->title ?: ($itinerary['trip']['title'] ?? null),
+        ])->save();
+
+        // Re-planning replaces the previous appearances rather than stacking
+        // them, so a traveller regenerating five times does not read as five
+        // separate exposures for every business involved.
+        TripPlacement::where('trip_id', $trip->id)->delete();
+
+        $rows = [];
+        $now  = now();
+
+        foreach ($itinerary['days'] as $day) {
+            foreach (array_values($day['stops']) as $position => $stop) {
+                $rows[] = [
+                    'site_id'    => (int) $stop['site']['id'],
+                    'trip_id'    => (int) $trip->id,
+                    'user_id'    => (int) $trip->user_id,
+                    'day'        => (int) $day['day'],
+                    'position'   => $position,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        }
+
+        if ($rows !== []) {
+            TripPlacement::insert($rows);
+        }
     }
 
     /**

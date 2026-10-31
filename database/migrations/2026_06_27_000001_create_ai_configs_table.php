@@ -31,6 +31,8 @@ class CreateAiConfigsTable extends Migration
             ['key' => 'ai_driver',             'value' => 'fake',              'description' => 'AI client driver: fake | claude'],
             ['key' => 'ai_model',              'value' => 'claude-haiku-5-5',  'description' => 'Model id used for itinerary generation'],
             ['key' => 'ai_timeout',            'value' => '45',                'description' => 'Model request timeout (seconds)'],
+            // Model prices are published in USD; ai_logs records rupees.
+            ['key' => 'usd_inr',               'value' => '88',                'description' => 'USD to INR, used to record generation cost'],
 
             // ── Shape of a trip ──────────────────────────────────────────────
             ['key' => 'candidate_limit',       'value' => '60',                'description' => 'Max candidate places sent to the model'],

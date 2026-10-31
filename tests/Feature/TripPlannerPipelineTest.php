@@ -10,6 +10,7 @@ use App\Models\RouteStops;
 use App\Models\SavedTrip;
 use App\Models\Site;
 use App\Models\User;
+use App\Services\Credits\CreditLedger;
 use App\Services\Trip\Ai\AiClient;
 use App\Services\Trip\CandidateFetcher;
 use App\Services\Trip\TripPlanner;
@@ -34,6 +35,10 @@ class TripPlannerPipelineTest extends ApiTestCase
         parent::setUp();
 
         $this->traveller = $this->userWithRole('user');
+
+        // Generation costs a credit now. These tests are about the pipeline,
+        // not the quota — TripCreditsTest covers running out.
+        app(CreditLedger::class)->grant($this->traveller, 10, 'test');
 
         $this->beach = Category::create([
             'name' => 'Beach', 'mr_name' => 'समुद्रकिनारा', 'code' => 'beach',

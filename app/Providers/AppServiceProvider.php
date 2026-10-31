@@ -31,9 +31,10 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return match ($driver) {
-                // 'claude' arrives in Phase 2; until then the fake driver is
-                // the only implementation and nothing can spend money.
-                default => new \App\Services\Trip\Ai\FakeClient(),
+                'claude' => new \App\Services\Trip\Ai\ClaudeClient(),
+                // Anything unrecognised falls back to the driver that cannot
+                // spend money, which is the safe direction for a typo.
+                default  => new \App\Services\Trip\Ai\FakeClient(),
             };
         });
     }
@@ -84,6 +85,19 @@ class AppServiceProvider extends ServiceProvider
         // File upload routes: 5/min per user — storage cost protection
         RateLimiter::for('uploads', function (Request $request) {
             return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Trip generation: the only route that costs money per call. Hourly
+        // and daily caps both come from ai_configs so an admin can tighten
+        // them during a spike without a deploy — which matters because the
+        // backend runs Octane and a deploy means a reload and a wait.
+        RateLimiter::for('trip', function (Request $request) {
+            $key = $request->user()?->id ?: $request->ip();
+
+            return [
+                Limit::perHour((int) \App\Models\AiConfig::get('rate_limit_per_hour', 10))->by("trip:h:{$key}"),
+                Limit::perDay((int) \App\Models\AiConfig::get('rate_limit_per_day', 20))->by("trip:d:{$key}"),
+            ];
         });
 
         // Public query/enquiry submissions: 5/min per IP — bot-spam protection.
