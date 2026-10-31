@@ -43,6 +43,7 @@ use App\Http\Controllers\User\V2\{
     EventTypeController,
     EventGalleryController,
     SiteGalleryController,
+    TripCartController,
     EventInteractionController,
     NotificationController,
     HealthCheckController,
@@ -351,6 +352,21 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     // product categories from chosen business categories before the vendor role exists.
     // Exposes taxonomy only; the site_id path still checks ownership.
     Route::post('allowedProductCategories', [ProductCategoryController::class, 'allowedProductCategories']);
+
+    // ── Trip cart ───────────────────────────────────────────────────
+    // Places a traveller ticked while browsing. Useful with no AI involved,
+    // so it ships before generation exists. Generation itself is NOT routed
+    // yet: it must sit behind the verified-email gate, the credit spend and
+    // throttle:trip, or it is an uncapped spend endpoint.
+    Route::post('trip/cart', [TripCartController::class, 'cart']);
+    Route::post('trip/addToCart', [TripCartController::class, 'addToCart'])
+        ->middleware('throttle:writes');
+    Route::post('trip/removeFromCart', [TripCartController::class, 'removeFromCart'])
+        ->middleware('throttle:writes');
+    Route::post('trip/reorderCart', [TripCartController::class, 'reorderCart'])
+        ->middleware('throttle:writes');
+    Route::post('trip/updateCart', [TripCartController::class, 'updateCart'])
+        ->middleware('throttle:writes');
 
     Route::middleware(['vendor', 'throttle:writes'])->group(function () {
         Route::post('addSite', [SiteController::class, 'submitSite'])
