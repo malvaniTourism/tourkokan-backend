@@ -5,8 +5,8 @@ namespace App\Services\Trip;
 use App\Models\AiConfig;
 use App\Models\AiLog;
 use App\Models\SavedTrip;
-use App\Models\Site;
 use App\Models\TripPlacement;
+use App\Models\User;
 use App\Services\Credits\CreditLedger;
 use App\Services\Trip\Ai\AiClient;
 use Illuminate\Support\Facades\Log;
@@ -27,6 +27,7 @@ class TripPlanner
         private ItineraryAssembler $assembler,
         private AiClient $ai,
         private CreditLedger $credits,
+        private TripCart $cart,
     ) {
     }
 
@@ -39,7 +40,10 @@ class TripPlanner
     {
         $minCart = (int) AiConfig::get('min_cart_places', 3);
 
-        $picked = $this->candidates->byIds($this->cartSiteIds($trip));
+        // Through TripCart, so the plan follows the order the traveller
+        // dragged the places into. Reading `favourites` directly here ordered
+        // by id instead, which quietly ignored every reorder they made.
+        $picked = $this->cart->contents($trip);
 
         if ($picked->count() < $minCart) {
             return $this->refuse('cart_too_small');
@@ -86,6 +90,163 @@ class TripPlanner
         $this->persist($trip, $result['itinerary']);
 
         return $result;
+    }
+
+    /**
+     * What a filter set would give you, without calling the model.
+     *
+     * Free, and the only honest way to answer "can this be planned" before a
+     * credit is spent. `planFromForm` runs the same resolution through the same
+     * floor check, so a quote that says yes cannot be followed by a plan that
+     * refuses for want of places.
+     *
+     * @return array{ok: bool, reason: string|null, candidates: int, needed: int, days: int, towns: array<int,string>}
+     */
+    public function quote(array $filters): array
+    {
+        $set = $this->resolveFilters($filters);
+
+        return [
+            'ok'         => $set['ok'],
+            'reason'     => $set['reason'],
+            'candidates' => $set['total'],
+            'needed'     => $set['needed'],
+            'days'       => $set['days'],
+            'towns'      => $set['anchors']->pluck('name')->all(),
+        ];
+    }
+
+    /**
+     * Plan from the form's filters, with nothing ticked beforehand.
+     *
+     * The trip row is created before the spend, because the ledger keys a
+     * credit to a trip — that is what makes a re-plan free. A refusal after
+     * that point deletes the row again: a `draft` with no places in it would
+     * become the traveller's open cart and hide the one they were filling.
+     *
+     * @return array{ok: bool, itinerary: array|null, reason: string|null, log_id: int|null, trip_id: int|null}
+     */
+    public function planFromForm(User $user, array $filters): array
+    {
+        $set = $this->resolveFilters($filters);
+
+        if (!$set['ok']) {
+            return $this->refuse($set['reason']) + ['trip_id' => null];
+        }
+
+        $trip = SavedTrip::create([
+            'user_id'      => $user->id,
+            'status'       => 'draft',
+            'days'         => $set['days'],
+            'base_site_id' => $set['anchors']->first()->id,
+            'filters'      => $set['filters'],
+            'title'        => $filters['title'] ?? null,
+        ]);
+
+        if (!$this->credits->spend($user, (int) $trip->id)) {
+            $trip->delete();
+
+            return $this->refuse('insufficient_credits') + ['trip_id' => null];
+        }
+
+        $result = $this->run(
+            picked: $set['picked'],
+            suggested: $set['suggested'],
+            days: $set['days'],
+            userId: (int) $user->id,
+            tripId: (int) $trip->id,
+            type: 'plan',
+            filters: $set['filters'],
+        );
+
+        if (!$result['ok']) {
+            $this->credits->refund($user, (int) $trip->id);
+            $trip->delete();
+
+            return $result + ['trip_id' => null];
+        }
+
+        $this->persist($trip, $result['itinerary']);
+
+        return $result + ['trip_id' => (int) $trip->id];
+    }
+
+    /**
+     * Turn a filter set into the places it reaches, and say whether that is
+     * enough. Shared by `quote` and `planFromForm` so the two cannot drift.
+     *
+     * @return array{
+     *     ok: bool, reason: string|null, days: int, needed: int, total: int,
+     *     anchors: \Illuminate\Support\Collection, picked: \Illuminate\Support\Collection,
+     *     suggested: \Illuminate\Support\Collection, filters: array
+     * }
+     */
+    private function resolveFilters(array $filters): array
+    {
+        $maxDays = (int) AiConfig::get('max_days', 7);
+        $days    = max(1, min($maxDays, (int) ($filters['days'] ?? 2)));
+        $radius  = (float) ($filters['radius_km'] ?? AiConfig::get('default_radius_km', 40));
+        $needed  = $days * (int) AiConfig::get('min_stops_per_day', 2);
+
+        $empty = collect();
+        $anchors = $this->candidates->byIds(
+            array_map('intval', (array) ($filters['town_site_ids'] ?? []))
+        );
+
+        if ($anchors->isEmpty()) {
+            return [
+                'ok' => false, 'reason' => 'town_not_found', 'days' => $days,
+                'needed' => $needed, 'total' => 0, 'anchors' => $empty,
+                'picked' => $empty, 'suggested' => $empty, 'filters' => $filters,
+            ];
+        }
+
+        $codes = array_values(array_unique(array_filter(
+            (array) ($filters['category_codes'] ?? [])
+        )));
+
+        // "Suggest me somewhere to stay" is a wider candidate set, not a
+        // separate search: the model places a stay from the same list.
+        if (($filters['stay'] ?? 'suggest') === 'suggest' && $codes !== []) {
+            $codes = array_values(array_unique(array_merge(
+                $codes,
+                $this->candidates->childCodes('accomodation')
+            )));
+        }
+
+        // A stay they have already booked is treated exactly like a place they
+        // ticked: it must survive validation or the plan fails.
+        $stayId = (int) ($filters['stay_site_id'] ?? 0);
+        $picked = ($filters['stay'] ?? null) === 'booked' && $stayId > 0
+            ? $this->candidates->byIds([$stayId])
+            : $empty;
+
+        $suggested = $this->candidates->aroundMany(
+            $anchors,
+            $codes,
+            $radius,
+            $picked->pluck('id')->all(),
+        );
+
+        $total = $picked->count() + $suggested->count();
+
+        return [
+            'ok'        => $total >= $needed,
+            'reason'    => $total >= $needed ? null : 'not_enough_places',
+            'days'      => $days,
+            'needed'    => $needed,
+            'total'     => $total,
+            'anchors'   => $anchors,
+            'picked'    => $picked,
+            'suggested' => $suggested,
+            'filters'   => [
+                'town_site_ids'  => $anchors->pluck('id')->map(fn ($v) => (int) $v)->all(),
+                'category_codes' => $codes,
+                'radius_km'      => $radius,
+                'stay'           => $filters['stay'] ?? 'suggest',
+                'stay_site_id'   => $picked->isNotEmpty() ? (int) $picked->first()->id : null,
+            ],
+        ];
     }
 
     /**
@@ -213,21 +374,6 @@ class TripPlanner
             'reason'    => null,
             'log_id'    => $row?->id,
         ];
-    }
-
-    /**
-     * Site ids in the cart, in the order they were added.
-     *
-     * @return array<int,int>
-     */
-    private function cartSiteIds(SavedTrip $trip): array
-    {
-        return $trip->favourites()
-            ->where('favouritable_type', (new Site())->getMorphClass())
-            ->orderBy('id')
-            ->pluck('favouritable_id')
-            ->map(fn ($v) => (int) $v)
-            ->all();
     }
 
     private function write(array $attributes): ?AiLog

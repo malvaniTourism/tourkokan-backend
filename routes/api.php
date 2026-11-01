@@ -369,13 +369,24 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     Route::post('trip/updateCart', [TripCartController::class, 'updateCart'])
         ->middleware('throttle:writes');
 
+    // ── The plan form ───────────────────────────────────────────────
+    // Free and model-free. The form reads its own options from the live rows
+    // and asks what a filter set would give before anything is spent, so a
+    // traveller learns a two-day waterfall trip will not fill while they can
+    // still change it.
+    Route::post('trip/questionSet', [TripPlannerController::class, 'questionSet']);
+    Route::post('trip/quote', [TripPlannerController::class, 'quote'])
+        ->middleware('throttle:writes');
+
     // ── Generation ──────────────────────────────────────────────────
-    // The only route that costs money per call, so it carries both gates:
+    // The only routes that cost money per call, so they carry both gates:
     // verified.email because a guest holds a working JWT and is not an
     // identity, and throttle:trip because a credit check alone does not
     // bound how fast someone burns through what they have.
-    Route::post('trip/planFromCart', [TripPlannerController::class, 'planFromCart'])
-        ->middleware(['verified.email', 'throttle:trip']);
+    Route::middleware(['verified.email', 'throttle:trip'])->group(function () {
+        Route::post('trip/planFromCart', [TripPlannerController::class, 'planFromCart']);
+        Route::post('trip/plan', [TripPlannerController::class, 'plan']);
+    });
 
     Route::middleware(['vendor', 'throttle:writes'])->group(function () {
         Route::post('addSite', [SiteController::class, 'submitSite'])

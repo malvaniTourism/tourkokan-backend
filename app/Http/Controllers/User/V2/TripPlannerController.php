@@ -4,7 +4,11 @@ namespace App\Http\Controllers\User\V2;
 
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Trip\PlanFromCartRequest;
+use App\Http\Requests\Trip\PlanTripRequest;
+use App\Http\Requests\Trip\QuoteTripRequest;
+use App\Models\AiConfig;
 use App\Services\Credits\CreditLedger;
+use App\Services\Trip\CandidateFetcher;
 use App\Services\Trip\TripCart;
 use App\Services\Trip\TripPlanner;
 use Illuminate\Http\Request;
@@ -17,9 +21,12 @@ use Illuminate\Http\Request;
  * JWT, so `auth:api` alone is not an identity), the credit spend, and
  * `throttle:trip`. Without them this is an uncapped spend endpoint.
  *
- * The form-driven `plan`, `quote`, `questionSet` and the trip listings are
- * still stubs. Their names match the contract in the implementation plan, so
- * filling them does not rename a route.
+ * `questionSet` and `quote` are free and spend nothing, so they sit behind
+ * `auth:api` alone. `plan` spends a credit and therefore carries the same
+ * guards as `planFromCart`.
+ *
+ * The trip listings are still stubs. Their names match the contract in the
+ * implementation plan, so filling them does not rename a route.
  */
 class TripPlannerController extends BaseController
 {
@@ -27,25 +34,97 @@ class TripPlannerController extends BaseController
         private TripPlanner $planner,
         private TripCart $cart,
         private CreditLedger $credits,
+        private CandidateFetcher $candidates,
     ) {
     }
 
-    /** Filter options for the plan form, built from the live category codes. */
+    /**
+     * Everything the plan form needs to render itself.
+     *
+     * Served rather than compiled into the app because all of it moves: a new
+     * town, a category that just gained its first place, a changed free quota.
+     * An app that shipped its own copy would offer a filter the database
+     * cannot satisfy until the next release.
+     */
     public function questionSet(Request $request)
     {
-        return $this->notYet('Question set');
+        $user = auth()->user();
+
+        return $this->sendResponse([
+            'towns' => $this->candidates->towns()->map(fn ($site) => [
+                'site_id' => (int) $site->id,
+                'name'    => $site->name,
+                'mr_name' => $site->mr_name,
+                'lat'     => (float) $site->latitude,
+                'lng'     => (float) $site->longitude,
+            ])->all(),
+            // Only codes with places behind them, newest counts each time.
+            'interests' => $this->candidates->interestOptions(),
+            'days'      => [
+                'min'     => 1,
+                'max'     => (int) AiConfig::get('max_days', 7),
+                'default' => 2,
+            ],
+            'max_towns' => (int) AiConfig::get('max_towns', 3),
+            'radius_km' => (float) AiConfig::get('default_radius_km', 40),
+            'credits'   => $this->credits->balance($user),
+        ], 'Plan form.');
     }
 
-    /** Candidate count and credit cost for a filter set. Free, no model call. */
-    public function quote(Request $request)
+    /**
+     * What a filter set would give you, before anything is spent.
+     *
+     * Free and model-free: the form calls this as the traveller changes their
+     * mind, so they learn that two days of waterfalls alone will not fill
+     * while they can still add an interest — not after a credit is gone.
+     */
+    public function quote(QuoteTripRequest $request)
     {
-        return $this->notYet('Quote');
+        $quote = $this->planner->quote($request->validated());
+
+        return $this->sendResponse([
+            'can_plan'   => $quote['ok'],
+            'reason'     => $quote['reason'],
+            'candidates' => $quote['candidates'],
+            'needed'     => $quote['needed'],
+            'days'       => $quote['days'],
+            'towns'      => $quote['towns'],
+            'cost'       => 1,
+            'credits'    => $this->credits->balance(auth()->user()),
+        ], $quote['ok'] ? 'Ready to plan.' : $this->message($quote['reason']));
     }
 
-    /** Generate from the form's filters. Spends one credit. */
-    public function plan(Request $request)
+    /**
+     * Generate from the form's filters. Spends one credit.
+     *
+     * Returns the same payload as `planFromCart` — `{trip_id, itinerary,
+     * credits}` — so the app's itinerary screen serves both entry points
+     * without knowing which one it came from.
+     */
+    public function plan(PlanTripRequest $request)
     {
-        return $this->notYet('Plan');
+        $user = auth()->user();
+
+        $this->credits->grantSignupCredits($user);
+
+        $result = $this->planner->planFromForm($user, $request->validated());
+
+        if (!$result['ok']) {
+            return $this->sendError(
+                $this->message($result['reason']),
+                [
+                    'reason'  => $result['reason'],
+                    'credits' => $this->credits->balance($user),
+                ],
+                200
+            );
+        }
+
+        return $this->sendResponse([
+            'trip_id'   => $result['trip_id'],
+            'itinerary' => $result['itinerary'],
+            'credits'   => $this->credits->balance($user),
+        ], 'Your trip is ready.');
     }
 
     /**
@@ -97,6 +176,8 @@ class TripPlannerController extends BaseController
             'cart_too_small'       => 'Add at least three places so we can spread them across your days.',
             'insufficient_credits' => 'You have used all your free plans. Invite a friend to get more.',
             'generation_failed'    => 'We could not build a full plan from these places. Nothing was charged — please try again.',
+            'town_not_found'       => 'Choose a town to base your trip in.',
+            'not_enough_places'    => 'There is not enough to see for a trip this long. Add an interest, widen the area, or shorten the trip.',
             default                => 'We could not plan this trip.',
         };
     }
