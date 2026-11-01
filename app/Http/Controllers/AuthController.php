@@ -682,10 +682,16 @@ class AuthController extends BaseController
             }
 
             $user->update([
-                'otp'               => null,
-                'email_verified_at' => Carbon::now(),
-                'isVerified'        => true,
+                'otp'        => null,
+                'isVerified' => true,
             ]);
+            // email_verified_at is deliberately NOT in User $fillable —
+            // Laravel's own default User model leaves it out, because any
+            // update($request->all()) path would then let a caller mark their
+            // own email verified. Mass assignment therefore DROPS it silently,
+            // which is why verified.email refused every trip. forceFill is the
+            // explicit, non-mass-assignable write.
+            $user->forceFill(['email_verified_at' => Carbon::now()])->save();
 
             $token = JWTAuth::fromUser($user);
             return $this->createNewToken($token, 'Logged In Successfully!');
@@ -883,10 +889,14 @@ class AuthController extends BaseController
                 $user = User::findByEmail($googleUser['email']);
 
                 if ($user) {
-                    $user->update([
-                        'email_verified_at' => Carbon::now(),
-                        'isVerified'        => true,
-                    ]);
+                    $user->update(['isVerified' => true]);
+                    // email_verified_at is deliberately NOT in User $fillable —
+                    // Laravel's own default User model leaves it out, because any
+                    // update($request->all()) path would then let a caller mark their
+                    // own email verified. Mass assignment therefore DROPS it silently,
+                    // which is why verified.email refused every trip. forceFill is the
+                    // explicit, non-mass-assignable write.
+                    $user->forceFill(['email_verified_at' => Carbon::now()])->save();
 
                     Log::info('[googleAuth] Existing user logged in', ['user_id' => $user->id]);
 
@@ -920,7 +930,7 @@ class AuthController extends BaseController
                         'name' => $googleUser['name'],
                         'email' => $googleUser['email'],
                         'password' => bcrypt($password),
-                        'email_verified_at' => Carbon::now(),
+                        // email_verified_at is set after create() — see below.
                         'isVerified' => true,
                         'profile_picture' => preg_replace('/=s\d+-c$/', '=s400-c', $googleUser['picture'] ?? ''),
                         'uid' => Str::random(10),
@@ -934,6 +944,8 @@ class AuthController extends BaseController
                     }
 
                     $user = User::create($input);
+                    // Not fillable, so it cannot ride along in create($input).
+                    $user->forceFill(['email_verified_at' => Carbon::now()])->save();
                     $user->roles()->attach($roles->id);
 
                     Log::info('[googleAuth] New user created', ['user_id' => $user->id]);
