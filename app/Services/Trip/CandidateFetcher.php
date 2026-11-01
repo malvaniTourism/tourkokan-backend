@@ -127,10 +127,47 @@ class CandidateFetcher
      */
     public function towns(array $codes = ['city', 'district']): Collection
     {
-        return $this->baseQuery()
+        // Deliberately WITHOUT the bus-stop exclusion that destinations get.
+        // A taluka town is often an ST depot as well — Devgad carries
+        // `bus_stop_type = 'Depo'` — and excluding it here dropped the
+        // district's best-known town from the planner entirely. The exclusion
+        // exists to keep shelters out of places-to-visit; it says nothing
+        // about whether somewhere can anchor a trip.
+        return $this->townQuery()
             ->whereHas('categories', fn ($c) => $c->whereIn('code', $codes))
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * The towns a trip named, by id. Resolved under the same relaxed rule as
+     * `towns()` — offering a town the planner then cannot resolve is the worst
+     * of both worlds, and is exactly what happened to Devgad.
+     *
+     * @param  array<int,int>  $siteIds
+     */
+    public function townsByIds(array $siteIds): Collection
+    {
+        if ($siteIds === []) {
+            return collect();
+        }
+
+        return $this->townQuery()
+            ->whereIn('sites.id', $siteIds)
+            ->get()
+            ->sortBy(fn ($site) => array_search($site->id, $siteIds, true))
+            ->values();
+    }
+
+    /** A place that can anchor a trip: approved, live, and on the map. */
+    private function townQuery()
+    {
+        return Site::query()
+            ->where('sites.status', true)
+            ->where('submission_status', 'approved')
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->with(['categories:id,name,code']);
     }
 
     /**

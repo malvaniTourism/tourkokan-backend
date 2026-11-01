@@ -140,6 +140,53 @@ class TripFormPlanTest extends ApiTestCase
         $this->assertSame(16.06, $response->json('data.towns.0.lat'));
     }
 
+    /**
+     * Devgad carries `bus_stop_type = 'Depo'` in the live data, and the
+     * destination rule that keeps bus shelters out of itineraries was quietly
+     * dropping the district's best-known town from the planner altogether.
+     * Anchoring a trip and being worth visiting are different questions.
+     */
+    public function test_a_town_that_is_also_a_bus_depot_can_still_anchor_a_trip(): void
+    {
+        $this->beaches(8);
+
+        $depot = $this->site('Devgad', 'city', 16.37, 73.38);
+        $depot->forceFill(['bus_stop_type' => 'Depo'])->save();
+
+        $towns = collect(
+            $this->assertApiSuccess($this->questionSet())->json('data.towns')
+        )->pluck('site_id')->all();
+
+        $this->assertContains($depot->id, $towns, 'A depot town must still be offered');
+
+        // And offering it is worthless unless it also resolves when chosen.
+        $this->assertApiSuccess($this->plan([
+            'town_site_ids'  => [$depot->id],
+            'category_codes' => ['beach'],
+            'days'           => 2,
+        ]));
+    }
+
+    public function test_a_bus_shelter_is_still_never_a_destination(): void
+    {
+        $this->beaches(8);
+
+        $shelter = $this->site('Some Stop', 'beach', 16.061, 73.471);
+        $shelter->forceFill(['bus_stop_type' => 'Stop'])->save();
+
+        $response = $this->assertApiSuccess($this->plan([
+            'town_site_ids'  => [$this->town->id],
+            'category_codes' => ['beach'],
+            'days'           => 2,
+        ]));
+
+        $names = collect($response->json('data.itinerary.days'))
+            ->flatMap(fn ($day) => collect($day['stops'])->pluck('site.name'))
+            ->all();
+
+        $this->assertNotContains('Some Stop', $names);
+    }
+
     public function test_an_administrative_category_is_never_an_interest(): void
     {
         $this->beaches(3);

@@ -222,7 +222,10 @@ class TripPlanner
         $needed  = $days * (int) AiConfig::get('min_stops_per_day', 2);
 
         $empty = collect();
-        $anchors = $this->candidates->byIds(
+        // Anchors go through the town rule, not the destination one: a taluka
+        // town may also be a bus depot, and the question "can this anchor a
+        // trip" is not the question "is this worth visiting".
+        $anchors = $this->candidates->townsByIds(
             array_map('intval', (array) ($filters['town_site_ids'] ?? []))
         );
 
