@@ -30,6 +30,9 @@ class SiteController extends BaseController
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
+                    // Raw subquery, so the model's global scope does not
+                    // reach it: a place ticked into a trip is not a favourite.
+                    ->whereNull('favourites.trip_id')
                     ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                     ->where('favourites.user_id', $user->id);
             }, 'is_favorite')
@@ -80,6 +83,9 @@ class SiteController extends BaseController
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
+                    // Raw subquery, so the model's global scope does not
+                    // reach it: a place ticked into a trip is not a favourite.
+                    ->whereNull('favourites.trip_id')
                     ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                     ->where('favourites.user_id', $user_id);
             }, 'is_favorite')
@@ -145,6 +151,9 @@ class SiteController extends BaseController
                         $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                             ->from('favourites')
                             ->whereColumn('sites.id', 'favourites.favouritable_id')
+                    // Raw subquery, so the model's global scope does not
+                    // reach it: a place ticked into a trip is not a favourite.
+                    ->whereNull('favourites.trip_id')
                             ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                             ->where('favourites.user_id', $user->id);
                     }, 'is_favorite')
@@ -206,6 +215,9 @@ class SiteController extends BaseController
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
                     ->whereColumn('sites.id', 'favourites.favouritable_id')
+                    // Raw subquery, so the model's global scope does not
+                    // reach it: a place ticked into a trip is not a favourite.
+                    ->whereNull('favourites.trip_id')
                     ->where('favourites.favouritable_type', (new Site)->getMorphClass())
                     ->where('favourites.user_id', $user->id);
             }, 'is_favorite')

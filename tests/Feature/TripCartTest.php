@@ -74,6 +74,58 @@ class TripCartTest extends ApiTestCase
         $this->assertSame('Kunkeshwar Beach', $response->json('data.places.0.name'));
     }
 
+    /**
+     * The cart lives on `favourites`, which eight other queries already read
+     * and none of them knew about `trip_id`. Both halves of that mistake are
+     * pinned here: a ticked place is not a favourite, and the heart must not
+     * reach into somebody's trip.
+     */
+    public function test_a_place_in_a_trip_is_not_a_favourite(): void
+    {
+        $site = $this->site('Tarkarli Beach');
+        $this->assertApiSuccess($this->add($site));
+
+        $listed = $this->actingAs($this->traveller, 'api')
+            ->postJson('/api/v2/favourites');
+
+        $this->assertApiSuccess($listed);
+        $this->assertSame(
+            0,
+            $listed->json('data.total'),
+            'Ticking a place into a trip must not add it to Favourites'
+        );
+    }
+
+    public function test_tapping_the_heart_cannot_remove_a_place_from_a_trip(): void
+    {
+        $site = $this->site('Tarkarli Beach');
+        $trip = $this->assertApiSuccess($this->add($site))->json('data.trip_id');
+
+        // The heart toggle, exactly as the favourites endpoint runs it.
+        $found = \App\Models\Site::find($site->id)->favourites()
+            ->where(['user_id' => $this->traveller->id])
+            ->first();
+
+        $this->assertNull($found, 'The toggle must not see a cart row at all');
+        $this->assertSame(1, \App\Models\Favourite::inTrip($trip)->count());
+    }
+
+    public function test_a_place_keeps_the_position_it_was_added_at(): void
+    {
+        // `sort_order` was missing from $fillable, so mass assignment dropped
+        // it and every cart row was created with a null position.
+        $first  = $this->site('Tarkarli Beach');
+        $second = $this->site('Chivla Beach');
+
+        $trip = $this->assertApiSuccess($this->add($first))->json('data.trip_id');
+        $this->assertApiSuccess($this->add($second, $trip));
+
+        $orders = \App\Models\Favourite::inTrip($trip)->orderBy('id')->pluck('sort_order');
+
+        $this->assertNotNull($orders[1], 'The second place must carry a position');
+        $this->assertGreaterThan($orders[0] ?? -1, $orders[1]);
+    }
+
     public function test_ticking_the_same_place_twice_leaves_one_row(): void
     {
         $site = $this->site('Kunkeshwar Beach');
@@ -82,7 +134,7 @@ class TripCartTest extends ApiTestCase
         $again = $this->assertApiSuccess($this->add($site, $first->json('data.trip_id')));
 
         $this->assertSame(1, $again->json('data.count'));
-        $this->assertSame(1, Favourite::whereNotNull('trip_id')->count());
+        $this->assertSame(1, Favourite::inTrip()->count());
     }
 
     public function test_everything_lands_in_one_open_cart_while_browsing(): void
@@ -229,7 +281,7 @@ class TripCartTest extends ApiTestCase
             ->postJson('/api/v2/trip/removeFromCart', ['trip_id' => $trip, 'site_id' => $site->id])
             ->assertStatus(404);
 
-        $this->assertSame(1, Favourite::whereNotNull('trip_id')->count());
+        $this->assertSame(1, Favourite::inTrip()->count());
     }
 
     public function test_the_cart_needs_authentication(): void

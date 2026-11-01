@@ -49,7 +49,10 @@ class SavedTrip extends Model
      */
     public function favourites()
     {
-        return $this->hasMany(Favourite::class, 'trip_id');
+        // Without lifting it, the model's global scope — which keeps cart
+        // rows out of everyone else's favourites — would hide every row here.
+        return $this->hasMany(Favourite::class, 'trip_id')
+            ->withoutGlobalScope('ordinary');
     }
 
     /**
@@ -64,7 +67,9 @@ class SavedTrip extends Model
             'id',
             'id',
             'favouritable_id'
-        )->where('favourites.favouritable_type', (new Site())->getMorphClass());
+        )
+            ->withoutGlobalScope('ordinary')
+            ->where('favourites.favouritable_type', (new Site())->getMorphClass());
     }
 
     public function scopeDrafts($query)

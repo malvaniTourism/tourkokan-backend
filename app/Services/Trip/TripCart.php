@@ -162,7 +162,9 @@ class TripCart
     /** Favourite rows belonging to this trip, sites only. */
     private function rows(SavedTrip $trip)
     {
-        return Favourite::where('trip_id', $trip->id)
+        // inTrip() lifts the global scope that hides cart rows from every
+        // ordinary favourites query.
+        return Favourite::inTrip($trip->id)
             ->where('favouritable_type', (new Site())->getMorphClass());
     }
 
