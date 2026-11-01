@@ -50,7 +50,14 @@ class LegResolver
             ->join('routes', 'routes.id', '=', 'a.route_id')
             ->where('a.site_id', $fromSiteId)
             ->where('b.site_id', $toSiteId)
-            ->where('routes.status', true)
+            // Deliberately NOT filtered on `routes.status`. That column reads
+            // like `sites.status` but is not: every one of the 1,389 routes
+            // carries 0, the admin form defaults new ones to false, and no
+            // other consumer — the landing page, the MSRTC search — looks at
+            // it. Filtering on it returned no bus for any pair of places, so
+            // every leg in every itinerary came back as "by road" and the one
+            // thing this planner has that nothing else does was silently off.
+            // If the column is ever given meaning, this is where it goes back.
             ->orderBy('a.dept_time')
             ->limit($limit)
             ->get([
@@ -72,6 +79,64 @@ class LegResolver
                 ? $r->working_days
                 : null,
         ])->all();
+    }
+
+    /**
+     * Getting from where the traveller lands to where the trip starts.
+     *
+     * The useful question is not "is there a bus" but "is there a bus after my
+     * train gets in" — an 06:10 service is no help to someone arriving at
+     * 13:40. So `after` filters the departures and the soonest survivor is the
+     * one worth naming.
+     *
+     * Returns null when nothing direct runs, which is a real answer: the plan
+     * then says so rather than implying a connection the traveller would wait
+     * all afternoon for.
+     *
+     * @return array<string,mixed>|null
+     */
+    public function onwardFrom(int $fromSiteId, int $toSiteId, ?string $after = null): ?array
+    {
+        // A wider limit than busOptions' default: the first few services of
+        // the day are often useless to an afternoon arrival.
+        $buses = $this->busOptions($fromSiteId, $toSiteId, 20);
+
+        if ($buses === []) {
+            return null;
+        }
+
+        if ($after === null) {
+            return $buses[0];
+        }
+
+        $cutoff = substr($after, 0, 5);
+
+        foreach ($buses as $bus) {
+            // Times are HH:MM strings from the duty sheets, so a string
+            // comparison orders them correctly without parsing.
+            if ($bus['depart'] !== '' && $bus['depart'] >= $cutoff) {
+                return $bus;
+            }
+        }
+
+        // Everything today has gone. Naming tomorrow's first service is more
+        // honest than naming one that has already left.
+        return ['tomorrow' => true] + $buses[0];
+    }
+
+    /**
+     * Which of these towns the traveller can actually reach from where they
+     * land, by a direct bus. Answered before a plan is paid for.
+     *
+     * @param  array<int,int>  $townIds
+     * @return array<int,int>  the reachable ones
+     */
+    public function reachableTowns(int $fromSiteId, array $townIds): array
+    {
+        return array_values(array_filter(
+            $townIds,
+            fn ($townId) => $this->busOptions($fromSiteId, (int) $townId, 1) !== []
+        ));
     }
 
     /**

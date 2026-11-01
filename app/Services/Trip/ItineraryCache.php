@@ -37,7 +37,8 @@ class ItineraryCache
         float $lat,
         float $lng,
         float $radiusKm,
-        string $stay = 'suggest'
+        string $stay = 'suggest',
+        ?array $arrival = null
     ): string {
         $codes = array_values(array_unique($categoryCodes));
         sort($codes);
@@ -49,6 +50,15 @@ class ItineraryCache
             'lng'    => round($lng, 2),
             'radius' => round($radiusKm),
             'stay'   => $stay,
+            // How they arrive reshapes day 1, so two travellers only share an
+            // answer when they arrive the same way at roughly the same time.
+            // The hour, not the minute: 13:40 and 13:55 want the same plan,
+            // and keying on the minute would make the cache useless.
+            'arrival' => $arrival === null ? null : [
+                'mode' => $arrival['mode'] ?? null,
+                'from' => $arrival['site_id'] ?? null,
+                'hour' => substr((string) ($arrival['at'] ?? ''), 0, 2),
+            ],
         ]));
     }
 

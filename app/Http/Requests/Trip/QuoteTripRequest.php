@@ -30,6 +30,18 @@ class QuoteTripRequest extends CartRequest
 
             'stay'         => 'nullable|in:booked,suggest',
             'stay_site_id' => 'nullable|integer|exists:sites,id|required_if:stay,booked',
+
+            // How they get to Kokan. `own_vehicle` needs no entry point —
+            // they drive to the first stop — so site_id is required for the
+            // other three and meaningless for that one.
+            'arrival'         => 'nullable|array',
+            'arrival.mode'    => 'required_with:arrival|in:train,flight,bus,own_vehicle',
+            // required_if, not required_unless: with no arrival at all the
+            // mode is null, which "is not own_vehicle", and required_unless
+            // would demand a station from everyone who never answered.
+            'arrival.site_id' => 'nullable|integer|exists:sites,id|required_if:arrival.mode,train,flight,bus',
+            'arrival.at'      => 'nullable|date_format:H:i',
+            'departure_at'    => 'nullable|date_format:H:i',
         ];
     }
 
@@ -39,6 +51,8 @@ class QuoteTripRequest extends CartRequest
             'town_site_ids.required'     => 'Choose a town to base your trip in.',
             'town_site_ids.max'          => 'Pick fewer towns — a trip spread any wider stops being a trip.',
             'stay_site_id.required_if'   => 'Tell us where you are staying.',
+            'arrival.site_id.required_if' => 'Tell us where you are arriving.',
+            'arrival.at.date_format'     => 'Give the arrival time as HH:MM.',
         ];
     }
 }

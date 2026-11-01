@@ -68,6 +68,29 @@ class TripPlannerController extends BaseController
             'max_towns' => (int) AiConfig::get('max_towns', 3),
             'radius_km' => (float) AiConfig::get('default_radius_km', 40),
             'credits'   => $this->credits->balance($user),
+
+            // How they get here. `own_vehicle` carries no points because
+            // someone driving arrives at the first stop, not at a station.
+            'arrival' => [
+                'modes'  => [
+                    ['code' => 'train',       'label' => 'By train'],
+                    ['code' => 'own_vehicle', 'label' => 'Own vehicle'],
+                    ['code' => 'bus',         'label' => 'By bus'],
+                    ['code' => 'flight',      'label' => 'By flight'],
+                ],
+                'points' => $this->candidates->arrivalPoints()->map(fn ($site) => [
+                    'site_id' => (int) $site->id,
+                    'name'    => $site->name,
+                    // Which mode this point belongs to, so the picker can
+                    // narrow once a mode is chosen.
+                    'modes'   => $this->modesFor($site),
+                ])->all(),
+            ],
+
+            // Deliberately advertised as not ready. Prices exist for one
+            // product in the whole database, so a budget filter would match
+            // nothing while looking like it worked.
+            'budget' => ['available' => false],
         ], 'Plan form.');
     }
 
@@ -89,6 +112,9 @@ class TripPlannerController extends BaseController
             'needed'     => $quote['needed'],
             'days'       => $quote['days'],
             'towns'      => $quote['towns'],
+            // Null unless they said how they are getting here. Carries the
+            // onward bus and the hour day one can really start.
+            'arrival'    => $quote['arrival'],
             'cost'       => 1,
             'credits'    => $this->credits->balance(auth()->user()),
         ], $quote['ok'] ? 'Ready to plan.' : $this->message($quote['reason']));
@@ -167,6 +193,25 @@ class TripPlannerController extends BaseController
             'itinerary' => $result['itinerary'],
             'credits'   => $this->credits->balance($user),
         ], 'Your trip is ready.');
+    }
+
+    /**
+     * Which arrival modes a point serves.
+     *
+     * A depot serves both "by bus" and, for anyone driving in and parking, no
+     * one — so the mapping stays narrow and literal rather than clever.
+     *
+     * @return array<int,string>
+     */
+    private function modesFor($site): array
+    {
+        $codes = $site->categories->pluck('code')->all();
+
+        return array_values(array_filter([
+            in_array('railway_station', $codes, true) ? 'train' : null,
+            in_array('airport', $codes, true) ? 'flight' : null,
+            in_array('msrtc', $codes, true) ? 'bus' : null,
+        ]));
     }
 
     /** Copy the app shows for each refusal. */

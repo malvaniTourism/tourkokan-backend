@@ -116,6 +116,9 @@ class TripPlanner
             'needed'     => $set['needed'],
             'days'       => $set['days'],
             'towns'      => $set['anchors']->pluck('name')->all(),
+            // Free, and the question a traveller cannot answer themselves:
+            // can I actually get from where I land to where I am going?
+            'arrival'    => $set['arrival'],
         ];
     }
 
@@ -161,6 +164,7 @@ class TripPlanner
             type: 'plan',
             filters: $set['filters'],
             cacheKey: $this->cacheKeyFor($set),
+            arrival: $set['arrival'],
         );
 
         if (!$result['ok']) {
@@ -201,6 +205,7 @@ class TripPlanner
             lng: (float) $anchor->longitude,
             radiusKm: (float) $set['filters']['radius_km'],
             stay: (string) $set['filters']['stay'],
+            arrival: $set['arrival'],
         );
     }
 
@@ -264,6 +269,8 @@ class TripPlanner
             $picked->pluck('id')->all(),
         );
 
+        $arrival = $this->resolveArrival($filters, $anchors);
+
         $total = $picked->count() + $suggested->count();
 
         return [
@@ -275,14 +282,115 @@ class TripPlanner
             'anchors'   => $anchors,
             'picked'    => $picked,
             'suggested' => $suggested,
+            'arrival'   => $arrival,
             'filters'   => [
                 'town_site_ids'  => $anchors->pluck('id')->map(fn ($v) => (int) $v)->all(),
                 'category_codes' => $codes,
                 'radius_km'      => $radius,
                 'stay'           => $filters['stay'] ?? 'suggest',
                 'stay_site_id'   => $picked->isNotEmpty() ? (int) $picked->first()->id : null,
+                'arrival'        => $arrival === null ? null : [
+                    'mode'    => $arrival['mode'],
+                    'site_id' => $arrival['site_id'],
+                    'at'      => $arrival['at'],
+                ],
+                'departure_at'   => $filters['departure_at'] ?? null,
             ],
         ];
+    }
+
+    /**
+     * How the traveller gets here, as facts the plan can be shaped around.
+     *
+     * Driving needs no entry point — they arrive at the first stop. Everything
+     * else lands somewhere specific, and the question that matters is not
+     * whether a bus exists but whether one runs *after* they land: a 06:10
+     * service is no use to an afternoon train.
+     *
+     * Returns null when there is nothing useful to say, so the rest of the
+     * pipeline is unchanged for the traveller who does not answer.
+     *
+     * @param  \Illuminate\Support\Collection  $anchors
+     * @return array<string,mixed>|null
+     */
+    private function resolveArrival(array $filters, $anchors): ?array
+    {
+        $mode = $filters['arrival']['mode'] ?? null;
+
+        if ($mode === null) {
+            return null;
+        }
+
+        $at = $filters['arrival']['at'] ?? null;
+        $point = $this->candidates->arrivalPoint(
+            (int) ($filters['arrival']['site_id'] ?? 0)
+        );
+
+        // Own vehicle: no station, no onward bus, just the hour they get in.
+        if ($mode === 'own_vehicle' || $point === null) {
+            return [
+                'mode'           => $mode,
+                'site_id'        => $point?->id,
+                'from'           => $point?->name,
+                'at'             => $at,
+                'earliest_start' => $this->earliestStart($at),
+                'reaches'        => [],
+                'onward'         => null,
+                'last_day_ends_by' => $filters['departure_at'] ?? null,
+            ];
+        }
+
+        $townIds = $anchors->pluck('id')->map(fn ($v) => (int) $v)->all();
+        $reaches = $this->legs->reachableTowns((int) $point->id, $townIds);
+
+        // The onward connection to the first town they can actually get to.
+        $firstReachable = $reaches[0] ?? ($townIds[0] ?? null);
+        $onward = $firstReachable
+            ? $this->legs->onwardFrom((int) $point->id, (int) $firstReachable, $at)
+            : null;
+
+        // The day cannot start before they are actually in town. Landing at
+        // 13:40 means nothing if the only onward bus goes at 17:20 — planning
+        // a 14:40 first stop would strand them at the station watching it.
+        $start = $this->earliestStart($at);
+
+        if ($onward && !empty($onward['arrive']) && empty($onward['tomorrow'])) {
+            // Half an hour off the bus, not a full hour: they are already
+            // in town by then.
+            $start = max($start, $this->earliestStart($onward['arrive'], 30));
+        }
+
+        return [
+            'mode'           => $mode,
+            'site_id'        => (int) $point->id,
+            'from'           => $point->name,
+            'at'             => $at,
+            'earliest_start' => $start,
+            'reaches'        => $reaches,
+            'onward'         => $onward,
+            'last_day_ends_by' => $filters['departure_at'] ?? null,
+        ];
+    }
+
+    /**
+     * The hour the trip can actually begin.
+     *
+     * An hour after landing, because nobody steps off a train and straight
+     * onto a beach. Before 09:00 it makes no difference — the day was always
+     * going to start then.
+     */
+    private function earliestStart(?string $at, int $bufferMinutes = 60): string
+    {
+        if (!$at) {
+            return '09:00';
+        }
+
+        $minutes = ((int) substr($at, 0, 2)) * 60 + (int) substr($at, 3, 2) + $bufferMinutes;
+        $minutes = min($minutes, 23 * 60);
+
+        $start = sprintf('%02d:%02d', intdiv($minutes, 60), $minutes % 60);
+
+        return max($start, '09:00');
     }
 
     /**
@@ -340,6 +448,7 @@ class TripPlanner
         string $type,
         array $filters,
         ?string $cacheKey = null,
+        ?array $arrival = null,
     ): array {
         $pickedRows    = $this->candidates->project($picked);
         $suggestedRows = $this->candidates->project($suggested);
@@ -349,6 +458,7 @@ class TripPlanner
             suggested: $suggestedRows,
             legs: $this->legs->legsFor($picked),
             days: $days,
+            arrival: $arrival,
         );
 
         $log = [
@@ -366,7 +476,7 @@ class TripPlanner
         // already-answered question keeps working even when spending has
         // stopped for the day.
         if ($cacheKey !== null && $entry = $this->cache->get($cacheKey)) {
-            $served = $this->serveCached($entry, $prompt, $days, $requiredIds, $log);
+            $served = $this->serveCached($entry, $prompt, $days, $requiredIds, $log, $arrival);
 
             if ($served !== null) {
                 return $served;
@@ -425,6 +535,7 @@ class TripPlanner
             allowedSiteIds: $prompt['allowed_site_ids'],
             days: $days,
             requiredSiteIds: $requiredIds,
+            arrivalStart: $arrival['earliest_start'] ?? null,
         );
 
         $row = $this->write($log + [
@@ -453,10 +564,26 @@ class TripPlanner
 
         return [
             'ok'        => true,
-            'itinerary' => $result['itinerary'],
+            'itinerary' => $this->withArrival($result['itinerary'], $arrival),
             'reason'    => null,
             'log_id'    => $row?->id,
         ];
+    }
+
+    /**
+     * The journey in, attached to the finished plan.
+     *
+     * Kept out of the cached response body on purpose: the arrival is part of
+     * the key, but the onward bus is read fresh so a cached plan never names a
+     * service that has since been withdrawn.
+     */
+    private function withArrival(array $itinerary, ?array $arrival): array
+    {
+        if ($arrival !== null) {
+            $itinerary['arrival'] = $arrival;
+        }
+
+        return $itinerary;
     }
 
     /**
@@ -475,7 +602,8 @@ class TripPlanner
         array $prompt,
         int $days,
         array $requiredIds,
-        array $log
+        array $log,
+        ?array $arrival = null
     ): ?array {
         $started = microtime(true);
 
@@ -484,6 +612,7 @@ class TripPlanner
             allowedSiteIds: $prompt['allowed_site_ids'],
             days: $days,
             requiredSiteIds: $requiredIds,
+            arrivalStart: $arrival['earliest_start'] ?? null,
         );
 
         if (!$result['ok']) {
@@ -508,7 +637,7 @@ class TripPlanner
 
         return [
             'ok'        => true,
-            'itinerary' => $result['itinerary'],
+            'itinerary' => $this->withArrival($result['itinerary'], $arrival),
             'reason'    => null,
             'log_id'    => $row?->id,
         ];

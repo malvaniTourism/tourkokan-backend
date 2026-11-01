@@ -39,7 +39,8 @@ class ItineraryAssembler
         array $raw,
         array $allowedSiteIds,
         int $days,
-        array $requiredSiteIds = []
+        array $requiredSiteIds = [],
+        ?string $arrivalStart = null
     ): array {
         $minPerDay = (int) AiConfig::get('min_stops_per_day', 2);
         $maxPerDay = (int) AiConfig::get('max_stops_per_day', 5);
@@ -97,8 +98,18 @@ class ItineraryAssembler
             return $this->fail($dropped, 'no_valid_stops');
         }
 
-        foreach ($clean as $day) {
-            if (count($day['stops']) < $minPerDay) {
+        // A traveller still on a train at 17:54 cannot make two stops that
+        // evening, so day one is shifted to when they actually arrive and is
+        // exempt from the daily minimum. Enforced here rather than trusted to
+        // the model, like every other fact in this file.
+        if ($arrivalStart !== null) {
+            $clean[0]['stops'] = $this->afterArrival($clean[0]['stops'], $arrivalStart);
+        }
+
+        foreach ($clean as $index => $day) {
+            $exempt = $arrivalStart !== null && $index === 0;
+
+            if (!$exempt && count($day['stops']) < $minPerDay) {
                 return $this->fail($dropped, 'day_too_thin');
             }
         }
@@ -209,6 +220,66 @@ class ItineraryAssembler
     }
 
     /** Accept HH:MM only; anything else becomes null rather than reaching the app. */
+    /**
+     * Day one, moved to when the traveller is actually there.
+     *
+     * Everything is pushed forward by however late the arrival is, and
+     * anything that no longer fits before the evening is dropped rather than
+     * promised. A stop at 23:30 is not a stop.
+     *
+     * @param  array<int,array<string,mixed>>  $stops
+     * @return array<int,array<string,mixed>>
+     */
+    private function afterArrival(array $stops, string $arrivalStart): array
+    {
+        if ($stops === []) {
+            return $stops;
+        }
+
+        $first = $stops[0]['arrive'] ?? null;
+
+        if ($first === null || $first >= $arrivalStart) {
+            return $stops;
+        }
+
+        $shift = $this->minutes($arrivalStart) - $this->minutes($first);
+        $lastUsefulHour = (int) AiConfig::get('day_ends_at_hour', 21) * 60;
+
+        $moved = [];
+
+        foreach ($stops as $stop) {
+            $arrive = $this->shift($stop['arrive'] ?? null, $shift);
+
+            if ($arrive === null || $this->minutes($arrive) > $lastUsefulHour) {
+                break;
+            }
+
+            $stop['arrive'] = $arrive;
+            $stop['depart'] = $this->shift($stop['depart'] ?? null, $shift);
+            $moved[] = $stop;
+        }
+
+        return $moved;
+    }
+
+    private function minutes(string $time): int
+    {
+        return ((int) substr($time, 0, 2)) * 60 + (int) substr($time, 3, 2);
+    }
+
+    private function shift(?string $time, int $byMinutes): ?string
+    {
+        if ($time === null) {
+            return null;
+        }
+
+        $total = $this->minutes($time) + $byMinutes;
+
+        return $total >= 24 * 60
+            ? null
+            : sprintf('%02d:%02d', intdiv($total, 60), $total % 60);
+    }
+
     private function time(?string $value): ?string
     {
         if ($value === null) {

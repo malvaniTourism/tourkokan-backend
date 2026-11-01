@@ -159,6 +159,40 @@ class CandidateFetcher
             ->values();
     }
 
+    /**
+     * The ways into the district: stations, the airport, the ST depots.
+     *
+     * Unlike towns these are not required to carry coordinates, because what
+     * makes them useful is the bus graph rather than distance — `route_stops`
+     * knows what runs from them, and none of these rows has a latitude. They
+     * are also all tagged `bus_stop_type`, which is correct: they really are
+     * bus stops. That is precisely why they must not be fetched through the
+     * destination rule.
+     *
+     * @param  array<int,string>  $codes
+     */
+    public function arrivalPoints(array $codes = ['railway_station', 'airport', 'msrtc']): Collection
+    {
+        return Site::query()
+            ->where('sites.status', true)
+            ->whereHas('categories', fn ($c) => $c->whereIn('code', $codes))
+            // Somewhere nothing runs to is not somewhere you can arrive.
+            ->whereIn('sites.id', fn ($q) => $q->select('site_id')->from('route_stops'))
+            ->with(['categories:id,name,code'])
+            ->orderBy('name')
+            ->get();
+    }
+
+    /** One arrival point by id, under the same relaxed rule. */
+    public function arrivalPoint(?int $siteId): ?Site
+    {
+        if (!$siteId) {
+            return null;
+        }
+
+        return $this->arrivalPoints()->firstWhere('id', $siteId);
+    }
+
     /** A place that can anchor a trip: approved, live, and on the map. */
     private function townQuery()
     {
