@@ -366,6 +366,15 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
         ->middleware('throttle:writes');
     Route::post('trip/reorderCart', [TripCartController::class, 'reorderCart'])
         ->middleware('throttle:writes');
+    // ── A place the traveller found themselves ──────────────────────
+    // Resolving a pasted Maps link is read-only; keeping the result writes to
+    // the trip's custom_stops, never to `sites` — an unverified point must not
+    // leak into everyone else's search results.
+    Route::post('trip/resolveMapLink', [TripCartController::class, 'resolveMapLink'])
+        ->middleware('throttle:writes');
+    Route::post('trip/addCustomStop', [TripCartController::class, 'addCustomStop'])
+        ->middleware('throttle:writes');
+
     Route::post('trip/updateCart', [TripCartController::class, 'updateCart'])
         ->middleware('throttle:writes');
 

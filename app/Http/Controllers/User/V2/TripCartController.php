@@ -10,7 +10,9 @@ use App\Http\Requests\Trip\ShowCartRequest;
 use App\Http\Requests\Trip\UpdateCartRequest;
 use App\Models\AiConfig;
 use App\Models\SavedTrip;
+use App\Services\Trip\MapLinkResolver;
 use App\Services\Trip\TripCart;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
@@ -89,6 +91,77 @@ class TripCartController extends BaseController
     }
 
     /** Days, base town and title — the rest of the cart screen. */
+    /**
+     * Resolve a Google Maps link the traveller pasted.
+     *
+     * Read-only and spends nothing, so it sits with the rest of the cart
+     * operations rather than behind the generation gates. It answers one
+     * question — can we plan around this point — and when the answer is no it
+     * returns the nearest places we do cover, so the refusal offers a choice.
+     */
+    public function resolveMapLink(Request $request, MapLinkResolver $resolver)
+    {
+        $request->validate([
+            'url' => 'required|string|max:2048|url',
+        ]);
+
+        $result = $resolver->resolve($request->input('url'));
+
+        if (!$result['ok']) {
+            return $this->sendError(
+                match ($result['reason']) {
+                    'no_coordinates' => 'That link does not point at a place we can read. Use Share, then Copy link.',
+                    'no_coverage'    => 'We could not check that link against our map just now.',
+                    default          => 'We could not open that link. Check it and try again.',
+                },
+                ['reason' => $result['reason']],
+                200
+            );
+        }
+
+        return $this->sendResponse($result, 'Link resolved.');
+    }
+
+    /**
+     * Keep a place the traveller found themselves.
+     *
+     * Stored on the trip's `custom_stops`, NOT as a site: it has no owner, no
+     * verification and no contact details, and writing it into `sites` would
+     * put an unverified point into everyone else's search results.
+     */
+    public function addCustomStop(Request $request)
+    {
+        $data = $request->validate([
+            'trip_id'   => 'nullable|integer',
+            'name'      => 'required|string|max:120',
+            'latitude'  => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'kind'      => 'nullable|string|max:32',
+        ]);
+
+        $trip = $this->cart->resolve($request->user(), $data['trip_id'] ?? null);
+        if (!$trip) {
+            return $this->sendError('No trip to add that to.', [], 200);
+        }
+
+        $stops   = $trip->custom_stops ?? [];
+        $stops[] = [
+            'name'      => $data['name'],
+            'latitude'  => (float) $data['latitude'],
+            'longitude' => (float) $data['longitude'],
+            'kind'      => $data['kind'] ?? null,
+            'added_at'  => now()->toIso8601String(),
+        ];
+
+        $trip->custom_stops = $stops;
+        $trip->save();
+
+        return $this->sendResponse([
+            'trip_id'      => (int) $trip->id,
+            'custom_stops' => $stops,
+        ], 'Added to your trip.');
+    }
+
     public function updateCart(UpdateCartRequest $request)
     {
         $trip = $this->cart->resolve(auth()->user(), $request->integer('trip_id'), create: false);
