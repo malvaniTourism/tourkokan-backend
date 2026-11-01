@@ -178,6 +178,9 @@ class TripPlannerController extends BaseController
             'generation_failed'    => 'We could not build a full plan from these places. Nothing was charged — please try again.',
             'town_not_found'       => 'Choose a town to base your trip in.',
             'not_enough_places'    => 'There is not enough to see for a trip this long. Add an interest, widen the area, or shorten the trip.',
+            // Deliberately not "we are over budget". Trips already planned
+            // still work, so the useful advice is to try a popular area.
+            'spend_ceiling'        => 'Trip planning is busy right now. Popular areas still work — try again in a little while.',
             default                => 'We could not plan this trip.',
         };
     }

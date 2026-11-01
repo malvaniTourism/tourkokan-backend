@@ -3,6 +3,7 @@
 namespace App\Services\Trip;
 
 use App\Models\AiConfig;
+use App\Models\AiItineraryCache;
 use App\Models\AiLog;
 use App\Models\SavedTrip;
 use App\Models\TripPlacement;
@@ -28,6 +29,8 @@ class TripPlanner
         private AiClient $ai,
         private CreditLedger $credits,
         private TripCart $cart,
+        private ItineraryCache $cache,
+        private SpendGuard $spend,
     ) {
     }
 
@@ -157,6 +160,7 @@ class TripPlanner
             tripId: (int) $trip->id,
             type: 'plan',
             filters: $set['filters'],
+            cacheKey: $this->cacheKeyFor($set),
         );
 
         if (!$result['ok']) {
@@ -169,6 +173,35 @@ class TripPlanner
         $this->persist($trip, $result['itinerary']);
 
         return $result + ['trip_id' => (int) $trip->id];
+    }
+
+    /**
+     * The cache key for a resolved filter set, or null where caching would be
+     * wrong.
+     *
+     * A trip with places the traveller has already committed to — a booked
+     * stay, or a whole cart — has an input set that is theirs alone. Two
+     * travellers with the same filters and different hotels would share a key,
+     * each find the other's answer missing their own stay, and take turns
+     * throwing it away. Those plans are also the ones travellers value most,
+     * so paying for them is the right trade.
+     */
+    private function cacheKeyFor(array $set): ?string
+    {
+        if ($set['picked']->isNotEmpty()) {
+            return null;
+        }
+
+        $anchor = $set['anchors']->first();
+
+        return $this->cache->key(
+            categoryCodes: $set['filters']['category_codes'],
+            days: $set['days'],
+            lat: (float) $anchor->latitude,
+            lng: (float) $anchor->longitude,
+            radiusKm: (float) $set['filters']['radius_km'],
+            stay: (string) $set['filters']['stay'],
+        );
     }
 
     /**
@@ -303,6 +336,7 @@ class TripPlanner
         ?int $tripId,
         string $type,
         array $filters,
+        ?string $cacheKey = null,
     ): array {
         $pickedRows    = $this->candidates->project($picked);
         $suggestedRows = $this->candidates->project($suggested);
@@ -322,6 +356,35 @@ class TripPlanner
             'candidates_sent' => count($prompt['allowed_site_ids']),
             'prompt_hash'     => $this->prompts->hash($prompt),
         ];
+
+        $requiredIds = $picked->pluck('id')->map(fn ($v) => (int) $v)->all();
+
+        // Somebody has asked this before. Checked before the ceiling, so an
+        // already-answered question keeps working even when spending has
+        // stopped for the day.
+        if ($cacheKey !== null && $entry = $this->cache->get($cacheKey)) {
+            $served = $this->serveCached($entry, $prompt, $days, $requiredIds, $log);
+
+            if ($served !== null) {
+                return $served;
+            }
+        }
+
+        // The circuit breaker. A new question is what costs money, so this is
+        // the only place it can be refused.
+        if (!$this->spend->canSpend()) {
+            Log::warning('[trip] daily spend ceiling reached', [
+                'spent'   => $this->spend->spentToday(),
+                'ceiling' => $this->spend->ceiling(),
+            ]);
+
+            $this->write($log + [
+                'status'         => 'failed',
+                'failure_reason' => 'spend_ceiling',
+            ]);
+
+            return $this->refuse('spend_ceiling');
+        }
 
         try {
             $answer = $this->ai->itinerary($prompt, ItinerarySchema::json());
@@ -344,6 +407,11 @@ class TripPlanner
             'model'      => $meta['model'] ?? null,
             'tokens_in'  => (int) ($meta['tokens_in'] ?? 0),
             'tokens_out' => (int) ($meta['tokens_out'] ?? 0),
+            // Zero today: our frozen prefix is about 217 tokens and the model
+            // will not cache one below 512. Recorded so that stops being an
+            // assumption the day the prompt or the model changes.
+            'cache_read_tokens'  => (int) ($meta['cache_read_tokens'] ?? 0),
+            'cache_write_tokens' => (int) ($meta['cache_write_tokens'] ?? 0),
             'cost_inr'   => $meta['cost_inr'] ?? 0,
             'latency_ms' => (int) ($meta['latency_ms'] ?? 0),
             'ai_response' => $answer['data'] ?? null,
@@ -353,7 +421,7 @@ class TripPlanner
             raw: $answer['data'] ?? [],
             allowedSiteIds: $prompt['allowed_site_ids'],
             days: $days,
-            requiredSiteIds: $picked->pluck('id')->map(fn ($v) => (int) $v)->all(),
+            requiredSiteIds: $requiredIds,
         );
 
         $row = $this->write($log + [
@@ -368,12 +436,95 @@ class TripPlanner
             return $this->refuse('generation_failed', $row?->id);
         }
 
+        // Keep the answer, not the itinerary: the next traveller gets today's
+        // places arranged the way this one's were.
+        if ($cacheKey !== null) {
+            $this->cache->put(
+                hash: $cacheKey,
+                response: $answer['data'] ?? [],
+                siteIds: $this->siteIdsIn($result['itinerary']),
+                days: $days,
+                costInr: (float) ($meta['cost_inr'] ?? 0),
+            );
+        }
+
         return [
             'ok'        => true,
             'itinerary' => $result['itinerary'],
             'reason'    => null,
             'log_id'    => $row?->id,
         ];
+    }
+
+    /**
+     * Serve a cached answer, or return null to say it no longer holds.
+     *
+     * The answer goes through the same validator as a fresh one, against the
+     * places that exist right now. A business that has closed since is dropped
+     * exactly as an invented one would be — and if that leaves the plan too
+     * thin, the entry is thrown away rather than served. This is why a cache
+     * hit cannot be staler than a fresh generation.
+     *
+     * @param  array<int,int>  $requiredIds
+     */
+    private function serveCached(
+        AiItineraryCache $entry,
+        array $prompt,
+        int $days,
+        array $requiredIds,
+        array $log
+    ): ?array {
+        $started = microtime(true);
+
+        $result = $this->assembler->assemble(
+            raw: (array) $entry->response,
+            allowedSiteIds: $prompt['allowed_site_ids'],
+            days: $days,
+            requiredSiteIds: $requiredIds,
+        );
+
+        if (!$result['ok']) {
+            $this->cache->forget($entry->filter_hash);
+
+            return null;
+        }
+
+        $this->cache->hit($entry);
+
+        $row = $this->write($log + [
+            'status'           => 'cached',
+            'driver'           => 'cache',
+            // Nothing was bought, which is the whole point of the row.
+            'cost_inr'         => 0,
+            'latency_ms'       => (int) round((microtime(true) - $started) * 1000),
+            'ai_response'      => $entry->response,
+            'dropped_site_ids' => $result['dropped'],
+            'valid_sites_used' => $result['sites_used'],
+            'days_generated'   => count($result['itinerary']['days']),
+        ]);
+
+        return [
+            'ok'        => true,
+            'itinerary' => $result['itinerary'],
+            'reason'    => null,
+            'log_id'    => $row?->id,
+        ];
+    }
+
+    /**
+     * Every place a finished plan names.
+     *
+     * @return array<int,int>
+     */
+    private function siteIdsIn(array $itinerary): array
+    {
+        return collect($itinerary['days'] ?? [])
+            ->flatMap(fn ($day) => collect($day['stops'] ?? [])->pluck('site.id'))
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function write(array $attributes): ?AiLog

@@ -32,6 +32,20 @@ class ClaudeClient implements AiClient
         'claude-opus-5-5'   => ['in' => 4.00, 'out' => 20.00],
     ];
 
+    /**
+     * Cached input against the base input price. A read is a tenth, a write a
+     * quarter more. (Opus 5.5 reads cheaper still, at 0.05x — ignored here
+     * because it would only ever understate a bill we are not running.)
+     */
+    private const CACHE_READ_MULTIPLIER  = 0.1;
+    private const CACHE_WRITE_MULTIPLIER = 1.25;
+
+    /**
+     * The shortest prefix Claude Haiku 5.5 will cache. A shorter one is not an
+     * error: it silently caches nothing and reports zero cache tokens.
+     */
+    private const MIN_CACHEABLE_TOKENS = 512;
+
     public function __construct(private ?Client $client = null)
     {
     }
@@ -51,9 +65,9 @@ class ClaudeClient implements AiClient
                 // reasoning. Low effort keeps the bill where it belongs.
                 'effort' => 'low',
             ],
-            // The frozen half of the prompt goes here so it caches cleanly;
-            // the volatile trip data rides in the user turn.
-            system: $prompt['system'],
+            // The frozen half of the prompt goes here; the volatile trip data
+            // rides in the user turn, which is the order caching requires.
+            system: $this->cacheable($prompt['system']),
         );
 
         // Safety classifiers can decline with HTTP 200, so the stop reason is
@@ -76,18 +90,59 @@ class ClaudeClient implements AiClient
 
         $tokensIn  = (int) $message->usage->inputTokens;
         $tokensOut = (int) $message->usage->outputTokens;
+        // Zero unless the frozen prefix is both marked cacheable and long
+        // enough to qualify — see `cacheable()` below. Read regardless, so the
+        // logs answer the question instead of us assuming it.
+        $cacheRead  = (int) ($message->usage->cacheReadInputTokens ?? 0);
+        $cacheWrite = (int) ($message->usage->cacheCreationInputTokens ?? 0);
 
         return [
             'data' => $data,
             'meta' => [
-                'driver'     => 'claude',
-                'model'      => $message->model ?: $model,
-                'tokens_in'  => $tokensIn,
-                'tokens_out' => $tokensOut,
-                'cost_inr'   => $this->costInr($message->model ?: $model, $tokensIn, $tokensOut),
+                'driver'             => 'claude',
+                'model'              => $message->model ?: $model,
+                'tokens_in'          => $tokensIn,
+                'tokens_out'         => $tokensOut,
+                'cache_read_tokens'  => $cacheRead,
+                'cache_write_tokens' => $cacheWrite,
+                'cost_inr'           => $this->costInr(
+                    $message->model ?: $model,
+                    $tokensIn,
+                    $tokensOut,
+                    $cacheRead,
+                    $cacheWrite
+                ),
                 'latency_ms' => (int) round((microtime(true) - $started) * 1000),
             ],
         ];
+    }
+
+    /**
+     * The system prompt, marked cacheable only if it is long enough to be.
+     *
+     * Our frozen prefix is currently around 217 tokens, well under the 512 the
+     * model needs, so a marker on it would cache nothing and say nothing about
+     * it. Rather than ship a no-op or pretend, the decision is made from the
+     * prompt's actual size: grow the prompt past the threshold, or move to a
+     * model with a different one, and caching starts on its own — with the
+     * logged cache tokens as the proof.
+     *
+     * @return array<int,array<string,mixed>>|string
+     */
+    private function cacheable(string $system): array|string
+    {
+        // Roughly 3.6 characters per token for English prose. A crude estimate
+        // is enough: being wrong either way only costs a marker that does
+        // nothing, which is what we already have.
+        if ((int) (strlen($system) / 3.6) < self::MIN_CACHEABLE_TOKENS) {
+            return $system;
+        }
+
+        return [[
+            'type'         => 'text',
+            'text'         => $system,
+            'cacheControl' => ['type' => 'ephemeral'],
+        ]];
     }
 
     /** Structured outputs put the JSON in the first text block. */
@@ -102,8 +157,21 @@ class ClaudeClient implements AiClient
         return null;
     }
 
-    private function costInr(string $model, int $tokensIn, int $tokensOut): float
-    {
+    /**
+     * What the call cost, in rupees.
+     *
+     * Cached input is not priced like fresh input: a read costs a tenth of an
+     * input token and a write costs a quarter more than one. Counting either as
+     * ordinary input would misreport the bill — and the bill is what the daily
+     * ceiling is measured against.
+     */
+    private function costInr(
+        string $model,
+        int $tokensIn,
+        int $tokensOut,
+        int $cacheRead = 0,
+        int $cacheWrite = 0
+    ): float {
         $rates = self::USD_PER_MTOK[$model] ?? null;
 
         if ($rates === null) {
@@ -114,8 +182,12 @@ class ClaudeClient implements AiClient
             return 0.0;
         }
 
-        $usd = ($tokensIn / 1_000_000 * $rates['in'])
-             + ($tokensOut / 1_000_000 * $rates['out']);
+        $perMtok = fn (int $tokens, float $rate) => $tokens / 1_000_000 * $rate;
+
+        $usd = $perMtok($tokensIn, $rates['in'])
+             + $perMtok($tokensOut, $rates['out'])
+             + $perMtok($cacheRead, $rates['in'] * self::CACHE_READ_MULTIPLIER)
+             + $perMtok($cacheWrite, $rates['in'] * self::CACHE_WRITE_MULTIPLIER);
 
         return round($usd * (float) AiConfig::get('usd_inr', 88), 4);
     }

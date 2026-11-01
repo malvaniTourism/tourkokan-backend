@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\V2\EventGalleryController as AdminEventGalleryCon
 use App\Http\Controllers\Admin\V2\SiteGalleryController as AdminSiteGalleryController;
 use App\Http\Controllers\Admin\V2\UserRoleRequestController as AdminUserRoleRequestController;
 use App\Http\Controllers\Admin\V2\AnalyticsController;
+use App\Http\Controllers\Admin\V2\AiDashboardController;
 use App\Http\Controllers\Admin\V2\ProductCategoryController as AdminProductCategoryController;
 use App\Http\Controllers\Admin\V2\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\V2\PlanController as AdminPlanController;
@@ -289,6 +290,19 @@ Route::group(['middleware' => ['auth:api', 'premiddleware', 'admin', 'throttle:a
     Route::post('analytics/eventTypeSummary',  [AnalyticsController::class, 'eventTypeSummary']);
     Route::post('analytics/platformBreakdown', [AnalyticsController::class, 'platformBreakdown']);
     Route::post('analytics/favouriteActivity', [AnalyticsController::class, 'favouriteActivity']);
+
+    // ── AI Trip Planner ─────────────────────────────────────────────────
+    // Four screens: is it healthy and what is it costing (overview), what
+    // happened to one traveller's trip (logs/getLog), tighten something now
+    // without a deploy (config), and a user who ran out (credits).
+    Route::post('ai/overview',      [AiDashboardController::class, 'overview']);
+    Route::post('ai/logs',          [AiDashboardController::class, 'logs']);
+    Route::post('ai/getLog',        [AiDashboardController::class, 'getLog']);
+    Route::post('ai/reviewLog',     [AiDashboardController::class, 'review']);
+    Route::post('ai/config',        [AiDashboardController::class, 'config']);
+    Route::post('ai/updateConfig',  [AiDashboardController::class, 'updateConfig']);
+    Route::post('ai/userCredits',   [AiDashboardController::class, 'userCredits']);
+    Route::post('ai/grantCredits',  [AiDashboardController::class, 'grantCredits']);
 });
 
 // Admin-only route management (requires admin role)

@@ -25,6 +25,8 @@ class AiLog extends Model
         'model',
         'tokens_in',
         'tokens_out',
+        'cache_read_tokens',
+        'cache_write_tokens',
         'cost_inr',
         'latency_ms',
         'ai_response',

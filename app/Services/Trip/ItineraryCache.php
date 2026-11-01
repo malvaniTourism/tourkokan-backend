@@ -1,0 +1,156 @@
+<?php
+
+namespace App\Services\Trip;
+
+use App\Models\AiConfig;
+use App\Models\AiItineraryCache;
+use Illuminate\Support\Collection;
+
+/**
+ * The result cache: the same question is never bought twice.
+ *
+ * This is the main lever on unit cost, and a bigger one than model choice.
+ * It is also the honest near-term version of "train our own model later" —
+ * generated itineraries are outputs, not labelled training data, and caching
+ * delivers the same economics today with no ML work.
+ *
+ * What is cached is the model's decision. The places are refetched on every
+ * hit and run through the assembler again, so a cached plan is as current as a
+ * fresh one and a closed business falls out of it on its own.
+ */
+class ItineraryCache
+{
+    /**
+     * The question, normalised to the point where two travellers asking the
+     * same thing agree.
+     *
+     * Coordinates are rounded to two decimals — roughly a kilometre — because
+     * a base town picked from a list gives everyone the same pin, but a
+     * coordinate arriving from a map pin would otherwise make every request
+     * unique and the cache useless.
+     *
+     * @param  array<int,string>  $categoryCodes
+     */
+    public function key(
+        array $categoryCodes,
+        int $days,
+        float $lat,
+        float $lng,
+        float $radiusKm,
+        string $stay = 'suggest'
+    ): string {
+        $codes = array_values(array_unique($categoryCodes));
+        sort($codes);
+
+        return hash('sha256', json_encode([
+            'codes'  => $codes,
+            'days'   => $days,
+            'lat'    => round($lat, 2),
+            'lng'    => round($lng, 2),
+            'radius' => round($radiusKm),
+            'stay'   => $stay,
+        ]));
+    }
+
+    /**
+     * A cached answer, or null. Expiry is checked here rather than by a
+     * scheduled sweep, so a stale entry can never be served even if nothing
+     * has cleaned up.
+     */
+    public function get(string $hash): ?AiItineraryCache
+    {
+        if (!$this->enabled()) {
+            return null;
+        }
+
+        return AiItineraryCache::where('filter_hash', $hash)->unexpired()->first();
+    }
+
+    /** Record that an entry was used. The hit rate is a metric the panel reads. */
+    public function hit(AiItineraryCache $entry): void
+    {
+        $entry->forceFill([
+            'hits'        => $entry->hits + 1,
+            'last_hit_at' => now(),
+        ])->save();
+    }
+
+    /**
+     * Keep an answer. Does nothing when caching is switched off, so the
+     * feature can be disabled in one config row without a deploy.
+     *
+     * @param  array<string,mixed>  $response  what the model returned
+     * @param  array<int,int>       $siteIds   the places the answer named
+     */
+    public function put(
+        string $hash,
+        array $response,
+        array $siteIds,
+        int $days,
+        float $costInr
+    ): void {
+        if (!$this->enabled()) {
+            return;
+        }
+
+        $ttl = (int) AiConfig::get('cache_ttl_hours', 168);
+
+        AiItineraryCache::updateOrCreate(
+            ['filter_hash' => $hash],
+            [
+                'response'   => $response,
+                'site_ids'   => array_values($siteIds),
+                'days'       => $days,
+                'cost_inr'   => $costInr,
+                'expires_at' => $ttl > 0 ? now()->addHours($ttl) : null,
+            ]
+        );
+    }
+
+    /**
+     * Throw an entry away. Called when a cached answer no longer validates —
+     * usually because a place in it has closed — so the next traveller gets a
+     * fresh plan rather than the same broken one.
+     */
+    public function forget(string $hash): void
+    {
+        AiItineraryCache::where('filter_hash', $hash)->delete();
+    }
+
+    /**
+     * Drop every cached answer that names this place.
+     *
+     * Not required for correctness — reassembly already removes a place that
+     * has left the candidate set — but it turns the next traveller's silent
+     * revalidation into a straightforward miss, and it is what an admin
+     * expects to happen when they reject a listing.
+     */
+    public function forgetSite(int $siteId): int
+    {
+        return AiItineraryCache::whereJsonContains('site_ids', $siteId)->delete();
+    }
+
+    /**
+     * Hit rate and what caching has saved, for the overview screen.
+     *
+     * @return array{entries: int, hits: int, saved_inr: float}
+     */
+    public function stats(): array
+    {
+        /** @var Collection<int,AiItineraryCache> $rows */
+        $rows = AiItineraryCache::unexpired()->get(['hits', 'cost_inr']);
+
+        return [
+            'entries' => $rows->count(),
+            'hits'    => (int) $rows->sum('hits'),
+            // Each hit avoided one generation at that entry's own cost, which
+            // is a measurement rather than an estimate.
+            'saved_inr' => round((float) $rows->sum(fn ($r) => $r->hits * (float) $r->cost_inr), 2),
+        ];
+    }
+
+    private function enabled(): bool
+    {
+        return AiConfig::getBool('cache_enabled', true);
+    }
+}
