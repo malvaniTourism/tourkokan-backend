@@ -43,7 +43,14 @@ class ItinerarySchema
                                         'depart'  => ['type' => 'string'],
                                         'note'    => ['type' => 'string'],
                                     ],
-                                    'required'             => ['site_id', 'arrive', 'note'],
+                                    // `depart` is required alongside `arrive`.
+                                    // Left optional, the model filled it for
+                                    // some stops and not others, and a stop
+                                    // rendered as a range came out "12:15-".
+                                    // Both are suggested timings rather than
+                                    // facts, so there is no reason for one to
+                                    // be answerable and the other not.
+                                    'required'             => ['site_id', 'arrive', 'depart', 'note'],
                                     'additionalProperties' => false,
                                 ],
                             ],
