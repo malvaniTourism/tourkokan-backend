@@ -7,6 +7,7 @@ use App\Http\Requests\Trip\PlanFromCartRequest;
 use App\Http\Requests\Trip\PlanTripRequest;
 use App\Http\Requests\Trip\QuoteTripRequest;
 use App\Models\AiConfig;
+use App\Models\SavedTrip;
 use App\Services\Credits\CreditLedger;
 use App\Services\Trip\CandidateFetcher;
 use App\Services\Trip\TripCart;
@@ -25,8 +26,8 @@ use Illuminate\Http\Request;
  * `auth:api` alone. `plan` spends a credit and therefore carries the same
  * guards as `planFromCart`.
  *
- * The trip listings are still stubs. Their names match the contract in the
- * implementation plan, so filling them does not rename a route.
+ * `myTrips` and `getTrip` are read-only and spend nothing, so they sit behind
+ * `auth:api` alone — a saved trip was already paid for when it was generated.
  */
 class TripPlannerController extends BaseController
 {
@@ -230,24 +231,85 @@ class TripPlannerController extends BaseController
         };
     }
 
-    /** The traveller's saved trips. */
+    /**
+     * The traveller's saved trips.
+     *
+     * Only `generated` rows: a draft is the cart, which already has its own
+     * screen, and listing it here would show a traveller an itinerary that
+     * does not exist yet.
+     *
+     * The summary line is built here rather than in the app because it reads
+     * the itinerary JSON — the app would otherwise download every full
+     * itinerary just to count stops for a list row.
+     */
     public function myTrips(Request $request)
     {
-        return $this->notYet('My trips');
+        $trips = SavedTrip::where('user_id', auth()->id())
+            ->where('status', 'generated')
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get();
+
+        return $this->sendResponse([
+            'trips'   => $trips->map(fn (SavedTrip $t) => $this->tripRow($t))->values(),
+            'credits' => $this->credits->balance(auth()->user()),
+        ], 'Saved trips.');
     }
 
-    /** One saved itinerary. */
+    /**
+     * One saved itinerary, in the same shape generation returns, so the
+     * itinerary screen renders a reopened trip through the identical path as
+     * a freshly generated one.
+     */
     public function getTrip(Request $request)
     {
-        return $this->notYet('Get trip');
+        $trip = SavedTrip::where('user_id', auth()->id())
+            ->where('id', (int) $request->input('trip_id'))
+            ->first();
+
+        if (!$trip || $trip->status !== 'generated') {
+            return $this->sendError('That trip is no longer available.', [], 200);
+        }
+
+        return $this->sendResponse([
+            'trip_id'   => (int) $trip->id,
+            'itinerary' => $trip->itinerary,
+            'credits'   => $this->credits->balance(auth()->user()),
+        ], 'Saved trip.');
     }
 
-    private function notYet(string $feature)
+    /**
+     * One row of the saved-trips list.
+     *
+     * Stop names come from the itinerary that was stored at generation time,
+     * not from a fresh site lookup: a saved trip is a record of what the
+     * traveller was given, and it has to keep reading the same after a site is
+     * renamed or unpublished.
+     */
+    private function tripRow(SavedTrip $trip): array
     {
-        return $this->sendError(
-            "{$feature} is not implemented yet (Phase 0 scaffold).",
-            [],
-            501
-        );
+        $itinerary = $trip->itinerary ?? [];
+        $days      = $itinerary['days'] ?? [];
+
+        $names = [];
+        $stops = 0;
+        foreach ($days as $day) {
+            foreach ($day['stops'] ?? [] as $stop) {
+                $stops++;
+                $name = $stop['site']['name'] ?? null;
+                if ($name && !in_array($name, $names, true)) {
+                    $names[] = $name;
+                }
+            }
+        }
+
+        return [
+            'id'         => (int) $trip->id,
+            'title'      => $trip->title ?: ($itinerary['trip']['title'] ?? 'Your trip'),
+            'days'       => (int) $trip->days,
+            'stop_count' => $stops,
+            'stop_names' => array_slice($names, 0, 3),
+            'created_at' => optional($trip->created_at)->toIso8601String(),
+        ];
     }
 }

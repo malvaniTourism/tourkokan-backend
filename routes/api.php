@@ -388,6 +388,14 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
         Route::post('trip/plan', [TripPlannerController::class, 'plan']);
     });
 
+    // ── Saved trips ─────────────────────────────────────────────────
+    // Read-only and free. Deliberately NOT behind verified.email: the trip
+    // was paid for when it was generated, and a traveller who has lost
+    // access to their email should still be able to open the itinerary they
+    // are standing in the middle of.
+    Route::post('trip/myTrips', [TripPlannerController::class, 'myTrips']);
+    Route::post('trip/getTrip', [TripPlannerController::class, 'getTrip']);
+
     Route::middleware(['vendor', 'throttle:writes'])->group(function () {
         Route::post('addSite', [SiteController::class, 'submitSite'])
             ->middleware('plan.limit:max_sites');
