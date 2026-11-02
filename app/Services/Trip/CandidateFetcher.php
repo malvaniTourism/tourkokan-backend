@@ -64,14 +64,21 @@ class CandidateFetcher
      * @param  Collection<int,Site>  $anchors
      * @param  array<int,string>     $categoryCodes
      * @param  array<int,int>        $excludeIds
+     * @param  int|null              $limit  overrides the model's candidate
+     *                                       budget. Browsing is not bounded by
+     *                                       what fits in a prompt, and a place
+     *                                       picked beyond the 60th is still
+     *                                       honoured: planFromCart loads the
+     *                                       cart by id, not from this list.
      */
     public function aroundMany(
         Collection $anchors,
         array $categoryCodes = [],
         float $radiusKm = 40,
-        array $excludeIds = []
+        array $excludeIds = [],
+        ?int $limit = null
     ): Collection {
-        $total = (int) AiConfig::get('candidate_limit', 60);
+        $total = $limit ?? (int) AiConfig::get('candidate_limit', 60);
 
         if ($anchors->isEmpty()) {
             return collect();
@@ -325,6 +332,35 @@ class CandidateFetcher
      * short description. No phone numbers, no prices — those are attached
      * afterwards from the live rows, never echoed back by the model.
      */
+    /**
+     * The same places as the app sees them.
+     *
+     * The pair matters: `project()` goes to the MODEL and is deliberately
+     * thin — no images, no phone numbers, nothing it could echo back as if it
+     * were a fact. `present()` goes to the APP, which needs the picture, the
+     * Marathi name and the verified badge to draw a row.
+     *
+     * Identical to what the cart returns, so a browse row and a cart row are
+     * the same object to the app and a list can be built once.
+     */
+    public function present(Collection $sites): array
+    {
+        return $sites->map(fn ($site) => [
+            'id'         => (int) $site->id,
+            'name'       => $site->name,
+            'mr_name'    => $site->mr_name,
+            'image'      => $site->image,
+            'logo'       => $site->logo,
+            'latitude'   => $site->latitude,
+            'longitude'  => $site->longitude,
+            'verified'   => $site->verification_status === 'verified',
+            'categories' => $site->categories->map(fn ($c) => [
+                'code' => $c->code,
+                'name' => $c->name,
+            ])->all(),
+        ])->all();
+    }
+
     public function project(Collection $sites): array
     {
         return $sites->map(fn ($site) => [

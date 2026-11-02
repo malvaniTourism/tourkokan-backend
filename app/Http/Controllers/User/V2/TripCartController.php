@@ -11,6 +11,7 @@ use App\Http\Requests\Trip\UpdateCartRequest;
 use App\Models\AiConfig;
 use App\Models\SavedTrip;
 use App\Services\Trip\MapLinkResolver;
+use App\Services\Trip\CandidateFetcher;
 use App\Services\Trip\TripCart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -25,8 +26,10 @@ use RuntimeException;
  */
 class TripCartController extends BaseController
 {
-    public function __construct(private TripCart $cart)
-    {
+    public function __construct(
+        private TripCart $cart,
+        private CandidateFetcher $candidates,
+    ) {
     }
 
     /** The open cart, or the one named by trip_id. */
@@ -170,7 +173,18 @@ class TripCartController extends BaseController
             return $this->sendError('Trip not found.', '', 404);
         }
 
-        $trip->fill($request->only(['days', 'base_site_id', 'title']))->save();
+        $trip->fill($request->only(['days', 'base_site_id', 'title']));
+
+        // Merged, not replaced. The stepper saves step 1 and step 2 in
+        // separate calls, so a replace would have the second wipe the first.
+        if ($request->has('filters')) {
+            $trip->filters = array_replace(
+                (array) $trip->filters,
+                array_filter((array) $request->input('filters'), fn ($v) => $v !== null)
+            );
+        }
+
+        $trip->save();
 
         return $this->sendResponse($this->present($trip->fresh()), 'Trip updated.');
     }
@@ -198,22 +212,13 @@ class TripCartController extends BaseController
         ];
     }
 
+    /**
+     * Shared with the browse endpoint, so a cart row and a pick-list row are
+     * the same object to the app.
+     */
     private function places(Collection $sites): array
     {
-        return $sites->map(fn ($site) => [
-            'id'         => (int) $site->id,
-            'name'       => $site->name,
-            'mr_name'    => $site->mr_name,
-            'image'      => $site->image,
-            'logo'       => $site->logo,
-            'latitude'   => $site->latitude,
-            'longitude'  => $site->longitude,
-            'verified'   => $site->verification_status === 'verified',
-            'categories' => $site->categories->map(fn ($c) => [
-                'code' => $c->code,
-                'name' => $c->name,
-            ])->all(),
-        ])->all();
+        return $this->candidates->present($sites);
     }
 
     private function refusal(RuntimeException $e)

@@ -384,6 +384,10 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     // traveller learns a two-day waterfall trip will not fill while they can
     // still change it.
     Route::post('trip/questionSet', [TripPlannerController::class, 'questionSet']);
+    // Step 2 of the stepper: browse the places a trip could be built from.
+    // Free and model-free, like the quote, so it carries the read throttle.
+    Route::post('trip/places', [TripPlannerController::class, 'places'])
+        ->middleware('throttle:api');
     Route::post('trip/quote', [TripPlannerController::class, 'quote'])
         ->middleware('throttle:writes');
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User\V2;
 
 use App\Http\Controllers\BaseController;
+use App\Http\Requests\Trip\BrowsePlacesRequest;
 use App\Http\Requests\Trip\PlanFromCartRequest;
 use App\Http\Requests\Trip\PlanTripRequest;
 use App\Http\Requests\Trip\QuoteTripRequest;
@@ -31,12 +32,70 @@ use Illuminate\Http\Request;
  */
 class TripPlannerController extends BaseController
 {
+    /**
+     * How many places browsing may return. Generous — someone clearing every
+     * filter across three towns should see the district, not a page of it —
+     * but bounded, because an unbounded list is a slow screen.
+     */
+    private const BROWSE_LIMIT = 300;
+
     public function __construct(
         private TripPlanner $planner,
         private TripCart $cart,
         private CreditLedger $credits,
         private CandidateFetcher $candidates,
     ) {
+    }
+
+    /**
+     * The places a traveller may pick from — step 2 of the stepper.
+     *
+     * Built on `aroundMany`, which is the planner's own candidate query. That
+     * is the point: a browse list built on anything else could offer a place
+     * the planner then refuses to build around, and the traveller would have
+     * no way to understand why.
+     *
+     * Free, like the quote. Browsing costs nothing and spends no credit.
+     */
+    public function places(BrowsePlacesRequest $request)
+    {
+        $towns = $this->candidates->townsByIds(
+            array_map('intval', (array) $request->input('town_site_ids', []))
+        );
+
+        if ($towns->isEmpty()) {
+            return $this->sendError(
+                $this->message('town_not_found'),
+                ['reason' => 'town_not_found'],
+                200
+            );
+        }
+
+        $codes  = array_values(array_filter((array) $request->input('category_codes', [])));
+        $radius = (float) ($request->input('radius_km') ?: AiConfig::get('default_radius_km', 40));
+
+        // Not bounded by the model's candidate budget: browsing is not a
+        // prompt, and a place picked past the 60th is still planned around
+        // because the cart is loaded by id.
+        $sites = $this->candidates->aroundMany($towns, $codes, $radius, [], self::BROWSE_LIMIT);
+
+        if ($search = trim((string) $request->input('search'))) {
+            $sites = $sites->filter(
+                fn ($site) => stripos((string) $site->name, $search) !== false
+                    || stripos((string) $site->mr_name, $search) !== false
+            )->values();
+        }
+
+        return $this->sendResponse([
+            'towns'    => $towns->pluck('name')->all(),
+            'radius_km' => $radius,
+            'count'    => $sites->count(),
+            // Capped, so a traveller who clears every filter does not get a
+            // thousand rows. The count above is of what matched.
+            'truncated' => $sites->count() >= self::BROWSE_LIMIT,
+            'places'   => $this->candidates->present($sites),
+            'minimum'  => (int) AiConfig::get('min_cart_places', 3),
+        ], 'Places to pick from.');
     }
 
     /**

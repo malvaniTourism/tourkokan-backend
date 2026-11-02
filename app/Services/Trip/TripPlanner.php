@@ -61,16 +61,36 @@ class TripPlanner
             return $this->refuse('insufficient_credits');
         }
 
-        // Fill the gaps around what they chose, anchored on their base town if
-        // they named one, otherwise on the first place they picked.
-        $anchor     = $trip->baseSite ?: $picked->first();
-        $suggested  = $this->candidates->nearby(
-            (float) $anchor->latitude,
-            (float) $anchor->longitude,
-            (array) data_get($trip->filters, 'category_codes', []),
-            (float) data_get($trip->filters, 'radius_km', 40),
+        $filters = (array) $trip->filters;
+
+        // Fill the gaps around what they chose. The towns come from the
+        // stepper's step 1 when it saved them; otherwise this falls back to
+        // the base town, or to the first place picked.
+        //
+        // Both paths go through `aroundMany` so a cart trip and a form trip
+        // are filled from the same query — and so a traveller who chose three
+        // towns gets places near all three, not three towns' worth of
+        // candidates crowded out by whichever one happened to be the anchor.
+        $anchors = $this->candidates->townsByIds(
+            array_map('intval', (array) data_get($filters, 'town_site_ids', []))
+        );
+
+        if ($anchors->isEmpty()) {
+            $fallback = $trip->baseSite ?: $picked->first();
+            $anchors  = $fallback ? collect([$fallback]) : collect();
+        }
+
+        $suggested = $this->candidates->aroundMany(
+            $anchors,
+            (array) data_get($filters, 'category_codes', []),
+            (float) data_get($filters, 'radius_km', 40),
             $picked->pluck('id')->all(),
         );
+
+        // Arrival was being stored and then ignored on this path: it is
+        // resolved on the form path only, so a stepper trip would carry a
+        // train time that never reached the plan.
+        $arrival = $this->resolveArrival($filters, $anchors);
 
         $result = $this->run(
             picked: $picked,
@@ -79,7 +99,8 @@ class TripPlanner
             userId: (int) $trip->user_id,
             tripId: (int) $trip->id,
             type: 'cart',
-            filters: (array) $trip->filters,
+            filters: $filters,
+            arrival: $arrival,
         );
 
         if (!$result['ok']) {
