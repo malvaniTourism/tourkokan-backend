@@ -4,17 +4,23 @@ namespace App\Http\Controllers\User\V2;
 
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Trip\AddToCartRequest;
+use App\Http\Requests\Trip\ClaimTripRequest;
 use App\Http\Requests\Trip\RemoveFromCartRequest;
 use App\Http\Requests\Trip\ReorderCartRequest;
 use App\Http\Requests\Trip\ShowCartRequest;
 use App\Http\Requests\Trip\UpdateCartRequest;
 use App\Models\AiConfig;
+use App\Models\Favourite;
 use App\Models\SavedTrip;
+use App\Models\User;
 use App\Services\Trip\MapLinkResolver;
 use App\Services\Trip\CandidateFetcher;
 use App\Services\Trip\TripCart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use RuntimeException;
 
 /**
@@ -163,6 +169,82 @@ class TripCartController extends BaseController
             'trip_id'      => (int) $trip->id,
             'custom_stops' => $stops,
         ], 'Added to your trip.');
+    }
+
+    /**
+     * Move a trip built while browsing onto the account that just signed in.
+     *
+     * The guest gate promises "nothing you picked is lost", and until this
+     * existed nothing kept that promise: a guest is an ordinary user row with
+     * `isVerified` false, signing in with Google creates a *different* row,
+     * and the trip stayed behind on the first one. The traveller was told
+     * their picks were safe and then watched them disappear.
+     *
+     * PROOF, NOT AN ID. The body carries the token the traveller was browsing
+     * under, not the trip id. Trip ids are sequential integers, so an id
+     * alone would let anyone claim anyone else's cart by counting. Holding
+     * the guest's token is the only evidence that the guest was you.
+     *
+     * The source must still be unverified. A stolen token for a real account
+     * therefore buys nothing here, which keeps the blast radius of this
+     * endpoint to carts that were anonymous anyway.
+     */
+    public function claim(ClaimTripRequest $request)
+    {
+        $user = auth()->user();
+
+        try {
+            // Cast, not `$request->string()`: that hands back a Stringable,
+            // which setToken() accepted without complaint and then read as
+            // the wrong subject — a silent miss rather than an exception.
+            $guestId = (int) JWTAuth::setToken((string) $request->input('guest_token'))
+                ->getPayload()
+                ->get('sub');
+        } catch (\Throwable $e) {
+            // An expired or malformed token is not an error worth showing:
+            // they are signed in, and there was simply nothing to carry over.
+            Log::info('[trip] claim: unreadable guest token', ['message' => $e->getMessage()]);
+
+            return $this->sendResponse(['claimed' => 0], 'Nothing to carry over.');
+        }
+
+        $guest = User::find($guestId);
+
+        if (!$guest || $guest->id === $user->id || !$guest->isGuest()) {
+            return $this->sendResponse(['claimed' => 0], 'Nothing to carry over.');
+        }
+
+        // Drafts only. A generated trip has been paid for out of the guest's
+        // own credits and has its own life in their saved list; moving it
+        // would be taking something rather than rescuing it.
+        $trips = SavedTrip::where('user_id', $guest->id)->drafts()->get();
+
+        if ($trips->isEmpty()) {
+            return $this->sendResponse(['claimed' => 0], 'Nothing to carry over.');
+        }
+
+        DB::transaction(function () use ($trips, $user) {
+            foreach ($trips as $trip) {
+                // The favourites rows carry their own user_id, so moving the
+                // trip without them would leave the picks owned by a user who
+                // can no longer reach them.
+                Favourite::withoutGlobalScopes()
+                    ->where('trip_id', $trip->id)
+                    ->update(['user_id' => $user->id]);
+
+                $trip->forceFill(['user_id' => $user->id])->save();
+            }
+        });
+
+        $open = $this->cart->resolve($user, null, create: false);
+
+        return $this->sendResponse(
+            [
+                'claimed' => $trips->count(),
+                'cart'    => $open ? $this->present($open) : null,
+            ],
+            'Your trip came with you.'
+        );
     }
 
     public function updateCart(UpdateCartRequest $request)

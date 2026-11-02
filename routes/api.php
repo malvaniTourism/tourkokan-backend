@@ -360,6 +360,11 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     // yet: it must sit behind the verified-email gate, the credit spend and
     // throttle:trip, or it is an uncapped spend endpoint.
     Route::post('trip/cart', [TripCartController::class, 'cart']);
+    // Carries a trip built while browsing onto the account that just signed
+    // in. Throttled like a write because it moves rows, and because the proof
+    // it takes is a token — guessing at those should not be cheap.
+    Route::post('trip/claim', [TripCartController::class, 'claim'])
+        ->middleware('throttle:writes');
     Route::post('trip/addToCart', [TripCartController::class, 'addToCart'])
         ->middleware('throttle:writes');
     Route::post('trip/removeFromCart', [TripCartController::class, 'removeFromCart'])
