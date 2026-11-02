@@ -315,7 +315,18 @@ class ItineraryAssembler
         int $minPerDay,
         ?string $arrivalStart,
     ): array {
-        $spare = array_values(array_diff($allowedIds, $usedIds));
+        // Most plans come back whole. Decide that before touching the database,
+        // or every good plan pays for a lookup only a short one needs.
+        $short = false;
+
+        foreach ($clean as $index => $day) {
+            if (($arrivalStart === null || $index !== 0) && count($day['stops']) < $minPerDay) {
+                $short = true;
+                break;
+            }
+        }
+
+        $spare = $short ? array_values(array_diff($allowedIds, $usedIds)) : [];
 
         if ($spare === []) {
             return $clean;
