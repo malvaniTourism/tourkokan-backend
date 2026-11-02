@@ -203,6 +203,10 @@ class TripCartController extends BaseController
             'title'         => $trip->title,
             'status'        => $trip->status,
             'days'          => (int) $trip->days,
+            // The step-1 answers, so a traveller who walks back to the first
+            // step finds their towns and interests still ticked rather than an
+            // empty form. Without this the stepper cannot be resumed.
+            'filters'       => (array) $trip->filters,
             'base_site_id'  => $trip->base_site_id ? (int) $trip->base_site_id : null,
             'count'         => $sites->count(),
             'minimum'       => $minimum,
