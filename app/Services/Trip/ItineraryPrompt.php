@@ -40,8 +40,27 @@ class ItineraryPrompt
             'Rules:',
             "- Use ONLY site_id values from the places given. Never invent one.",
             '- Every place under "picked" must appear somewhere in the plan.',
-            "- Between {$minPerDay} and {$maxPerDay} stops per day.",
+            // Said explicitly because the only other mention of "suggested"
+            // is the rule forbidding the summary from naming it. Given a list
+            // it was never told the purpose of, and a rule that every picked
+            // place must appear, the model read the picks AS the plan and
+            // returned three stops for a two-day trip — which the assembler
+            // then discarded whole for one thin day.
+            '- "picked" is usually too few to fill the days on its own. The places',
+            '  under "suggested" are there to make up the rest: draw on them freely.',
+            "- Every day must have between {$minPerDay} and {$maxPerDay} stops.",
+            "  A day with fewer than {$minPerDay} is rejected and the traveller gets",
+            "  nothing, so take from \"suggested\" rather than leave a day short.",
+            "- You need at least " . ($minPerDay * $days) . " stops in total across the",
+            "  {$days} day(s). Count them before you answer.",
             '- Group places that are close together on the same day.',
+            // The schema types these as plain strings, so the model answered
+            // "Morning" and "Late afternoon" — reasonable English, and
+            // ItineraryAssembler::time() drops anything that is not strict
+            // HH:MM, so every stop rendered with no time at all.
+            '- "arrive" and "depart" are 24-hour clock times in exactly HH:MM',
+            '  form, such as "09:00" or "16:30". Words like "Morning" are',
+            '  discarded and the stop is shown with no time.',
             '- Do not state travel times, fares or opening hours. Those are added later.',
             '- Write notes a traveller can act on, not marketing copy.',
             '- The summary is read by the traveller, so write it about their trip.',
