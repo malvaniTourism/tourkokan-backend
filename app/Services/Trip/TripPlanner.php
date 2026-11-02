@@ -6,6 +6,7 @@ use App\Models\AiConfig;
 use App\Models\AiItineraryCache;
 use App\Models\AiLog;
 use App\Models\SavedTrip;
+use App\Models\Site;
 use App\Models\TripPlacement;
 use App\Models\User;
 use App\Services\Credits\CreditLedger;
@@ -92,8 +93,15 @@ class TripPlanner
         // train time that never reached the plan.
         $arrival = $this->resolveArrival($filters, $anchors);
 
+        // Pasted places are picks too: the traveller chose them deliberately,
+        // so they are planned around rather than appended afterwards. Until
+        // now `custom_stops` was written by addCustomStop and read by
+        // nothing — the app said "added to your trip" and the plan never
+        // mentioned it again.
+        $custom = $this->customSites($trip);
+
         $result = $this->run(
-            picked: $picked,
+            picked: $picked->concat($custom),
             suggested: $suggested,
             days: $days,
             userId: (int) $trip->user_id,
@@ -101,6 +109,7 @@ class TripPlanner
             type: 'cart',
             filters: $filters,
             arrival: $arrival,
+            extraSites: $custom,
         );
 
         if (!$result['ok']) {
@@ -440,6 +449,13 @@ class TripPlanner
 
         foreach ($itinerary['days'] as $day) {
             foreach (array_values($day['stops']) as $position => $stop) {
+                // Negative ids are the traveller's own pins. No business sits
+                // behind one, so there is no exposure to record — and no row
+                // for the foreign key to point at.
+                if ((int) $stop['site']['id'] < 0) {
+                    continue;
+                }
+
                 $rows[] = [
                     'site_id'    => (int) $stop['site']['id'],
                     'trip_id'    => (int) $trip->id,
@@ -460,6 +476,38 @@ class TripPlanner
     /**
      * The shared body: everything after the places are known.
      */
+    /**
+     * The places a traveller pasted a map link for, as Site models that were
+     * never saved.
+     *
+     * They live on the trip's `custom_stops`, deliberately not in `sites`: an
+     * unverified pin has no owner and no approval, and must never leak into
+     * everyone else's search results. But the planner speaks in site ids, so
+     * they get **negative** ones — an id space the table can never produce,
+     * which makes "ours or theirs" a sign test rather than a lookup that
+     * could one day collide.
+     *
+     * `syncOriginal()` matters: `project()` reads names through
+     * `getRawOriginal()`, which is empty on a model that was never loaded.
+     */
+    private function customSites(?SavedTrip $trip)
+    {
+        return collect($trip?->custom_stops ?? [])
+            ->filter(fn ($s) => isset($s['latitude'], $s['longitude']))
+            ->values()
+            ->map(function ($stop, $i) {
+                $site = new Site([
+                    'name'      => (string) ($stop['name'] ?? 'Your place'),
+                    'latitude'  => (float) $stop['latitude'],
+                    'longitude' => (float) $stop['longitude'],
+                ]);
+                $site->id = -1 - $i;   // -1, -2, … in the order they were added
+                $site->syncOriginal();
+
+                return $site;
+            });
+    }
+
     private function run(
         $picked,
         $suggested,
@@ -470,6 +518,7 @@ class TripPlanner
         array $filters,
         ?string $cacheKey = null,
         ?array $arrival = null,
+        $extraSites = null,
     ): array {
         $pickedRows    = $this->candidates->project($picked);
         $suggestedRows = $this->candidates->project($suggested);
@@ -557,6 +606,7 @@ class TripPlanner
             days: $days,
             requiredSiteIds: $requiredIds,
             arrivalStart: $arrival['earliest_start'] ?? null,
+            extraSites: $extraSites,
         );
 
         $row = $this->write($log + [

@@ -40,7 +40,9 @@ class ItineraryAssembler
         array $allowedSiteIds,
         int $days,
         array $requiredSiteIds = [],
-        ?string $arrivalStart = null
+        ?string $arrivalStart = null,
+        /** Site models that were never saved — the traveller's own pins. */
+        $extraSites = null,
     ): array {
         $minPerDay = (int) AiConfig::get('min_stops_per_day', 2);
         $maxPerDay = (int) AiConfig::get('max_stops_per_day', 5);
@@ -126,7 +128,7 @@ class ItineraryAssembler
 
         return [
             'ok'         => true,
-            'itinerary'  => $this->rehydrate($raw, $clean),
+            'itinerary'  => $this->rehydrate($raw, $clean, $extraSites),
             'dropped'    => $dropped,
             'reason'     => null,
             'sites_used' => count($usedIds),
@@ -137,7 +139,7 @@ class ItineraryAssembler
      * Rebuild the plan from our own rows. The model's ordering and prose are
      * kept; every fact is re-read from the database.
      */
-    private function rehydrate(array $raw, array $clean): array
+    private function rehydrate(array $raw, array $clean, $extraSites = null): array
     {
         $ids = collect($clean)->flatMap(fn ($d) => array_column($d['stops'], 'site_id'))->all();
 
@@ -146,6 +148,16 @@ class ItineraryAssembler
             ->with(['categories:id,name,code'])
             ->get()
             ->keyBy('id');
+
+        // The traveller's own pins carry negative ids and have no row to
+        // read, so they arrive already built. Merged in here rather than
+        // special-cased below, so everything downstream — the legs, the
+        // ordering, the shape of a stop — treats them like any other place.
+        if ($extraSites) {
+            foreach ($extraSites as $extra) {
+                $sites->put((int) $extra->id, $extra);
+            }
+        }
 
         $days = [];
 
@@ -168,7 +180,10 @@ class ItineraryAssembler
                         'id'         => (int) $site->id,
                         'name'       => $site->name,
                         'mr_name'    => $site->mr_name,
-                        'categories' => $site->categories->map(fn ($c) => [
+                        'custom'     => (int) $site->id < 0,
+                        'categories' => ((int) $site->id < 0
+                            ? collect()
+                            : $site->categories)->map(fn ($c) => [
                             'code' => $c->code,
                             'name' => $c->name,
                         ])->all(),
