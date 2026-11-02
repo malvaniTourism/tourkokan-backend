@@ -185,7 +185,7 @@ class CandidateFetcher
             ->whereHas('categories', fn ($c) => $c->whereIn('code', $codes))
             // Somewhere nothing runs to is not somewhere you can arrive.
             ->whereIn('sites.id', fn ($q) => $q->select('site_id')->from('route_stops'))
-            ->with(['categories:id,name,code'])
+            ->with(['categories:id,name,mr_name,code'])
             ->orderBy('name')
             ->get();
     }
@@ -208,7 +208,7 @@ class CandidateFetcher
             ->where('submission_status', 'approved')
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->with(['categories:id,name,code']);
+            ->with(['categories:id,name,mr_name,code']);
     }
 
     /**
@@ -309,7 +309,7 @@ class CandidateFetcher
     private function baseQuery()
     {
         return $this->destinations(Site::query())
-            ->with(['categories:id,name,code'])
+            ->with(['categories:id,name,mr_name,code'])
             ->withAvg('rating', 'rate');
     }
 
@@ -354,9 +354,15 @@ class CandidateFetcher
             'latitude'   => $site->latitude,
             'longitude'  => $site->longitude,
             'verified'   => $site->verification_status === 'verified',
+            // Both names, as the site itself and `interestOptions()` already
+            // send them. `$c->name` resolves through Category's accessor,
+            // which needs a language this request does not carry — so a
+            // Marathi app was being handed "Beach" next to a Marathi place
+            // name. The app picks the field it needs.
             'categories' => $site->categories->map(fn ($c) => [
-                'code' => $c->code,
-                'name' => $c->name,
+                'code'    => $c->code,
+                'name'    => $c->getRawOriginal('name'),
+                'mr_name' => $c->mr_name,
             ])->all(),
         ])->all();
     }
