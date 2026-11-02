@@ -108,9 +108,25 @@ class ItineraryAssembler
             $clean[0]['stops'] = $this->afterArrival($clean[0]['stops'], $arrivalStart);
         }
 
+        // A traveller who picks three places for two days has asked for
+        // something their own picks cannot satisfy: two days need four stops.
+        // The gap is meant to come from `suggested`, and the prompt says so —
+        // but a model that ignores it used to cost the whole plan, and the
+        // traveller got nothing after a real call had already been paid for.
+        //
+        // So fill the short day here instead, from the same vetted list the
+        // model was offered. Nothing is invented: every added place was already
+        // allowed, is nearest to what that day already holds, and is rebuilt
+        // from its live row like every other stop.
+        $clean = $this->fillThinDays(
+            $clean, array_keys($allowed), $usedIds, $requiredSiteIds, $minPerDay, $arrivalStart
+        );
+
         foreach ($clean as $index => $day) {
             $exempt = $arrivalStart !== null && $index === 0;
 
+            // Still short after the top-up means the offered list was genuinely
+            // too small. That is a real failure and is still reported as one.
             if (!$exempt && count($day['stops']) < $minPerDay) {
                 return $this->fail($dropped, 'day_too_thin');
             }
@@ -275,6 +291,135 @@ class ItineraryAssembler
         }
 
         return $moved;
+    }
+
+    /**
+     * Complete any day the model left short, using places it was already given.
+     *
+     * Nearest-first, so a filled day stays geographically coherent rather than
+     * sending the traveller across the district for the sake of a count. Stops
+     * are appended after the day's last departure and never past the evening —
+     * a stop at 23:30 is not a stop, the same rule arrival-shifting uses.
+     *
+     * @param  array<int,array<string,mixed>>  $clean
+     * @param  array<int,int>                  $allowedIds
+     * @param  array<int,int>                  $usedIds     grows as places are taken
+     * @param  array<int,int>                  $requiredIds the traveller's own picks
+     * @return array<int,array<string,mixed>>
+     */
+    private function fillThinDays(
+        array $clean,
+        array $allowedIds,
+        array &$usedIds,
+        array $requiredIds,
+        int $minPerDay,
+        ?string $arrivalStart,
+    ): array {
+        $spare = array_values(array_diff($allowedIds, $usedIds));
+
+        if ($spare === []) {
+            return $clean;
+        }
+
+        // One query for every coordinate this may need to measure against.
+        $coords = Site::whereIn('id', array_merge($spare, $usedIds))
+            ->get(['id', 'latitude', 'longitude'])
+            ->keyBy('id');
+
+        $dayEndsAt = (int) AiConfig::get('day_ends_at_hour', 21) * 60;
+
+        foreach ($clean as $index => $day) {
+            // Day one after a late arrival is exempt from the minimum, so it is
+            // exempt from being padded to meet it.
+            if ($arrivalStart !== null && $index === 0) {
+                continue;
+            }
+
+            while (count($clean[$index]['stops']) < $minPerDay && $spare !== []) {
+                $last   = $clean[$index]['stops'][count($clean[$index]['stops']) - 1];
+                $anchor = $coords->get($last['site_id']);
+
+                // A place the traveller picked and the model left out comes
+                // first, wherever it is: their own choice outranks proximity,
+                // and leaving it out would fail the plan a few lines below
+                // anyway. Only then does the nearest suggestion get a look.
+                $theirs = array_values(array_intersect($spare, $requiredIds));
+                $pick   = $theirs !== []
+                    ? $this->nearestTo($anchor, $theirs, $coords)
+                    : $this->nearestTo($anchor, $spare, $coords);
+
+                // Leave time to get there, then a stop long enough to be worth
+                // making. Both are plain defaults — the model writes the times
+                // it chooses, and this is only for the stops it declined to add.
+                $arrive = $this->shift($last['depart'] ?? $last['arrive'], 45);
+
+                if ($arrive === null || $this->minutes($arrive) > $dayEndsAt) {
+                    break;
+                }
+
+                $clean[$index]['stops'][] = [
+                    'site_id' => $pick,
+                    'arrive'  => $arrive,
+                    'depart'  => $this->shift($arrive, 90),
+                    // No note: the model did not write one, and inventing prose
+                    // about a place is exactly what this class exists to prevent.
+                    'note'    => '',
+                ];
+
+                $usedIds[] = $pick;
+                $spare     = array_values(array_diff($spare, [$pick]));
+            }
+        }
+
+        return $clean;
+    }
+
+    /**
+     * The spare place closest to where the day currently ends.
+     *
+     * Without coordinates on either side there is nothing to compare, so the
+     * first spare is taken rather than pretending to have measured.
+     *
+     * @param  array<int,int>  $spare
+     */
+    private function nearestTo($anchor, array $spare, Collection $coords): int
+    {
+        if (!$anchor || $anchor->latitude === null || $anchor->longitude === null) {
+            return $spare[0];
+        }
+
+        $best     = $spare[0];
+        $bestDist = INF;
+
+        foreach ($spare as $id) {
+            $site = $coords->get($id);
+
+            if (!$site || $site->latitude === null || $site->longitude === null) {
+                continue;
+            }
+
+            $dist = $this->km(
+                (float) $anchor->latitude, (float) $anchor->longitude,
+                (float) $site->latitude, (float) $site->longitude,
+            );
+
+            if ($dist < $bestDist) {
+                $bestDist = $dist;
+                $best     = $id;
+            }
+        }
+
+        return $best;
+    }
+
+    private function km(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $r = 6371.0;
+
+        return $r * acos(min(1.0, max(-1.0,
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($lng2 - $lng1))
+            + sin(deg2rad($lat1)) * sin(deg2rad($lat2))
+        )));
     }
 
     private function minutes(string $time): int

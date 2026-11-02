@@ -242,7 +242,58 @@ class TripPlannerPipelineTest extends ApiTestCase
         $this->assertContains($strangerId, $log->dropped_site_ids);
     }
 
-    public function test_a_day_left_too_thin_fails_rather_than_being_served(): void
+    public function test_a_day_left_too_thin_is_completed_from_the_offered_places(): void
+    {
+        // Three picks over two days cannot meet a two-stop minimum on their
+        // own — the shortfall is meant to come from the nearby places the
+        // model was offered. When it declines to take them, the assembler
+        // does, rather than throwing away a plan the traveller has paid for.
+        $picked = $this->sixPlaces();
+        $trip   = $this->cart($picked);
+
+        $this->app->bind(AiClient::class, fn () => new class ($picked) implements AiClient {
+            public function __construct(private array $picked)
+            {
+            }
+
+            public function itinerary(array $prompt, array $schema): array
+            {
+                return [
+                    'data' => [
+                        'trip' => ['title' => 'Trip', 'summary' => ''],
+                        'days' => [
+                            ['day' => 1, 'theme' => 'One', 'stops' => [
+                                ['site_id' => (int) $this->picked[0]->id, 'arrive' => '09:00', 'depart' => '11:00', 'note' => 'first'],
+                                ['site_id' => (int) $this->picked[1]->id, 'arrive' => '12:00', 'depart' => '14:00', 'note' => 'second'],
+                            ]],
+                            ['day' => 2, 'theme' => 'Two', 'stops' => [
+                                ['site_id' => (int) $this->picked[2]->id, 'arrive' => '09:00', 'depart' => '11:00', 'note' => 'only one'],
+                            ]],
+                        ],
+                        'warnings' => [],
+                    ],
+                    'meta' => ['driver' => 'stub'],
+                ];
+            }
+        });
+
+        $result = app(TripPlanner::class)->planFromCart($trip);
+
+        $this->assertTrue($result['ok'], 'a short day should be filled, not fatal');
+
+        $days = $result['itinerary']['days'];
+        $this->assertCount(2, $days);
+        $this->assertCount(2, $days[1]['stops'], 'day two should have been topped up');
+
+        // The added stop is a real, offered place with a time that follows the
+        // one before it — and no invented prose about somewhere nobody wrote up.
+        $added = $days[1]['stops'][1];
+        $this->assertSame('', $added['note']);
+        $this->assertMatchesRegularExpression('/^([01]\d|2[0-3]):[0-5]\d$/', $added['arrive']);
+        $this->assertGreaterThan(0, (int) $added['site']['id']);
+    }
+
+    public function test_a_day_that_cannot_be_filled_still_fails(): void
     {
         $picked = $this->sixPlaces();
         $trip   = $this->cart($picked);
@@ -271,9 +322,15 @@ class TripPlannerPipelineTest extends ApiTestCase
 
         $result = app(TripPlanner::class)->planFromCart($trip);
 
+        // One day answered for a two-day trip. Filling stops cannot conjure the
+        // missing day, so this is still a failure — reported as the structural
+        // one it actually is rather than as a thin day.
         $this->assertFalse($result['ok']);
         $this->assertSame('generation_failed', $result['reason']);
-        $this->assertSame('day_too_thin', AiLog::latest('id')->first()->failure_reason);
+        $this->assertSame(
+            'fewer_days_than_requested',
+            AiLog::latest('id')->first()->failure_reason
+        );
     }
 
     public function test_a_cart_below_the_minimum_is_refused_without_calling_the_model(): void
