@@ -367,7 +367,7 @@ class SiteController extends BaseController
     {
         $submissions = Site::ownedBy(auth()->id())
             ->with('categories:id,name,mr_name,code')
-            ->select('id', 'name', 'image', 'is_primary', 'status', 'submission_status', 'rejection_reason', 'reg_type', 'verification_status', 'verified_at', 'created_at', 'updated_at')
+            ->select('id', 'name', 'mr_name', 'image', 'is_primary', 'status', 'submission_status', 'rejection_reason', 'reg_type', 'verification_status', 'verified_at', 'created_at', 'updated_at')
             ->latest()
             ->paginateSafe();
 
@@ -393,7 +393,7 @@ class SiteController extends BaseController
             ->whereIn('submission_status', ['pending', 'approved'])
             ->with('categories:id,name,mr_name,code')
             ->withCount('products')
-            ->select('id', 'name', 'image', 'logo', 'is_primary', 'parent_id', 'status', 'submission_status', 'verification_status', 'latitude', 'longitude', 'pin_code', 'phone', 'whatsapp', 'created_at')
+            ->select('id', 'name', 'mr_name', 'image', 'logo', 'is_primary', 'parent_id', 'status', 'submission_status', 'verification_status', 'latitude', 'longitude', 'pin_code', 'phone', 'whatsapp', 'created_at')
             ->orderByDesc('is_primary')
             ->latest()
             ->paginateSafe();

@@ -292,4 +292,97 @@ class CategoryNameLocalisationTest extends TestCase
             . implode("\n  ", $offenders)
         );
     }
+
+    /**
+     * The third shape, and the one that got away twice.
+     *
+     * A bare `Model::select(...)` or `->select(...)` is neither a relation
+     * string nor a `fields` option, so neither guard above can see it. Four
+     * thin selects survived a sweep that fixed forty-seven because of this —
+     * including SiteService's hot-places query, which selected `tag_line`
+     * without `mr_tag_line` while correctly carrying `mr_name` two columns
+     * earlier.
+     *
+     * A column list is only judged when it looks like a site, category or
+     * product one, because `select('id','name','email')` on a User is
+     * perfectly correct and there are many of them.
+     */
+    public function test_no_bare_select_forgets_a_translation_column(): void
+    {
+        $pairs = [
+            'name'        => 'mr_name',
+            'tag_line'    => 'mr_tag_line',
+            'description' => 'mr_description',
+        ];
+
+        // Columns that only ever appear on a translatable model's table.
+        $markers = [
+            'parent_id', 'tag_line', 'is_hot_place', 'bus_stop_type',
+            'submission_status', 'mr_name', 'is_hot_category', 'booking_type',
+        ];
+
+        $offenders = [];
+
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(app_path(), \FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($files as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $relative = str_replace(base_path() . '/', '', $file->getPathname());
+
+            if (str_contains($relative, 'Controllers/API/V1/')) {
+                continue;
+            }
+
+            $source = file_get_contents($file->getPathname());
+
+            // Both `->select(` and `Model::select(`. The second is how
+            // SiteService and app/helpers.php slipped past.
+            preg_match_all('/(?:->|::)select\(\s*([^;()]*?)\s*\)/s', $source, $matches);
+
+            foreach ($matches[1] as $body) {
+                if (str_contains($body, 'DB::raw') || strlen($body) > 400) {
+                    continue;
+                }
+
+                $columns = array_map(
+                    fn ($c) => trim(trim($c), "'\""),
+                    explode(',', $body)
+                );
+
+                if (!array_intersect($columns, $markers)) {
+                    continue;   // not a translatable model's column list
+                }
+
+                foreach ($pairs as $base => $translated) {
+                    if (in_array($base, $columns, true)
+                        && !in_array($translated, $columns, true)) {
+                        $line = substr_count(
+                            substr($source, 0, strpos($source, $body)),
+                            "\n"
+                        ) + 1;
+
+                        $offenders[] = sprintf(
+                            '%s:%d  selects %s without %s',
+                            $relative,
+                            $line,
+                            $base,
+                            $translated
+                        );
+                    }
+                }
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $offenders,
+            "A bare select() drops a translation column:\n  "
+            . implode("\n  ", $offenders)
+        );
+    }
 }

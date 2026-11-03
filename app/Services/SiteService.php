@@ -174,7 +174,7 @@ class SiteService
      */
     public function getHotSites(?int $siteId): Collection
     {
-        $baseQuery = Site::select('id', 'name', 'mr_name', 'tag_line', 'logo', 'icon', 'image', 'is_hot_place', 'parent_id')
+        $baseQuery = Site::select('id', 'name', 'mr_name', 'tag_line', 'mr_tag_line', 'logo', 'icon', 'image', 'is_hot_place', 'parent_id')
             ->withAvg('rating', 'rate')
             ->whereStatus(true)
             ->selectSub(function ($query) {

@@ -218,7 +218,7 @@ function getLocationDetails($latitude, $longitude)
                 }
             }
 
-            $site = Site::select('id', 'name', 'parent_id')->where('name', $city)->first();
+            $site = Site::select('id', 'name', 'mr_name', 'parent_id')->where('name', $city)->first();
 
             $address = array(
                 'country' => $country,
