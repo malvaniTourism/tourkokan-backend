@@ -626,4 +626,90 @@ class TripCustomStopTest extends ApiTestCase
             'Each pasted place is costing a categories lookup for a row that does not exist'
         );
     }
+
+    // ── What the stored plan remembers ───────────────────────────────────────
+
+    public function test_the_stored_plan_remembers_which_stops_were_the_travellers_own(): void
+    {
+        $picked = $this->sixPlaces();
+        $trip   = $this->cart($picked);
+
+        $result = app(TripPlanner::class)->planFromCart($trip);
+        $this->assertTrue($result['ok'], $result['reason'] ?? '');
+
+        $byId = collect($this->stops($result['itinerary']))->keyBy('site.id');
+
+        // The badge used to be read off the live cart, which a reopened trip
+        // no longer has — so a saved plan lost every YOURS marker.
+        foreach ($picked as $site) {
+            $this->assertTrue(
+                $byId[$site->id]['site']['picked'],
+                "{$site->name} was the traveller's own pick and must say so"
+            );
+        }
+
+        $suggested = $byId->reject(
+            fn ($stop, $id) => in_array($id, array_map(fn ($s) => $s->id, $picked), true)
+        );
+        $this->assertNotEmpty($suggested, 'The planner should have filled with suggestions');
+        foreach ($suggested as $stop) {
+            $this->assertFalse(
+                $stop['site']['picked'],
+                'A suggestion must not be badged as the traveller\'s choice'
+            );
+        }
+    }
+
+    public function test_a_stop_carries_both_category_names_so_marathi_reads_as_marathi(): void
+    {
+        $trip   = $this->cart($this->sixPlaces());
+        $result = app(TripPlanner::class)->planFromCart($trip);
+
+        $this->assertTrue($result['ok'], $result['reason'] ?? '');
+
+        $stop = collect($this->stops($result['itinerary']))
+            ->first(fn ($s) => $s['site']['categories'] !== []);
+
+        $this->assertNotNull($stop, 'No stop carried a category at all');
+
+        // The itinerary is STORED. `$c->name` resolves through Category's
+        // accessor against the generating account's language, so whichever
+        // language planned the trip was frozen into it — and mr_name was not
+        // even selected, so the Marathi branch could never fire and every
+        // saved plan carried English. TripStopDetailScreen and
+        // TripContactsScreen both render these through categoryNames().
+        $this->assertSame('Beach', $stop['site']['categories'][0]['name']);
+        $this->assertSame('समुद्रकिनारा', $stop['site']['categories'][0]['mr_name']);
+        $this->assertSame('beach', $stop['site']['categories'][0]['code']);
+    }
+
+    public function test_a_pasted_place_is_measured_from_when_a_day_needs_filling(): void
+    {
+        // Three picks over two days cannot meet a two-stop minimum alone, so
+        // the top-up runs. One of the picks is a pin, which has no row — the
+        // coordinate lookup returned nothing for it and the nearest-place
+        // choice silently became "whatever was first".
+        $picked = array_slice($this->sixPlaces(), 0, 2);
+        $trip   = $this->cart($picked);
+
+        $this->add([
+            'trip_id'   => $trip->id,
+            'name'      => 'Nivti Rocks viewpoint',
+            'latitude'  => 16.0412,
+            'longitude' => 73.4691,
+        ]);
+
+        $result = app(TripPlanner::class)->planFromCart($trip->fresh());
+
+        $this->assertTrue($result['ok'], 'Planning failed: ' . ($result['reason'] ?? ''));
+
+        // Every day met the minimum, and the pin survived as a required pick.
+        foreach ($result['itinerary']['days'] as $day) {
+            $this->assertGreaterThanOrEqual(2, count($day['stops']));
+        }
+        $this->assertContains(
+            'Nivti Rocks viewpoint',
+            collect($this->stops($result['itinerary']))->pluck('site.name')->all()
+        );
+    }
 }

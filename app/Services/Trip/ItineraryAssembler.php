@@ -105,7 +105,25 @@ class ItineraryAssembler
         // exempt from the daily minimum. Enforced here rather than trusted to
         // the model, like every other fact in this file.
         if ($arrivalStart !== null) {
-            $clean[0]['stops'] = $this->afterArrival($clean[0]['stops'], $arrivalStart);
+            $before = array_column($clean[0]['stops'], 'site_id');
+            $kept   = $this->afterArrival($clean[0]['stops'], $arrivalStart);
+
+            // A stop cut for being before the train got in is NOT used, and
+            // leaving it in the tally hid it from `$spare` — so the top-up
+            // below could not offer back the very places it had just removed,
+            // and a late arrival made a thin day unfillable.
+            $cut     = array_diff($before, array_column($kept, 'site_id'));
+            $usedIds = array_values(array_diff($usedIds, $cut));
+
+            $clean[0]['stops'] = $kept;
+
+            // Nothing survives the arrival time: earliest_start is past the
+            // hour the day ends, so there is no time to fill and no plan to
+            // give. Saying so beats handing over a day that is empty by
+            // construction.
+            if ($kept === []) {
+                return $this->fail($dropped, 'arrival_after_day_end');
+            }
         }
 
         // A traveller who picks three places for two days has asked for
@@ -119,7 +137,8 @@ class ItineraryAssembler
         // allowed, is nearest to what that day already holds, and is rebuilt
         // from its live row like every other stop.
         $clean = $this->fillThinDays(
-            $clean, array_keys($allowed), $usedIds, $requiredSiteIds, $minPerDay, $arrivalStart
+            $clean, array_keys($allowed), $usedIds, $requiredSiteIds, $minPerDay, $arrivalStart,
+            $extraSites
         );
 
         foreach ($clean as $index => $day) {
@@ -136,18 +155,24 @@ class ItineraryAssembler
             return $this->fail($dropped, 'fewer_days_than_requested');
         }
 
+        // Read out of the plan rather than off the running tally: whatever an
+        // earlier stage dropped, added or shifted, this is the set the
+        // traveller will actually be given — so the guarantee and the logged
+        // figure are both structurally honest.
+        $inPlan = collect($clean)->flatMap(fn ($d) => array_column($d['stops'], 'site_id'))->all();
+
         // Every place the traveller personally picked must have survived.
-        $missing = array_diff($requiredSiteIds, $usedIds);
+        $missing = array_diff($requiredSiteIds, $inPlan);
         if ($missing !== []) {
             return $this->fail($dropped, 'picked_place_missing');
         }
 
         return [
             'ok'         => true,
-            'itinerary'  => $this->rehydrate($raw, $clean, $extraSites),
+            'itinerary'  => $this->rehydrate($raw, $clean, $extraSites, $requiredSiteIds),
             'dropped'    => $dropped,
             'reason'     => null,
-            'sites_used' => count($usedIds),
+            'sites_used' => count($inPlan),
         ];
     }
 
@@ -155,13 +180,22 @@ class ItineraryAssembler
      * Rebuild the plan from our own rows. The model's ordering and prose are
      * kept; every fact is re-read from the database.
      */
-    private function rehydrate(array $raw, array $clean, $extraSites = null): array
-    {
+    private function rehydrate(
+        array $raw,
+        array $clean,
+        $extraSites = null,
+        array $requiredSiteIds = []
+    ): array {
+        // Which stops the traveller chose themselves. The badge used to be
+        // read off the live cart, which a saved trip no longer has — so a plan
+        // reopened from My Trips lost every YOURS marker it was shown with.
+        $picked = array_flip(array_map('intval', $requiredSiteIds));
+
         $ids = collect($clean)->flatMap(fn ($d) => array_column($d['stops'], 'site_id'))->all();
 
         /** @var Collection<int,Site> $sites */
         $sites = Site::whereIn('id', $ids)
-            ->with(['categories:id,name,code'])
+            ->with(['categories:id,name,mr_name,code'])
             ->get()
             ->keyBy('id');
 
@@ -197,11 +231,25 @@ class ItineraryAssembler
                         'name'       => $site->name,
                         'mr_name'    => $site->mr_name,
                         'custom'     => (int) $site->id < 0,
+                        // Their own choice, not the model's suggestion.
+                        'picked'     => isset($picked[(int) $site->id]),
+                        // Both names, field for field with
+                        // CandidateFetcher::present(), so a browse row, a cart
+                        // row and a stop are the same object to the app.
+                        // getRawOriginal is load-bearing: `$c->name` resolves
+                        // through Category's accessor against the generating
+                        // account's language, and this payload is STORED — so
+                        // whichever language planned the trip was frozen into
+                        // it and shown to every later reader. The accessor
+                        // could not even find the Marathi name here, because
+                        // mr_name was not selected, so every saved itinerary
+                        // carried English.
                         'categories' => ((int) $site->id < 0
                             ? collect()
                             : $site->categories)->map(fn ($c) => [
-                            'code' => $c->code,
-                            'name' => $c->name,
+                            'code'    => $c->code,
+                            'name'    => $c->getRawOriginal('name'),
+                            'mr_name' => $c->mr_name,
                         ])->all(),
                         'latitude'   => $site->latitude,
                         'longitude'  => $site->longitude,
@@ -314,6 +362,7 @@ class ItineraryAssembler
         array $requiredIds,
         int $minPerDay,
         ?string $arrivalStart,
+        $extraSites = null,
     ): array {
         // Most plans come back whole. Decide that before touching the database,
         // or every good plan pays for a lookup only a short one needs.
@@ -336,6 +385,17 @@ class ItineraryAssembler
         $coords = Site::whereIn('id', array_merge($spare, $usedIds))
             ->get(['id', 'latitude', 'longitude'])
             ->keyBy('id');
+
+        // A pasted pin has no row, so it came back from that query as nothing
+        // and nearestTo() could neither measure from it nor to it — it fell
+        // through to "the first spare", which is no choice at all. Seeded the
+        // same way rehydrate() does, so the top-up measures real distances
+        // whether the day it is filling is ours or theirs.
+        if ($extraSites) {
+            foreach ($extraSites as $extra) {
+                $coords->put((int) $extra->id, $extra);
+            }
+        }
 
         $dayEndsAt = (int) AiConfig::get('day_ends_at_hour', 21) * 60;
 
