@@ -594,7 +594,7 @@ class TripCustomStopTest extends ApiTestCase
         $this->assertCount($max, $trip->fresh()->custom_stops);
     }
 
-    public function test_presenting_a_pasted_place_costs_no_extra_queries(): void
+    public function test_a_pasted_place_costs_no_categories_lookup(): void
     {
         $trip = $this->cart(array_slice($this->sixPlaces(), 0, 2));
 
@@ -608,22 +608,23 @@ class TripCustomStopTest extends ApiTestCase
         \DB::flushQueryLog();
         \DB::enableQueryLog();
         $this->cartOf($trip->id);
-        $withPins = count(\DB::getQueryLog());
-        \DB::disableQueryLog();
-
-        $bare = $this->cart(array_slice($this->sixPlaces(), 0, 2));
-        \DB::flushQueryLog();
-        \DB::enableQueryLog();
-        $this->cartOf($bare->id);
-        $withoutPins = count(\DB::getQueryLog());
+        $queries = array_column(\DB::getQueryLog(), 'query');
         \DB::disableQueryLog();
 
         // A pin has no row, so asking for its categories is a query against
-        // nothing. One per pin, on a presenter three screens call on focus.
-        $this->assertSame(
-            $withoutPins,
-            $withPins,
-            'Each pasted place is costing a categories lookup for a row that does not exist'
+        // nothing — one per pin, on a presenter three screens call on focus.
+        // Counted by what the query TOUCHES rather than by the total, which
+        // also moves with warm-up caches that have nothing to do with pins.
+        $categoryQueries = array_filter(
+            $queries,
+            fn ($q) => str_contains($q, 'category_site')
+        );
+
+        $this->assertCount(
+            1,
+            $categoryQueries,
+            'Two places and three pins must cost exactly one categories lookup, got: '
+            . count($categoryQueries)
         );
     }
 

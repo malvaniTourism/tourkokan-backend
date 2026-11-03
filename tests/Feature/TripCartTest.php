@@ -311,4 +311,64 @@ class TripCartTest extends ApiTestCase
             'The existing favourite must survive untouched'
         );
     }
+
+    // ── The number beside "Make my plan" ─────────────────────────────────────
+
+    public function test_the_cart_reports_how_many_free_plans_are_left(): void
+    {
+        $response = $this->assertApiSuccess($this->add($this->site('Kunkeshwar Beach')));
+
+        // The review screen shows this right before the traveller spends one.
+        // It used to read whatever the last unrelated request left in the
+        // store — the step-1 options call — so the number belonged to a
+        // different moment.
+        $this->assertNotNull(
+            $response->json('data.credits'),
+            'Every cart endpoint reports the whole cart, credits included'
+        );
+    }
+
+    public function test_a_traveller_who_has_never_planned_is_not_told_they_have_none(): void
+    {
+        $free = (int) \App\Models\AiConfig::get('free_plans_on_signup', 3);
+
+        // The signup grant is lazy: it is made on the first generation,
+        // behind the verified-email gate. So the wallet really is empty here.
+        $this->assertSame(0, app(\App\Services\Credits\CreditLedger::class)->balance($this->traveller));
+
+        $response = $this->assertApiSuccess($this->add($this->site('Tarkarli Beach')));
+
+        // Showing 0 beside a button that works, and then granting three the
+        // moment it is pressed, is a lie in the discouraging direction.
+        $this->assertSame($free, $response->json('data.credits'));
+    }
+
+    public function test_reporting_the_balance_does_not_hand_out_the_grant(): void
+    {
+        $ledger = app(\App\Services\Credits\CreditLedger::class);
+
+        $this->assertApiSuccess($this->add($this->site('Devbag Beach')));
+        $this->assertApiSuccess($this->add($this->site('Chivla Beach')));
+
+        // Reading a cart must not give anyone credits — a guest can open one
+        // and could never reach the endpoint that spends them.
+        $this->assertFalse($ledger->hasGrant($this->traveller, 'signup'));
+        $this->assertSame(0, $ledger->balance($this->traveller));
+    }
+
+    public function test_what_is_shown_before_planning_matches_what_is_left_after(): void
+    {
+        $shown = $this->assertApiSuccess($this->add($this->site('Bhogwe Beach')))
+            ->json('data.credits');
+
+        $ledger = app(\App\Services\Credits\CreditLedger::class);
+        $ledger->grantSignupCredits($this->traveller);   // what generating does
+        $ledger->spend($this->traveller, 99);            // and then one is spent
+
+        $this->assertSame(
+            $shown - 1,
+            $ledger->balance($this->traveller),
+            'The count shown before planning must be the one planning starts from'
+        );
+    }
 }

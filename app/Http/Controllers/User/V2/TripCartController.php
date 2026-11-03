@@ -14,6 +14,7 @@ use App\Models\AiConfig;
 use App\Models\Favourite;
 use App\Models\SavedTrip;
 use App\Models\User;
+use App\Services\Credits\CreditLedger;
 use App\Services\Trip\MapLinkResolver;
 use App\Services\Trip\CandidateFetcher;
 use App\Services\Trip\TripCart;
@@ -37,6 +38,7 @@ class TripCartController extends BaseController
     public function __construct(
         private TripCart $cart,
         private CandidateFetcher $candidates,
+        private CreditLedger $credits,
     ) {
     }
 
@@ -341,6 +343,12 @@ class TripCartController extends BaseController
             'base_site_id'  => $trip->base_site_id ? (int) $trip->base_site_id : null,
             'count'         => $all->count(),
             'minimum'       => $minimum,
+            // Carried here because the review screen shows it right before
+            // the traveller spends one. It used to read whatever the LAST
+            // other request happened to leave in the store — the step-1
+            // options call, usually — so the number beside "Make my plan"
+            // belonged to a different moment.
+            'credits'       => $this->credits->available(auth()->user()),
             // What the Plan button binds to, so the rule lives in one place.
             // It must agree with `TripPlanner::planFromCart`'s own gate, which
             // counts pins as well: a button that offers a trip the planner

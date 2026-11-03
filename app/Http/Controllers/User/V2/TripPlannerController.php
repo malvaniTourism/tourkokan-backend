@@ -127,7 +127,11 @@ class TripPlannerController extends BaseController
             ],
             'max_towns' => (int) AiConfig::get('max_towns', 3),
             'radius_km' => (float) AiConfig::get('default_radius_km', 40),
-            'credits'   => $this->credits->balance($user),
+            // available(), not balance(): the signup grant is made lazily on
+            // the first generation, so a verified account that has never
+            // planned reads 0 here and is then handed three the moment they
+            // press the button.
+            'credits'   => $this->credits->available($user),
 
             // How they get here. `own_vehicle` carries no points because
             // someone driving arrives at the first stop, not at a station.

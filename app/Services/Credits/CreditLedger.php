@@ -45,6 +45,27 @@ class CreditLedger
     }
 
     /**
+     * What the traveller can actually spend, for anything that SHOWS a number.
+     *
+     * Not the same as `balance()`, because the signup grant is lazy: it is
+     * made by `grantSignupCredits()` on the first generation, behind the
+     * verified-email gate, rather than at signup. So a verified account that
+     * has never planned has a balance of 0 and three plans coming, and every
+     * screen that read `balance()` told them "0 free plans left" beside a
+     * button that works perfectly well.
+     *
+     * Read-only on purpose. Granting here would hand three credits to anyone
+     * who so much as opens a cart, guests included, who cannot reach the
+     * generate endpoint to use them.
+     */
+    public function available(User $user): int
+    {
+        return $this->balance($user) + ($this->hasGrant($user, 'signup')
+            ? 0
+            : (int) AiConfig::get('free_plans_on_signup', 3));
+    }
+
+    /**
      * The free plans a verified account starts with. Idempotent — calling it
      * twice does not double-grant, which matters because the gate runs on
      * every generation rather than once at signup.
