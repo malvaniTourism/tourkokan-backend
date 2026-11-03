@@ -279,6 +279,9 @@ class TripPlannerController extends BaseController
     {
         return match ($reason) {
             'cart_too_small'       => 'Add at least three places so we can spread them across your days.',
+            // Says what to do about it. "Remove some" is the other half of the
+            // answer and the traveller cannot guess which half we mean.
+            'cart_too_big'         => 'That is more places than these days can hold. Add a day, or take a few places out.',
             'insufficient_credits' => 'You have used all your free plans. Invite a friend to get more.',
             'generation_failed'    => 'We could not build a full plan from these places. Nothing was charged — please try again.',
             'town_not_found'       => 'Choose a town to base your trip in.',

@@ -60,7 +60,20 @@ class TripPlanner
             return $this->refuse('cart_too_small');
         }
 
-        $days = max(1, (int) $trip->days);
+        // The other end of the same rule. Every picked place is mandatory —
+        // the assembler fails a plan that leaves one out — so more picks than
+        // the days can hold is a trip no model can deliver. Refusing here
+        // costs nothing; letting it through spends a credit on a call whose
+        // only possible outcome is picked_place_missing, and tells the
+        // traveller "that did not come out right" when the truth is "that is
+        // more places than three days can hold".
+        $days     = max(1, (int) $trip->days);
+        $capacity = $days * (int) AiConfig::get('max_stops_per_day', 5);
+
+        if ($picked->count() + $custom->count() > $capacity) {
+            return $this->refuse('cart_too_big');
+        }
+
         $user = $trip->user;
 
         // One credit buys one trip, re-plans included — the ledger keys the

@@ -712,4 +712,57 @@ class TripCustomStopTest extends ApiTestCase
             collect($this->stops($result['itinerary']))->pluck('site.name')->all()
         );
     }
+
+    public function test_more_places_than_the_days_can_hold_is_refused_before_the_model(): void
+    {
+        $max      = (int) \App\Models\AiConfig::get('max_stops_per_day', 5);
+        $capacity = 1 * $max;                        // a one-day trip
+
+        $sites = [];
+        for ($i = 0; $i <= $capacity; $i++) {        // one more than fits
+            $sites[] = $this->site("Place {$i}", 16.04 + ($i / 500), 73.47);
+        }
+
+        $trip = $this->cart($sites, days: 1);
+
+        $before = \App\Models\AiLog::count();
+        $result = app(TripPlanner::class)->planFromCart($trip);
+
+        // Every pick is mandatory, so this call could only ever come back as
+        // picked_place_missing. Refusing costs nothing; calling costs a credit
+        // and tells the traveller the wrong thing about why.
+        $this->assertFalse($result['ok']);
+        $this->assertSame('cart_too_big', $result['reason']);
+        $this->assertSame($before, \App\Models\AiLog::count(), 'No model call should have been made');
+    }
+
+    public function test_the_fake_driver_never_drops_a_place_the_traveller_picked(): void
+    {
+        // The fake is the default driver, so a dev or a CI run exercises it.
+        // It sliced the combined list to days x max_stops_per_day, and the
+        // planner concatenates pins LAST — so pins were the first thing cut,
+        // and the assembler calls a missing pick fatal.
+        $max   = (int) \App\Models\AiConfig::get('max_stops_per_day', 5);
+        $sites = [];
+        for ($i = 0; $i < $max; $i++) {
+            $sites[] = $this->site("Place {$i}", 16.04 + ($i / 500), 73.47);
+        }
+        $this->site('Spare one', 16.07, 73.47);
+        $this->site('Spare two', 16.08, 73.47);
+
+        $trip = $this->cart($sites, days: 2);
+        $this->add([
+            'trip_id' => $trip->id, 'name' => 'Nivti Rocks viewpoint',
+            'latitude' => 16.0412, 'longitude' => 73.4691,
+        ]);
+
+        $result = app(TripPlanner::class)->planFromCart($trip->fresh());
+
+        $this->assertTrue($result['ok'], 'Planning failed: ' . ($result['reason'] ?? ''));
+        $this->assertContains(
+            'Nivti Rocks viewpoint',
+            collect($this->stops($result['itinerary']))->pluck('site.name')->all(),
+            'The pasted pin was dropped by the stand-in model'
+        );
+    }
 }

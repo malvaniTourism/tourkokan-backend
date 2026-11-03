@@ -27,14 +27,19 @@ class FakeClient implements AiClient
         $days      = max(1, (int) ($prompt['days'] ?? 1));
         $maxPerDay = (int) AiConfig::get('max_stops_per_day', 5);
 
-        // Picked first — the traveller's own choices must all appear.
-        $ordered = array_merge(
-            $payload['picked'] ?? [],
-            $payload['suggested'] ?? []
-        );
-
+        // Picked first — the traveller's own choices must all appear, and the
+        // slice below used to be able to cut them, which broke the promise in
+        // that sentence. Only the suggestions are trimmed to fit now. Pasted
+        // pins are concatenated last by the planner, so they were the first
+        // thing dropped, and the assembler treats a missing pick as fatal: the
+        // fake driver and the assembler disagreed with each other.
+        $picked   = $payload['picked'] ?? [];
         $capacity = $days * $maxPerDay;
-        $ordered  = array_slice($ordered, 0, $capacity);
+
+        $ordered = array_merge(
+            $picked,
+            array_slice($payload['suggested'] ?? [], 0, max(0, $capacity - count($picked)))
+        );
 
         $buckets = array_fill(0, $days, []);
         foreach ($ordered as $i => $place) {
