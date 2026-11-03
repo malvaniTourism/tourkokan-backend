@@ -80,7 +80,7 @@ class CategoryController extends BaseController
             return $this->sendError($validator->errors(), '', 200);
         }
 
-        $subCategories = Category::with(['allSubCategories:id,name,parent_id,icon,status,is_hot_category'])
+        $subCategories = Category::with(['allSubCategories:id,name,mr_name,parent_id,icon,status,is_hot_category'])
             ->find($request->id);
 
         if (!$subCategories) {

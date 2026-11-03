@@ -58,7 +58,7 @@ class VendorController extends BaseController
                 'sites as approved_sites_count' => fn($q) => $q->where('submission_status', 'approved'),
                 'sites as pending_sites_count'  => fn($q) => $q->where('submission_status', 'pending'),
             ])
-            ->with(['sites' => fn($q) => $q->select('id', 'user_id', 'name', 'logo', 'is_primary', 'submission_status')])
+            ->with(['sites' => fn($q) => $q->select('id', 'user_id', 'name', 'mr_name', 'logo', 'is_primary', 'submission_status')])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $term  = trim($request->search);
                 $index = User::makeBlindIndex($term);
@@ -157,7 +157,7 @@ class VendorController extends BaseController
             ]);
 
         $products = Product::ownedBy($vendor->id)
-            ->with(['productCategory:id,name,code,booking_type', 'site:id,name', 'defaultVariant', 'cover'])
+            ->with(['productCategory:id,name,mr_name,code,booking_type', 'site:id,name,mr_name', 'defaultVariant', 'cover'])
             ->latest()
             ->limit(50)
             ->get();
@@ -185,7 +185,7 @@ class VendorController extends BaseController
                 'views' => (int) Product::whereIn('id', $productIds)->sum('views_count'),
                 'leads' => (int) Product::whereIn('id', $productIds)->sum('leads_count'),
                 'recent_leads' => ProductLead::whereIn('product_id', $productIds)
-                    ->with('product:id,name')
+                    ->with('product:id,name,mr_name')
                     ->latest()
                     ->limit(10)
                     ->get(),

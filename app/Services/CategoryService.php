@@ -40,7 +40,7 @@ class CategoryService
         ];
 
         if ($category) {
-            $with['subCategories.liveSites'] = fn($q) => $q->select('sites.id', 'name', 'meta_data');
+            $with['subCategories.liveSites'] = fn($q) => $q->select('sites.id', 'name', 'mr_name', 'meta_data');
         }
 
         $query = Category::with($with)

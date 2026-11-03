@@ -22,7 +22,7 @@ class EventController extends BaseController
     public function index(Request $request)
     {
         try {
-            $query = Event::with(['eventType', 'site:id,name'])
+            $query = Event::with(['eventType', 'site:id,name,mr_name'])
                 ->approved();
 
             if ($request->filled('search')) {
@@ -106,7 +106,7 @@ class EventController extends BaseController
     public function show(Request $request, $slug)
     {
         try {
-            $event = Event::with(['eventType', 'site:id,name', 'user:id,name'])
+            $event = Event::with(['eventType', 'site:id,name,mr_name', 'user:id,name'])
                 ->where('slug', $slug)
                 ->where('status', 'approved')
                 ->firstOrFail();

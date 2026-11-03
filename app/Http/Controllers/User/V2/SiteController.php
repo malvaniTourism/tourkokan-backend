@@ -110,11 +110,11 @@ class SiteController extends BaseController
     public function stops()
     {
         $places = Site::with([
-            'site:id,name,icon',
+            'site:id,name,mr_name,icon',
             'categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category'
         ])
             ->whereIn('bus_stop_type', ['Depo', 'Stop'])
-            ->select('id', 'name', 'parent_id', 'icon', 'status', 'is_hot_place', 'bus_stop_type')
+            ->select('id', 'name', 'mr_name', 'parent_id', 'icon', 'status', 'is_hot_place', 'bus_stop_type')
             ->paginateSafe();
 
         return $this->sendResponse($places, 'Stops successfully Retrieved...!');
@@ -138,11 +138,12 @@ class SiteController extends BaseController
         }
 
         $withArr = [
-            'site:id,parent_id,name',
+            'site:id,parent_id,name,mr_name',
             'sites' => function ($query) use ($user) {
                 $query->select(
                     'id', 'name', 'mr_name', 'parent_id', 'image',
-                    'domain_name', 'description', 'tag_line',
+                    'domain_name', 'description', 'mr_description',
+                    'tag_line', 'mr_tag_line',
                     'bus_stop_type', 'icon', 'status',
                 )
                     ->with(['rate:id,user_id,rate,rateable_type,rateable_id,status', 'gallery'])

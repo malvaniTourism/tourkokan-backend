@@ -135,7 +135,7 @@ class VendorController extends BaseController
             ->whereIn('site_id', $sites->pluck('id'))
             ->with([
                 'productCategory:id,name,mr_name,code,booking_type',
-                'site:id,name',
+                'site:id,name,mr_name',
                 'defaultVariant:id,product_id,price,sale_price,stock',
                 'cover',
             ])

@@ -35,7 +35,7 @@ class FavouriteController extends BaseController
                 $morph->morphWith([
                     Product::class => [
                         'productCategory:id,name,mr_name,code,booking_type',
-                        'site:id,name,logo,latitude,longitude,phone,whatsapp',
+                        'site:id,name,mr_name,logo,latitude,longitude,phone,whatsapp',
                         'defaultVariant:id,product_id,price,sale_price,stock',
                         'cover',
                     ],

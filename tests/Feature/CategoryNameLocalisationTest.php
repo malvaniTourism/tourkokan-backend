@@ -194,4 +194,102 @@ class CategoryNameLocalisationTest extends TestCase
             . implode("\n  ", $offenders)
         );
     }
+
+    /**
+     * Sites and products, same trap, wider surface.
+     *
+     * Site translates THREE fields through accessors — name, tag_line and
+     * description — each falling back to English when its mr_ column was not
+     * selected. Products and product categories do not use an accessor at
+     * all: the app localises them itself (`localised()` in
+     * src/Services/marketplace.js reads obj.mr_name), so an omitted column
+     * has the same effect by a different route — the app has nothing to
+     * prefer and shows English.
+     *
+     * Relations are matched by name because that is what a select string
+     * carries. A name here that stops pointing at a translatable model costs
+     * a harmless extra column; one that is missing costs a Marathi reader.
+     */
+    public function test_no_site_or_product_select_forgets_its_translation(): void
+    {
+        $relations = [
+            // -> Site
+            'site', 'sites', 'sourcePlace', 'destinationPlace', 'liveSites', 'baseSite',
+            // -> Category
+            'category', 'categories', 'subCategories', 'allSubCategories',
+            'placeCategory', 'siteCategories', 'children', 'parent',
+            // -> Product / ProductCategory
+            'product', 'products', 'productCategory',
+        ];
+
+        $pairs = [
+            'name'        => 'mr_name',
+            'tag_line'    => 'mr_tag_line',
+            'description' => 'mr_description',
+        ];
+
+        $offenders = [];
+
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(app_path(), \FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($files as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $relative = str_replace(base_path() . '/', '', $file->getPathname());
+
+            // API/V1 is unrouted legacy — no route:list entry, no importer.
+            if (str_contains($relative, 'Controllers/API/V1/')) {
+                continue;
+            }
+
+            foreach (file($file->getPathname()) as $number => $line) {
+                $trimmed = ltrim($line);
+                if (str_starts_with($trimmed, '//')
+                    || str_starts_with($trimmed, '*')
+                    || str_starts_with($trimmed, '#')) {
+                    continue;
+                }
+
+                preg_match_all("/'([A-Za-z_.]+):([a-z_,\s]+)'/", $line, $matches, PREG_SET_ORDER);
+
+                foreach ($matches as $match) {
+                    $parts    = explode('.', $match[1]);
+                    $relation = end($parts);
+
+                    if (!in_array($relation, $relations, true)) {
+                        continue;
+                    }
+
+                    $columns = array_map('trim', explode(',', $match[2]));
+
+                    foreach ($pairs as $base => $translated) {
+                        if (in_array($base, $columns, true)
+                            && !in_array($translated, $columns, true)) {
+                            $offenders[] = sprintf(
+                                '%s:%d  %s: selects %s without %s',
+                                $relative,
+                                $number + 1,
+                                $relation,
+                                $base,
+                                $translated
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $offenders,
+            "These selects drop a translation column, so a Marathi reader gets "
+            . "English — through Site's accessor, or through the app's own "
+            . "localised() for products:\n  "
+            . implode("\n  ", $offenders)
+        );
+    }
 }

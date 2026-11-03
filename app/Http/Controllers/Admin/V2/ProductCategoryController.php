@@ -31,7 +31,7 @@ class ProductCategoryController extends BaseController
     public function listProductCategories(Request $request)
     {
         $categories = ProductCategory::query()
-            ->with('parent:id,name,code')
+            ->with('parent:id,name,mr_name,code')
             ->withCount('allowedCategories')
             ->when($request->filled('search'), fn($q) => $q->where(function ($w) use ($request) {
                 $w->where('name', 'like', "%{$request->search}%")
@@ -59,9 +59,9 @@ class ProductCategoryController extends BaseController
         }
 
         $category = ProductCategory::with([
-            'parent:id,name,code',
-            'children:id,parent_id,name,code',
-            'siteCategories:id,name,code',
+            'parent:id,name,mr_name,code',
+            'children:id,parent_id,name,mr_name,code',
+            'siteCategories:id,name,mr_name,code',
         ])->find($request->id);
 
         return $this->sendResponse($category, 'Product category retrieved successfully...!');
@@ -234,7 +234,7 @@ class ProductCategoryController extends BaseController
             }
         });
 
-        $result = AllowedProductCategory::with('productCategory:id,name,code,booking_type')
+        $result = AllowedProductCategory::with('productCategory:id,name,mr_name,code,booking_type')
             ->where('category_id', $request->category_id)
             ->get();
 

@@ -91,7 +91,7 @@ class CatalogController extends BaseController
             ->with([
                 'productCategory:id,name,mr_name,code,booking_type',
                 'site:id,name,mr_name,logo,image,latitude,longitude,pin_code,social_media,domain_name,phone,whatsapp,parent_id,verification_status',
-                'site.site:id,name',
+                'site.site:id,name,mr_name',
                 'variants' => fn($q) => $q->active(),
                 'gallery',
             ])

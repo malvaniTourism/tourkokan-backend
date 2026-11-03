@@ -26,7 +26,7 @@ class ProductController extends BaseController
     public function pendingProducts(Request $request)
     {
         $products = Product::awaitingReview()
-            ->with(['site:id,name,user_id', 'site.user:id,name', 'productCategory:id,name,code', 'defaultVariant', 'cover'])
+            ->with(['site:id,name,mr_name,user_id', 'site.user:id,name', 'productCategory:id,name,mr_name,code', 'defaultVariant', 'cover'])
             ->oldest()          // longest-waiting first
             ->paginateSafe();
 
@@ -39,7 +39,7 @@ class ProductController extends BaseController
     public function listAllProducts(Request $request)
     {
         $products = Product::query()
-            ->with(['site:id,name,user_id', 'productCategory:id,name,code', 'defaultVariant'])
+            ->with(['site:id,name,mr_name,user_id', 'productCategory:id,name,mr_name,code', 'defaultVariant'])
             ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
             ->when($request->filled('site_id'), fn($q) => $q->where('site_id', $request->site_id))
             ->when($request->filled('product_category_id'), fn($q) => $q->where('product_category_id', $request->product_category_id))
@@ -64,9 +64,9 @@ class ProductController extends BaseController
         }
 
         $product = Product::with([
-            'site:id,name,user_id',
+            'site:id,name,mr_name,user_id',
             'site.user:id,name',
-            'productCategory:id,name,code,booking_type,attribute_schema',
+            'productCategory:id,name,mr_name,code,booking_type,attribute_schema',
             'variants',
             'gallery',
         ])->find($request->id);

@@ -182,7 +182,7 @@ class VendorAnalyticsController extends BaseController
                 fn($q) => $q->where('lead_type', $request->lead_type))
             ->when($request->boolean('unread_only'),
                 fn($q) => $q->where('is_read', false))
-            ->with(['product:id,name,site_id', 'user:id,name,mobile'])
+            ->with(['product:id,name,mr_name,site_id', 'user:id,name,mobile'])
             ->latest()
             ->paginateSafe();
 

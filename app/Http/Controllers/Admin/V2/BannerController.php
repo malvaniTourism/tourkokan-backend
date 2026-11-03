@@ -39,8 +39,8 @@ class BannerController extends BaseController
         $query = Banner::with([
             'package:id,name,duration_days,price',
             'placement:id,code,description,screen,width,height',
-            'bannerable' => fn($q) => $q->select('id', 'name'),
-            'bannerable.categories' => fn($q) => $q->select('id', 'name', 'code'),
+            'bannerable' => fn($q) => $q->select('id', 'name', 'mr_name'),
+            'bannerable.categories' => fn($q) => $q->select('id', 'name', 'mr_name', 'code'),
         ]);
 
         $query->when($request->filled('status'),              fn($q) => $q->where('status', $request->status));
@@ -168,9 +168,9 @@ class BannerController extends BaseController
         }
 
         $banner = Banner::with(['bannerable' =>  function ($query) {
-            $query->select('id', 'name');
+            $query->select('id', 'name', 'mr_name');
         }, 'bannerable.categories' =>  function ($query) {
-            $query->select('id', 'name', 'code');
+            $query->select('id', 'name', 'mr_name', 'code');
         }])
             ->find($request->id);
 

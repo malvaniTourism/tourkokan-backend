@@ -35,7 +35,7 @@ class ProductController extends BaseController
     public function myProducts(Request $request)
     {
         $products = Product::ownedBy(auth()->id())
-            ->with(['productCategory:id,name,code,booking_type', 'site:id,name', 'defaultVariant', 'cover'])
+            ->with(['productCategory:id,name,mr_name,code,booking_type', 'site:id,name,mr_name', 'defaultVariant', 'cover'])
             ->when($request->filled('site_id'), fn($q) => $q->where('site_id', $request->site_id))
             ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
             ->when($request->filled('search'), fn($q) => $q->where('name', 'like', "%{$request->search}%"))
@@ -59,8 +59,8 @@ class ProductController extends BaseController
         }
 
         $product = Product::with([
-            'productCategory:id,name,code,booking_type,attribute_schema',
-            'site:id,name,user_id',
+            'productCategory:id,name,mr_name,code,booking_type,attribute_schema',
+            'site:id,name,mr_name,user_id',
             'variants',
             'gallery',
         ])->find($request->id);
@@ -148,7 +148,7 @@ class ProductController extends BaseController
         });
 
         return $this->sendResponse(
-            $product->load(['variants', 'productCategory:id,name,code']),
+            $product->load(['variants', 'productCategory:id,name,mr_name,code']),
             $site->submission_status === 'approved'
                 ? 'Product saved as a draft. Submit it for review when you are ready.'
                 : 'Product saved as a draft. It will go live once both your business listing and this product are approved.'
@@ -205,7 +205,7 @@ class ProductController extends BaseController
         });
 
         return $this->sendResponse(
-            $product->fresh()->load(['variants', 'productCategory:id,name,code']),
+            $product->fresh()->load(['variants', 'productCategory:id,name,mr_name,code']),
             $wasApproved
                 ? 'Product updated and sent for re-approval.'
                 : 'Product updated.'

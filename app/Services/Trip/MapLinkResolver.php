@@ -174,7 +174,7 @@ class MapLinkResolver
         $sites = Site::query()
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->select('id', 'name', 'latitude', 'longitude')
+            ->select('id', 'name', 'mr_name', 'latitude', 'longitude')
             ->get();
 
         return $sites

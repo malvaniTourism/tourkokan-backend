@@ -24,7 +24,7 @@ class EventController extends BaseController
     public function index(Request $request)
     {
         try {
-            $query = Event::with(['user:id,name,email', 'eventType:id,name', 'site:id,name']);
+            $query = Event::with(['user:id,name,email', 'eventType:id,name', 'site:id,name,mr_name']);
 
             if ($request->filled('status')) {
                 $query->where('status', $request->status);
@@ -73,7 +73,7 @@ class EventController extends BaseController
             $event = Event::with([
                 'user:id,name,email,mobile',
                 'eventType:id,name,code',
-                'site:id,name',
+                'site:id,name,mr_name',
                 'approvedBy:id,name',
             ])->findOrFail($request->id);
 
@@ -129,7 +129,7 @@ class EventController extends BaseController
             $event = Event::create($input);
 
             return $this->sendResponse(
-                $event->load(['eventType:id,name', 'site:id,name', 'user:id,name,email']),
+                $event->load(['eventType:id,name', 'site:id,name,mr_name', 'user:id,name,email']),
                 'Event created and published successfully'
             );
         } catch (\Throwable $th) {
@@ -214,7 +214,7 @@ class EventController extends BaseController
     public function pending(Request $request)
     {
         try {
-            $events = Event::with(['user:id,name,email', 'eventType:id,name', 'site:id,name'])
+            $events = Event::with(['user:id,name,email', 'eventType:id,name', 'site:id,name,mr_name'])
                 ->pending()
                 ->orderBy('created_at')
                 ->paginateSafe();
