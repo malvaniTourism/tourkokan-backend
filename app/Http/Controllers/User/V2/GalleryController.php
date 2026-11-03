@@ -36,7 +36,7 @@ class GalleryController extends BaseController
         $gallery = Gallery::whereNot('galleryable_type', (new \App\Models\Product())->getMorphClass())
             ->with([
                 'galleryable:id,name,mr_name,parent_id',
-                'galleryable.categories:id,name,code,parent_id'
+                'galleryable.categories:id,name,mr_name,code,parent_id'
             ])->where('status', true);
 
         if (!empty($siteId)) {

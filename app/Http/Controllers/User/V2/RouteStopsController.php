@@ -21,7 +21,7 @@ class RouteStopsController extends BaseController
 
         $stops = RouteStops::with([
             'site:id,name,mr_name',
-            'site.categories:id,name,icon',
+            'site.categories:id,name,mr_name,icon',
         ])
             ->where('route_id', $request->route_id)
             ->select('id', 'serial_no', 'route_id', 'site_id', 'arr_time', 'dept_time', 'total_time', 'delayed_time', 'distance')

@@ -25,7 +25,7 @@ class SiteController extends BaseController
         $user = auth()->user();
 
         $city = Site::withCount(['gallery', 'comment'])
-            ->with(['gallery', 'comment', 'categories:id,name,code,parent_id,icon,status,is_hot_category'])
+            ->with(['gallery', 'comment', 'categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category'])
             ->selectSub(function ($query) use ($user) {
                 $query->selectRaw('CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END')
                     ->from('favourites')
@@ -58,9 +58,9 @@ class SiteController extends BaseController
         $city = Site::withCount(['sites', 'gallery', 'comment'])
             ->withAvg('rating', 'rate')
             ->with([
-                'categories:id,name,code,parent_id,icon,status,is_hot_category',
+                'categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category',
                 'sites' => function ($query) {
-                    $query->with('categories:id,name,code,parent_id,icon,status,is_hot_category')
+                    $query->with('categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category')
                         ->limit(5);
                 },
                 'comment' => function ($query) {
@@ -111,7 +111,7 @@ class SiteController extends BaseController
     {
         $places = Site::with([
             'site:id,name,icon',
-            'categories:id,name,code,parent_id,icon,status,is_hot_category'
+            'categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category'
         ])
             ->whereIn('bus_stop_type', ['Depo', 'Stop'])
             ->select('id', 'name', 'parent_id', 'icon', 'status', 'is_hot_place', 'bus_stop_type')
@@ -163,13 +163,13 @@ class SiteController extends BaseController
             'sites.comment',
             'gallery',
             'comment',
-            'categories:id,name,code,parent_id,icon,status,is_hot_category',
+            'categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category',
             'rate:id,user_id,rate,rateable_type,rateable_id,status',
             'address:id,email,phone,latitude,longitude,addressable_type,addressable_id'
         ];
 
         if ($request->apitype == 'dropdown') {
-            $withArr = ['categories:id,name,code,parent_id,icon,status,is_hot_category'];
+            $withArr = ['categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category'];
         }
 
         $sites = Site::with($withArr);
@@ -357,7 +357,7 @@ class SiteController extends BaseController
         $site->categories()->attach($request->input('categories'));
 
         return $this->sendResponse(
-            $site->load('categories:id,name,code'),
+            $site->load('categories:id,name,mr_name,code'),
             'Your place has been submitted and is under review. We will notify you once approved.'
         );
     }
@@ -365,7 +365,7 @@ class SiteController extends BaseController
     public function mySubmissions(Request $request)
     {
         $submissions = Site::ownedBy(auth()->id())
-            ->with('categories:id,name,code')
+            ->with('categories:id,name,mr_name,code')
             ->select('id', 'name', 'image', 'is_primary', 'status', 'submission_status', 'rejection_reason', 'reg_type', 'verification_status', 'verified_at', 'created_at', 'updated_at')
             ->latest()
             ->paginateSafe();
@@ -390,7 +390,7 @@ class SiteController extends BaseController
     {
         $sites = Site::ownedBy(auth()->id())
             ->whereIn('submission_status', ['pending', 'approved'])
-            ->with('categories:id,name,code')
+            ->with('categories:id,name,mr_name,code')
             ->withCount('products')
             ->select('id', 'name', 'image', 'logo', 'is_primary', 'parent_id', 'status', 'submission_status', 'verification_status', 'latitude', 'longitude', 'pin_code', 'phone', 'whatsapp', 'created_at')
             ->orderByDesc('is_primary')
@@ -553,7 +553,7 @@ class SiteController extends BaseController
         }
 
         return $this->sendResponse(
-            array_merge($site->load('categories:id,name,code')->toArray(), [
+            array_merge($site->load('categories:id,name,mr_name,code')->toArray(), [
                 'meta_data' => $site->meta_data,
             ]),
             $previousStatus === 'approved'

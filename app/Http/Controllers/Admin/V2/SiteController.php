@@ -42,13 +42,13 @@ class SiteController extends BaseController
             'sites.comment',
             'gallery',
             'comment',
-            'categories:id,name,code,parent_id,icon,status,is_hot_category',
+            'categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category',
             'rate:id,user_id,rate,rateable_type,rateable_id,status',
             'address:id,email,phone,latitude,longitude,addressable_type,addressable_id',
         ];
 
         if ($request->apitype == 'dropdown') {
-            $withArr = ['categories:id,name,code,parent_id,icon,status,is_hot_category'];
+            $withArr = ['categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category'];
         }
 
         $sites = Site::with($withArr);
@@ -110,8 +110,8 @@ class SiteController extends BaseController
 
         $city = Site::withCount(['sites', 'gallery', 'comment'])
             ->with([
-                'categories:id,name,code,parent_id,icon,status,is_hot_category',
-                'sites' => fn($q) => $q->with('categories:id,name,code,parent_id,icon,status,is_hot_category')->limit(5),
+                'categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category',
+                'sites' => fn($q) => $q->with('categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category')->limit(5),
                 'comment' => fn($q) => $q->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5),
                 'comment.comment' => fn($q) => $q->select('id', 'parent_id', 'user_id', 'comment', 'commentable_type', 'commentable_id')->limit(5),
                 'comment.users' => fn($q) => $q->select('id', 'name', 'email', 'profile_picture'),
@@ -132,7 +132,7 @@ class SiteController extends BaseController
 
     public function stops()
     {
-        $places = Site::with(['site:id,name,icon', 'categories:id,name,code,parent_id,icon,status,is_hot_category'])
+        $places = Site::with(['site:id,name,icon', 'categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category'])
             ->whereIn('bus_stop_type', ['Depo', 'Stop'])
             ->select('id', 'name', 'parent_id', 'icon', 'status', 'is_hot_place', 'bus_stop_type')
             ->paginateSafe();
@@ -153,7 +153,7 @@ class SiteController extends BaseController
         }
 
         $places = Site::withCount(['sites', 'gallery', 'comments'])
-            ->with(['gallery', 'categories:id,name,icon,status']);
+            ->with(['gallery', 'categories:id,name,mr_name,icon,status']);
 
         if ($request->has('search')) {
             $places = $places->where('name', 'like', '%' . $request->input('search') . '%');
@@ -325,7 +325,7 @@ class SiteController extends BaseController
     public function pendingSubmissions(Request $request)
     {
         $sites = Site::where('submission_status', 'pending')
-            ->with(['categories:id,name,code', 'user:id,name,email'])
+            ->with(['categories:id,name,mr_name,code', 'user:id,name,email'])
             ->latest()
             ->paginateSafe();
 
@@ -338,7 +338,7 @@ class SiteController extends BaseController
      */
     public function allSubmissions(Request $request)
     {
-        $query = Site::with(['categories:id,name,code', 'user:id,name,email'])->latest();
+        $query = Site::with(['categories:id,name,mr_name,code', 'user:id,name,email'])->latest();
 
         if ($request->filled('submission_status')) {
             $query->where('submission_status', $request->submission_status);
@@ -424,7 +424,7 @@ class SiteController extends BaseController
     public function pendingVerifications(Request $request)
     {
         $sites = Site::where('verification_status', 'pending')
-            ->with(['categories:id,name,code', 'user:id,name,email'])
+            ->with(['categories:id,name,mr_name,code', 'user:id,name,email'])
             ->latest('updated_at')
             ->paginateSafe();
 

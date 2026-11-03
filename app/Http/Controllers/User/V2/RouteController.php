@@ -67,9 +67,9 @@ class RouteController extends BaseController
         $routes = Route::withCount(['routeStops'])
             ->with([
                 'sourcePlace:id,name',
-                'sourcePlace.categories:id,name,icon',
+                'sourcePlace.categories:id,name,mr_name,icon',
                 'destinationPlace:id,name',
-                'destinationPlace.categories:id,name,icon'
+                'destinationPlace.categories:id,name,mr_name,icon'
             ])
             ->select(
                 'id',
@@ -115,9 +115,9 @@ class RouteController extends BaseController
 
         $query = Route::with([
             'sourcePlace:id,name,mr_name',
-            'sourcePlace.categories:id,name,icon',
+            'sourcePlace.categories:id,name,mr_name,icon',
             'destinationPlace:id,name,mr_name',
-            'destinationPlace.categories:id,name,icon',
+            'destinationPlace.categories:id,name,mr_name,icon',
             'busType:id,type,logo,meta_data',
         ])->select(
             'id',

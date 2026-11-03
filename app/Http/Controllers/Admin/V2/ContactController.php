@@ -25,7 +25,7 @@ class ContactController extends BaseController
             'user:id,name',
             'adminUser:id,name',
             'contactable:id,name,parent_id',
-            'contactable.categories:id,name'
+            'contactable.categories:id,name,mr_name'
         ])
             ->when(request()->status, fn($q) => $q->where('status', request()->status))
             ->orderBy('created_at', 'DESC')

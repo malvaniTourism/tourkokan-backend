@@ -193,7 +193,7 @@ class VendorOnboardController extends BaseController
         });
 
         return $this->sendResponse([
-            'site'         => $site->load('categories:id,name,code'),
+            'site'         => $site->load('categories:id,name,mr_name,code'),
             'product'      => $product?->load('variants'),
             'role_request' => $roleRequest,
         ], 'Your business has been submitted and is under review. We will notify you once approved.');

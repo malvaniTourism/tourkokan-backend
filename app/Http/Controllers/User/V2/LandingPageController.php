@@ -134,7 +134,7 @@ class LandingPageController extends BaseController
         // Single eager-load pass (categories -> sites -> gallery -> comment tree) instead of
         // per-city lazy queries; per-parent limits ride on MySQL 8 window functions.
         $cities->load([
-            'categories:id,name,code,parent_id,icon,status,is_hot_category',
+            'categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category',
             'sites' => fn($q) => $q->select('id', 'name', 'mr_name', 'parent_id')
                 ->with(['categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category', 'site:id,parent_id,name,mr_name'])
                 ->orderBy('id')->limit(5),

@@ -79,7 +79,7 @@ class SiteService
         // One eager-load pass over every trending site at once (instead of per-site
         // queries inside the loop). MySQL 8 window functions enforce the per-parent limits.
         $merged = new EloquentCollection(collect($result)->flatten(1));
-        $merged->load(['categories:id,name,code,parent_id,icon,status,is_hot_category']);
+        $merged->load(['categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category']);
         self::loadSiteEngagement($merged);
 
         return $result;
@@ -205,7 +205,7 @@ class SiteService
         }
 
         $hotSites->load([
-            'categories:id,name,code,parent_id,icon,status,is_hot_category',
+            'categories:id,name,mr_name,code,parent_id,icon,status,is_hot_category',
             'gallery' => fn($q) => $q->orderBy('id')->limit(3),
         ]);
 
