@@ -127,6 +127,14 @@ class MapLinkResolver
      */
     private function coordinates(string $url): ?array
     {
+        // Decoded first: the `\s*` below only ever matched a literal space,
+        // and a URL carrying one is rejected by the `url` validation rule
+        // before it reaches here — so a shared link holding `q=lat,%20lng`
+        // read as "no coordinates in that link" and the traveller was told to
+        // copy it again. rawurldecode rather than urldecode: a `+` in a Maps
+        // path is a word separator, not a space to be invented.
+        $url = rawurldecode($url);
+
         $patterns = [
             '/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/',
             '/@(-?\d+\.\d+),(-?\d+\.\d+)/',

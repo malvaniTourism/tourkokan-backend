@@ -349,6 +349,14 @@ class CandidateFetcher
             'id'         => (int) $site->id,
             'name'       => $site->name,
             'mr_name'    => $site->mr_name,
+            // The traveller's own pasted pin. The sign test is the same
+            // expression the itinerary already uses, kept here rather than in
+            // either controller so a browse row, a cart row and a stop are one
+            // object to the app — browse rows get `custom: false` for free.
+            'custom'     => (int) $site->id < 0,
+            // Only a pin has one. It is how the app asks for it to be removed,
+            // since a negative id renumbers on every add.
+            'key'        => $site->custom_key ?? null,
             'image'      => $site->image,
             'logo'       => $site->logo,
             'latitude'   => $site->latitude,

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User\V2;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Trip\AddToCartRequest;
 use App\Http\Requests\Trip\ClaimTripRequest;
+use App\Http\Requests\Trip\RemoveCustomStopRequest;
 use App\Http\Requests\Trip\RemoveFromCartRequest;
 use App\Http\Requests\Trip\ReorderCartRequest;
 use App\Http\Requests\Trip\ShowCartRequest;
@@ -20,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use RuntimeException;
 
@@ -153,8 +155,26 @@ class TripCartController extends BaseController
             return $this->sendError('No trip to add that to.', [], 200);
         }
 
-        $stops   = $trip->custom_stops ?? [];
+        $stops = $trip->custom_stops ?? [];
+        $max   = (int) AiConfig::get('max_custom_stops', 10);
+
+        // Every pin is a MANDATORY pick — the assembler fails a plan that
+        // leaves one out — so an unbounded list is a trip that can never be
+        // planned. The ceiling is here rather than in the request rules
+        // because it depends on the trip, and an admin can move it.
+        if (count($stops) >= $max) {
+            return $this->sendError(
+                "You can add up to {$max} of your own places to one trip.",
+                ['reason' => 'too_many_custom_stops', 'max' => $max],
+                200
+            );
+        }
+
         $stops[] = [
+            // A uuid, not the position and not the negative id the app sees:
+            // both renumber whenever the list changes, so a screen one step
+            // stale would delete the wrong place. Written once, stable for ever.
+            'key'       => (string) Str::uuid(),
             'name'      => $data['name'],
             'latitude'  => (float) $data['latitude'],
             'longitude' => (float) $data['longitude'],
@@ -165,10 +185,32 @@ class TripCartController extends BaseController
         $trip->custom_stops = $stops;
         $trip->save();
 
-        return $this->sendResponse([
-            'trip_id'      => (int) $trip->id,
-            'custom_stops' => $stops,
-        ], 'Added to your trip.');
+        // The whole cart, like every other cart endpoint: the counter and the
+        // new row then move at the moment of saving instead of waiting for
+        // some other screen to refresh on focus.
+        return $this->sendResponse($this->present($trip->fresh()), 'Added to your trip.');
+    }
+
+    /**
+     * Take a pasted pin back off the trip.
+     *
+     * Keyed on the uuid written at add time, never on the negative id the app
+     * draws the row with: that id is a position in a filtered list and
+     * renumbers on every change, so removing by it can take out a different
+     * place than the one tapped. Idempotent, so a stale client sees the cart
+     * rather than an error.
+     */
+    public function removeCustomStop(RemoveCustomStopRequest $request)
+    {
+        $trip = $this->cart->resolve(auth()->user(), $request->integer('trip_id'), create: false);
+
+        if (!$trip) {
+            return $this->sendError('Trip not found.', '', 404);
+        }
+
+        $trip = $this->cart->removeCustomStop($trip, (string) $request->input('key'));
+
+        return $this->sendResponse($this->present($trip), 'Removed from your trip.');
     }
 
     /**
@@ -280,6 +322,13 @@ class TripCartController extends BaseController
         $sites   = $this->cart->contents($trip);
         $minimum = (int) AiConfig::get('min_cart_places', 3);
 
+        // Pasted pins, after the DB rows — the same order `planFromCart`
+        // concatenates them in, so what the review screen lists is exactly
+        // what the model is asked to plan. Until this was here, "Added to your
+        // trip" was followed by a cart that had never heard of the place.
+        $custom = $this->cart->customSites($trip);
+        $all    = $sites->concat($custom);
+
         return [
             'trip_id'       => (int) $trip->id,
             'title'         => $trip->title,
@@ -290,11 +339,14 @@ class TripCartController extends BaseController
             // empty form. Without this the stepper cannot be resumed.
             'filters'       => (array) $trip->filters,
             'base_site_id'  => $trip->base_site_id ? (int) $trip->base_site_id : null,
-            'count'         => $sites->count(),
+            'count'         => $all->count(),
             'minimum'       => $minimum,
             // What the Plan button binds to, so the rule lives in one place.
-            'can_plan'      => $sites->count() >= $minimum,
-            'places'        => $this->places($sites),
+            // It must agree with `TripPlanner::planFromCart`'s own gate, which
+            // counts pins as well: a button that offers a trip the planner
+            // then refuses is worse than a disabled one.
+            'can_plan'      => $all->count() >= $minimum,
+            'places'        => $this->places($all),
         ];
     }
 

@@ -379,6 +379,11 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
         ->middleware('throttle:writes');
     Route::post('trip/addCustomStop', [TripCartController::class, 'addCustomStop'])
         ->middleware('throttle:writes');
+    // Keyed on the uuid the pin was stored with. Without this the X beside a
+    // pasted place was a button that did nothing: removeFromCart takes a site
+    // id, and a pin has no row in `sites` to delete.
+    Route::post('trip/removeCustomStop', [TripCartController::class, 'removeCustomStop'])
+        ->middleware('throttle:writes');
 
     Route::post('trip/updateCart', [TripCartController::class, 'updateCart'])
         ->middleware('throttle:writes');

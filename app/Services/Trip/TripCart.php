@@ -112,6 +112,95 @@ class TripCart
     }
 
     /**
+     * The places a traveller pasted a map link for, as Site models that were
+     * never saved.
+     *
+     * Lives here rather than in the planner because two callers need the same
+     * answer: the planner, which plans them, and the cart presenter, which has
+     * to show them. Two definitions of the id convention would be two
+     * definitions of "ours or theirs".
+     *
+     * They get **negative** ids — an id space `sites` can never produce, which
+     * makes the test a sign check rather than a lookup that could one day
+     * collide. An unverified pin must never become a row in `sites`: it has no
+     * owner and no approval, and it would leak into everyone else's search.
+     *
+     * `syncOriginal()` matters: `project()` reads names through
+     * `getRawOriginal()`, which is empty on a model that was never loaded.
+     *
+     * @return Collection<int,Site>
+     */
+    public function customSites(?SavedTrip $trip): Collection
+    {
+        return collect($trip?->custom_stops ?? [])
+            ->filter(fn ($s) => isset($s['latitude'], $s['longitude']))
+            ->values()
+            ->map(function ($stop, $i) {
+                $site = new Site([
+                    'name'      => (string) ($stop['name'] ?? 'Your place'),
+                    'latitude'  => (float) $stop['latitude'],
+                    'longitude' => (float) $stop['longitude'],
+                ]);
+                $site->id = -1 - $i;   // -1, -2, … in the order they were added
+                $site->syncOriginal();
+                // Nothing to load and nothing to show: without this, present()
+                // fires a categories query per pin against a row that is not
+                // there.
+                $site->setRelation('categories', collect());
+                // Carried so the app can ask for this exact pin back out.
+                // NOT the negative id: that renumbers whenever the list changes.
+                $site->custom_key = $stop['key'] ?? ($stop['added_at'] ?? null);
+
+                return $site;
+            });
+    }
+
+    /**
+     * Take a pasted pin off the trip, by the key it was stored with.
+     *
+     * Keyed rather than positional on purpose. `customSites()` filters out
+     * coordinate-less entries BEFORE numbering, so the negative id the app
+     * holds is an index into the filtered list, not into `custom_stops` — and
+     * both renumber on every add. Removing by position can delete a different
+     * place than the one on screen.
+     *
+     * Idempotent: a key already gone returns the trip untouched rather than an
+     * error, the same habit `reorder()` has, because a stale client should not
+     * be shown a failure for work that is already done.
+     */
+    public function removeCustomStop(SavedTrip $trip, string $key): SavedTrip
+    {
+        $kept    = [];
+        $removed = false;
+
+        foreach ((array) $trip->custom_stops as $stop) {
+            $matches = isset($stop['key'])
+                ? $stop['key'] === $key
+                : ($stop['added_at'] ?? null) === $key;   // written before keys existed
+
+            if (!$removed && $matches) {
+                $removed = true;
+                continue;
+            }
+
+            $kept[] = $stop;
+        }
+
+        if ($removed) {
+            $trip->custom_stops = $kept;
+            $trip->save();
+        }
+
+        return $trip->fresh();
+    }
+
+    /** How many pasted pins this trip holds. */
+    public function customCount(?SavedTrip $trip): int
+    {
+        return $this->customSites($trip)->count();
+    }
+
+    /**
      * Apply a traveller's ordering. Ids not in the cart are ignored rather
      * than erroring — a stale client should not break a reorder.
      *

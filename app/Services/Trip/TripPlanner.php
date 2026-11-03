@@ -49,7 +49,14 @@ class TripPlanner
         // by id instead, which quietly ignored every reorder they made.
         $picked = $this->cart->contents($trip);
 
-        if ($picked->count() < $minCart) {
+        // Pasted pins are picks, and they are planned a few lines below — so
+        // they count here too. Counting only `favourites` made the app's Plan
+        // button offer a trip this gate then refused, which is worse than the
+        // button being disabled: the traveller had already been told "added
+        // to your trip".
+        $custom = $this->cart->customSites($trip);
+
+        if ($picked->count() + $custom->count() < $minCart) {
             return $this->refuse('cart_too_small');
         }
 
@@ -77,7 +84,7 @@ class TripPlanner
         );
 
         if ($anchors->isEmpty()) {
-            $fallback = $trip->baseSite ?: $picked->first();
+            $fallback = $trip->baseSite ?: ($picked->first() ?: $custom->first());
             $anchors  = $fallback ? collect([$fallback]) : collect();
         }
 
@@ -92,13 +99,6 @@ class TripPlanner
         // resolved on the form path only, so a stepper trip would carry a
         // train time that never reached the plan.
         $arrival = $this->resolveArrival($filters, $anchors);
-
-        // Pasted places are picks too: the traveller chose them deliberately,
-        // so they are planned around rather than appended afterwards. Until
-        // now `custom_stops` was written by addCustomStop and read by
-        // nothing — the app said "added to your trip" and the plan never
-        // mentioned it again.
-        $custom = $this->customSites($trip);
 
         $result = $this->run(
             picked: $picked->concat($custom),
@@ -476,37 +476,6 @@ class TripPlanner
     /**
      * The shared body: everything after the places are known.
      */
-    /**
-     * The places a traveller pasted a map link for, as Site models that were
-     * never saved.
-     *
-     * They live on the trip's `custom_stops`, deliberately not in `sites`: an
-     * unverified pin has no owner and no approval, and must never leak into
-     * everyone else's search results. But the planner speaks in site ids, so
-     * they get **negative** ones — an id space the table can never produce,
-     * which makes "ours or theirs" a sign test rather than a lookup that
-     * could one day collide.
-     *
-     * `syncOriginal()` matters: `project()` reads names through
-     * `getRawOriginal()`, which is empty on a model that was never loaded.
-     */
-    private function customSites(?SavedTrip $trip)
-    {
-        return collect($trip?->custom_stops ?? [])
-            ->filter(fn ($s) => isset($s['latitude'], $s['longitude']))
-            ->values()
-            ->map(function ($stop, $i) {
-                $site = new Site([
-                    'name'      => (string) ($stop['name'] ?? 'Your place'),
-                    'latitude'  => (float) $stop['latitude'],
-                    'longitude' => (float) $stop['longitude'],
-                ]);
-                $site->id = -1 - $i;   // -1, -2, … in the order they were added
-                $site->syncOriginal();
-
-                return $site;
-            });
-    }
 
     private function run(
         $picked,
