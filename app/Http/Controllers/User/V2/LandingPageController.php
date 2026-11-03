@@ -79,7 +79,12 @@ class LandingPageController extends BaseController
 
         $categories = $this->categoryService->getPaginated(null, 1, 15, [
             'paginate' => false,
-            'fields'   => ['id', 'name', 'code', 'icon', 'is_hot_category'],
+            // mr_name or the accessor cannot translate: it reads the column
+            // off the model, and an unselected column is null, which it
+            // treats as "no Marathi name" and answers in English. The
+            // subCategories eager-load already names it, which is why the
+            // children of this list came back Marathi and the parents did not.
+            'fields'   => ['id', 'name', 'mr_name', 'code', 'icon', 'is_hot_category'],
         ]);
 
         #Top famouse cities

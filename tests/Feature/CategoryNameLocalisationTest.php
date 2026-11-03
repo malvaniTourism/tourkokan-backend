@@ -145,4 +145,53 @@ class CategoryNameLocalisationTest extends TestCase
             . implode("\n  ", $offenders)
         );
     }
+
+    /**
+     * The same bug wearing different clothes.
+     *
+     * CategoryService takes its parent columns as a `fields` option that ends
+     * up in `->select()`, so the relation-string check above cannot see it.
+     * That is exactly how it survived the sweep: the subCategories eager-load
+     * named mr_name and translated, the parents took the caller's list and
+     * did not — Marathi readers got "Destination" above "शहर".
+     */
+    public function test_no_category_field_list_forgets_the_marathi_name(): void
+    {
+        $offenders = [];
+
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(app_path(), \FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($files as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $relative = str_replace(base_path() . '/', '', $file->getPathname());
+            $source   = file_get_contents($file->getPathname());
+
+            // `'fields' => ['id', 'name', ...]` — CategoryService's option.
+            preg_match_all("/'fields'\s*=>\s*\[([^\]]*)\]/", $source, $matches);
+
+            foreach ($matches[1] as $list) {
+                if (!str_contains($list, "'name'")) {
+                    continue;
+                }
+                if (str_contains($list, "'mr_name'")) {
+                    continue;
+                }
+
+                $offenders[] = "{$relative}: fields => [{$list}]";
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $offenders,
+            "A category field list selects `name` without `mr_name`, so the "
+            . "accessor answers in English whatever the reader's language:\n  "
+            . implode("\n  ", $offenders)
+        );
+    }
 }
