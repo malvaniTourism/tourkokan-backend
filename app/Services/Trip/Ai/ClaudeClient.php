@@ -70,24 +70,11 @@ class ClaudeClient implements AiClient
             system: $this->cacheable($prompt['system']),
         );
 
-        // Safety classifiers can decline with HTTP 200, so the stop reason is
-        // checked before the content is read.
-        if ($message->stopReason === 'refusal') {
-            throw new RuntimeException('The model declined this request.');
-        }
-
-        $text = $this->firstText($message->content);
-
-        if ($text === null) {
-            throw new RuntimeException('The model returned no text block.');
-        }
-
-        $data = json_decode($text, true);
-
-        if (!is_array($data)) {
-            throw new RuntimeException('The model returned text that is not JSON.');
-        }
-
+        // READ THE BILL FIRST. Every failure below arrives as a billed HTTP
+        // 200, and throwing before this point recorded them all as costing
+        // nothing — which left the daily spend ceiling blind to precisely the
+        // loop it exists to stop: a prompt or schema change that makes the
+        // model fail every call, each one paid for.
         $tokensIn  = (int) $message->usage->inputTokens;
         $tokensOut = (int) $message->usage->outputTokens;
         // Zero unless the frozen prefix is both marked cacheable and long
@@ -96,24 +83,44 @@ class ClaudeClient implements AiClient
         $cacheRead  = (int) ($message->usage->cacheReadInputTokens ?? 0);
         $cacheWrite = (int) ($message->usage->cacheCreationInputTokens ?? 0);
 
+        $meta = [
+            'driver'             => 'claude',
+            'model'              => $message->model ?: $model,
+            'tokens_in'          => $tokensIn,
+            'tokens_out'         => $tokensOut,
+            'cache_read_tokens'  => $cacheRead,
+            'cache_write_tokens' => $cacheWrite,
+            'cost_inr'           => $this->costInr(
+                $message->model ?: $model,
+                $tokensIn,
+                $tokensOut,
+                $cacheRead,
+                $cacheWrite
+            ),
+            'latency_ms' => (int) round((microtime(true) - $started) * 1000),
+        ];
+
+        // Safety classifiers can decline with HTTP 200, so the stop reason is
+        // checked before the content is read.
+        if ($message->stopReason === 'refusal') {
+            throw new BilledFailure('The model declined this request.', $meta);
+        }
+
+        $text = $this->firstText($message->content);
+
+        if ($text === null) {
+            throw new BilledFailure('The model returned no text block.', $meta);
+        }
+
+        $data = json_decode($text, true);
+
+        if (!is_array($data)) {
+            throw new BilledFailure('The model returned text that is not JSON.', $meta);
+        }
+
         return [
             'data' => $data,
-            'meta' => [
-                'driver'             => 'claude',
-                'model'              => $message->model ?: $model,
-                'tokens_in'          => $tokensIn,
-                'tokens_out'         => $tokensOut,
-                'cache_read_tokens'  => $cacheRead,
-                'cache_write_tokens' => $cacheWrite,
-                'cost_inr'           => $this->costInr(
-                    $message->model ?: $model,
-                    $tokensIn,
-                    $tokensOut,
-                    $cacheRead,
-                    $cacheWrite
-                ),
-                'latency_ms' => (int) round((microtime(true) - $started) * 1000),
-            ],
+            'meta' => $meta,
         ];
     }
 

@@ -94,9 +94,72 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('trip', function (Request $request) {
             $key = $request->user()?->id ?: $request->ip();
 
+            /**
+             * Only a call that could have cost something counts.
+             *
+             * Every tap used to, so a traveller refused five times for having
+             * too few places in the cart — which never reaches the model and
+             * never costs a paisa — had burned a quarter of their day's
+             * allowance on nothing. The limit exists to cap spending, so it
+             * counts spending.
+             *
+             * A failure the model DID answer (day_too_thin, a bad reply, a
+             * generation that fell over) is deliberately absent from this
+             * list: it reached the model and was billed, so it counts.
+             */
+            $billable = function ($response) {
+                $body = json_decode((string) $response->getContent(), true);
+
+                if (!is_array($body)) {
+                    return true;        // unreadable: count it rather than let it through
+                }
+
+                if (($body['success'] ?? false) === true) {
+                    return true;
+                }
+
+                return !in_array($body['data']['reason'] ?? null, [
+                    'cart_too_small',
+                    'cart_too_big',
+                    'spend_ceiling',
+                    'verification_required',
+                    'insufficient_credits',
+                    'town_not_found',
+                ], true);
+            };
+
+            /**
+             * The refusal, in our own envelope.
+             *
+             * Laravel's 429 body is its own shape, which the app read as an
+             * unknown failure — and the screen turned Retry-After into
+             * minutes, so a DAILY limit told the traveller to "give it a
+             * minute" and then printed 1440 of them. `scope` lets the screen
+             * say "tomorrow" for one and "in a few minutes" for the other.
+             */
+            $refuse = fn (string $scope) => fn ($request, array $headers) => response()->json([
+                'success' => false,
+                'message' => 'You have planned a lot of trips just now. Nothing is lost — your free plans are untouched.',
+                'data'    => [
+                    'reason'      => 'rate_limited',
+                    'scope'       => $scope,
+                    'retry_after' => (int) ($headers['Retry-After'] ?? 0),
+                ],
+            ], 429, $headers);
+
+            // max(1, …) because a 0 in ai_configs would refuse every traveller
+            // on the planet. The admin screen validates min:1, so this is only
+            // reachable by editing the row directly — which is exactly when a
+            // typo should not become an outage.
             return [
-                Limit::perHour((int) \App\Models\AiConfig::get('rate_limit_per_hour', 10))->by("trip:h:{$key}"),
-                Limit::perDay((int) \App\Models\AiConfig::get('rate_limit_per_day', 20))->by("trip:d:{$key}"),
+                Limit::perHour(max(1, (int) \App\Models\AiConfig::get('rate_limit_per_hour', 10)))
+                    ->by("trip:h:{$key}")
+                    ->after($billable)
+                    ->response($refuse('hour')),
+                Limit::perDay(max(1, (int) \App\Models\AiConfig::get('rate_limit_per_day', 20)))
+                    ->by("trip:d:{$key}")
+                    ->after($billable)
+                    ->response($refuse('day')),
             ];
         });
 

@@ -11,6 +11,7 @@ use App\Models\TripPlacement;
 use App\Models\User;
 use App\Services\Credits\CreditLedger;
 use App\Services\Trip\Ai\AiClient;
+use App\Services\Trip\Ai\BilledFailure;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -556,11 +557,24 @@ class TripPlanner
         } catch (Throwable $e) {
             Log::error('[trip] model call failed', ['message' => $e->getMessage()]);
 
+            // A refusal, a missing text block or non-JSON text all come back
+            // as a billed HTTP 200. When the client knows what the call cost,
+            // record it: a failure that was paid for has to count against the
+            // day's ceiling, or the breaker cannot see a loop that fails every
+            // time and is charged for every attempt.
+            $billed = $e instanceof BilledFailure ? $e->meta : [];
+
             $this->write($log + [
                 'status'         => 'failed',
                 'failure_reason' => 'model_error',
                 'error_message'  => $e->getMessage(),
                 'error_trace'    => $e->getTraceAsString(),
+                'driver'         => $billed['driver'] ?? null,
+                'model'          => $billed['model'] ?? null,
+                'tokens_in'      => (int) ($billed['tokens_in'] ?? 0),
+                'tokens_out'     => (int) ($billed['tokens_out'] ?? 0),
+                'cost_inr'       => $billed['cost_inr'] ?? 0,
+                'latency_ms'     => (int) ($billed['latency_ms'] ?? 0),
             ]);
 
             return $this->refuse('generation_failed');
