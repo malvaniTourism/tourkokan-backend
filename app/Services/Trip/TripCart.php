@@ -214,8 +214,26 @@ class TripCart
             throw new \RuntimeException('trip_not_found');
         }
 
+        // Which ids are actually in this cart, read once.
+        //
+        // NOT the return of update(): MySQL reports rows CHANGED, not rows
+        // matched, so a row that already held the position we were assigning
+        // came back as 0 and the counter stalled — handing the same
+        // sort_order to two different places.
+        $inCart = $this->rows($trip)
+            ->pluck('favouritable_id')
+            ->map(fn ($v) => (int) $v)
+            ->flip();
+
         $position = 0;
         foreach ($siteIds as $siteId) {
+            // An id that is not in the cart — a stale client, or the negative
+            // id of a pasted pin — used to burn a position anyway, leaving
+            // holes in a sequence the next reader may assume is dense.
+            if (!$inCart->has((int) $siteId)) {
+                continue;
+            }
+
             $this->rows($trip)
                 ->where('favouritable_id', (int) $siteId)
                 ->update(['sort_order' => $position++]);
@@ -243,6 +261,17 @@ class TripCart
         return $this->candidates->byIds($ids);
     }
 
+    /**
+     * How many places the traveller TICKED — not how many can still be
+     * planned around.
+     *
+     * `contents()` runs the rows back through CandidateFetcher, so a place
+     * that has since been unapproved, soft-deleted, tagged as a bus stop or
+     * stripped of its coordinates quietly vanishes from it. Comparing the two
+     * is the only way to notice, and someone has to: a place disappearing
+     * from the cart with no explanation is the same bug as a pasted pin never
+     * appearing in it, from the other direction.
+     */
     public function count(SavedTrip $trip): int
     {
         return $this->rows($trip)->count();

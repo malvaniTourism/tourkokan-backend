@@ -62,6 +62,22 @@ class TripCartTest extends ApiTestCase
         ]));
     }
 
+    /** The open cart, or a named trip. */
+    private function cart(?int $tripId = null)
+    {
+        return $this->actingAs($this->traveller, 'api')
+            ->postJson('/api/v2/trip/cart', array_filter(['trip_id' => $tripId]));
+    }
+
+    /** The trip a site was ticked into. */
+    private function tripId(Site $site): int
+    {
+        return (int) Favourite::withoutGlobalScopes()
+            ->where('favouritable_id', $site->id)
+            ->whereNotNull('trip_id')
+            ->value('trip_id');
+    }
+
     // ── Ticking places ───────────────────────────────────────────────────────
 
     public function test_ticking_a_place_starts_a_trip_and_adds_it(): void
@@ -370,5 +386,88 @@ class TripCartTest extends ApiTestCase
             $ledger->balance($this->traveller),
             'The count shown before planning must be the one planning starts from'
         );
+    }
+
+    // ── A place that stopped being plannable ─────────────────────────────────
+
+    public function test_a_picked_place_that_is_no_longer_listed_is_reported_not_swallowed(): void
+    {
+        $keep = $this->site('Tarkarli Beach');
+        $gone = $this->site('Doomed Beach');
+
+        $this->assertApiSuccess($this->add($keep));
+        $response = $this->assertApiSuccess($this->add($gone, $this->tripId($keep)));
+        $this->assertSame(2, $response->json('data.count'));
+        $this->assertSame(0, $response->json('data.unavailable'));
+
+        // It stops being somewhere you can go — unapproved, in this case.
+        $gone->forceFill(['submission_status' => 'pending'])->save();
+
+        $cart = $this->assertApiSuccess($this->cart());
+
+        // contents() filters it out, so it leaves the list either way. What
+        // must not happen is leaving with no explanation.
+        $this->assertSame(1, $cart->json('data.count'));
+        $this->assertSame(
+            1,
+            $cart->json('data.unavailable'),
+            'A place the traveller ticked vanished and nothing said so'
+        );
+    }
+
+    public function test_a_cart_whose_places_are_all_fine_reports_none_unavailable(): void
+    {
+        $this->assertApiSuccess($this->add($this->site('Chivla Beach')));
+
+        $this->assertSame(0, $this->cart()->json('data.unavailable'));
+    }
+
+    public function test_a_bus_stop_a_place_later_became_is_reported_too(): void
+    {
+        $site = $this->site('Was A Beach');
+        $this->assertApiSuccess($this->add($site));
+
+        // Retagged as a shelter by an admin: still listed, no longer a
+        // destination, so the planner would refuse to build around it.
+        $site->forceFill(['bus_stop_type' => 'depot'])->save();
+
+        $cart = $this->assertApiSuccess($this->cart());
+        $this->assertSame(0, $cart->json('data.count'));
+        $this->assertSame(1, $cart->json('data.unavailable'));
+    }
+
+    // ── Order stays dense ────────────────────────────────────────────────────
+
+    public function test_reordering_round_an_id_that_matches_nothing_leaves_no_gaps(): void
+    {
+        $a = $this->site('Alpha Beach');
+        $b = $this->site('Bravo Beach');
+        $c = $this->site('Charlie Beach');
+
+        $this->assertApiSuccess($this->add($a));
+        $trip = $this->tripId($a);
+        $this->assertApiSuccess($this->add($b, $trip));
+        $this->assertApiSuccess($this->add($c, $trip));
+
+        // 999 is in the cart's list but not in the cart — a stale client, or
+        // the negative id of a pasted pin.
+        $this->actingAs($this->traveller, 'api')->postJson('/api/v2/trip/reorderCart', [
+            'trip_id'  => $trip,
+            'site_ids' => [$c->id, 999, $a->id, $b->id],
+        ])->assertOk();
+
+        $orders = Favourite::withoutGlobalScopes()
+            ->where('trip_id', $trip)
+            ->orderBy('sort_order')
+            ->pluck('sort_order')
+            ->all();
+
+        // Dense from zero. An unmatched id used to burn a slot, leaving a
+        // hole in a sequence the next reader may assume is contiguous.
+        $this->assertSame([0, 1, 2], array_map('intval', $orders));
+
+        // And the order the traveller asked for still holds.
+        $ids = array_column($this->cart()->json('data.places'), 'id');
+        $this->assertSame([$c->id, $a->id, $b->id], $ids);
     }
 }

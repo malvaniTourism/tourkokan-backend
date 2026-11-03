@@ -331,6 +331,12 @@ class TripCartController extends BaseController
         $custom = $this->cart->customSites($trip);
         $all    = $sites->concat($custom);
 
+        // A place the traveller ticked that can no longer be planned around:
+        // unapproved since, soft-deleted, retagged as a bus stop, or stripped
+        // of its coordinates. `contents()` filters those out, so without this
+        // the row simply disappears and nobody is told why.
+        $unavailable = max(0, $this->cart->count($trip) - $sites->count());
+
         return [
             'trip_id'       => (int) $trip->id,
             'title'         => $trip->title,
@@ -349,6 +355,9 @@ class TripCartController extends BaseController
             // options call, usually — so the number beside "Make my plan"
             // belonged to a different moment.
             'credits'       => $this->credits->available(auth()->user()),
+            // Zero almost always. When it is not, the app says so rather than
+            // letting a place vanish from the list in silence.
+            'unavailable'   => $unavailable,
             // What the Plan button binds to, so the rule lives in one place.
             // It must agree with `TripPlanner::planFromCart`'s own gate, which
             // counts pins as well: a button that offers a trip the planner

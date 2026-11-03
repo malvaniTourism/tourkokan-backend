@@ -167,4 +167,37 @@ class TripRateLimitTest extends ApiTestCase
 
         $this->assertApiSuccess($this->plan($this->trip(4)));
     }
+
+    public function test_an_unverified_guest_never_burns_the_daily_allowance(): void
+    {
+        AiConfig::set('rate_limit_per_day', 2);
+
+        // Laravel's $middlewarePriority lifts ThrottleRequests above
+        // verified.email, so the guest's tap reaches the limiter BEFORE it is
+        // refused — the declared order in routes/api.php is not the order
+        // they run in, and reordering that array does not change it.
+        $guest = $this->userWithRole('user');
+        $guest->forceFill(['isVerified' => 0, 'email_verified_at' => null])->save();
+        \Illuminate\Support\Facades\RateLimiter::clear('trip:h:' . $guest->id);
+        \Illuminate\Support\Facades\RateLimiter::clear('trip:d:' . $guest->id);
+
+        $trip = $this->trip(4);
+        $trip->forceFill(['user_id' => $guest->id])->save();
+
+        for ($i = 0; $i < 5; $i++) {
+            $response = $this->actingAs($guest, 'api')
+                ->postJson('/api/v2/trip/planFromCart', ['trip_id' => $trip->id]);
+
+            $this->assertSame(200, $response->status(), 'A guest must be refused, not throttled');
+            $this->assertSame('verification_required', $response->json('data.reason'));
+        }
+
+        // Five refusals that cost nothing must not have spent the day's
+        // allowance of two. This is what makes the middleware order harmless.
+        $this->assertSame(
+            0,
+            \Illuminate\Support\Facades\RateLimiter::attempts('trip:d:' . $guest->id),
+            'An unverified tap was counted against a limit that exists to cap spending'
+        );
+    }
 }

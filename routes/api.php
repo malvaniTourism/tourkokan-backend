@@ -406,6 +406,17 @@ Route::group(['middleware' => ['auth:api', 'premiddleware'], 'prefix' => 'v2'], 
     // verified.email because a guest holds a working JWT and is not an
     // identity, and throttle:trip because a credit check alone does not
     // bound how fast someone burns through what they have.
+    //
+    // THE ORDER BELOW IS NOT THE ORDER THEY RUN IN. Laravel's
+    // $middlewarePriority lifts ThrottleRequests above anything not in that
+    // list, so throttle:trip runs FIRST and an unverified guest is counted
+    // before being refused. Reordering this array does not change it.
+    //
+    // Harmless, and deliberately so: the limiter's `after` callback only
+    // counts a response that could have cost money, and the middleware's
+    // refusal carries reason `verification_required`, which is on the
+    // not-billable list. See AppServiceProvider's 'trip' limiter, and
+    // TripRateLimitTest, which holds that behaviour in place.
     Route::middleware(['verified.email', 'throttle:trip'])->group(function () {
         Route::post('trip/planFromCart', [TripPlannerController::class, 'planFromCart']);
         Route::post('trip/plan', [TripPlannerController::class, 'plan']);
