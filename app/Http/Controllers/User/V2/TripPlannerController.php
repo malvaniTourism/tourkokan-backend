@@ -140,6 +140,9 @@ class TripPlannerController extends BaseController
                 'adults'   => ['min' => 1, 'max' => 30, 'default' => 2],
                 'children' => ['min' => 0, 'max' => 20, 'default' => 0],
                 'types'    => $this->tripTypes(),
+                // Only asked once there is a child to ask about. Served for
+                // a stronger reason than the types are — see childAgeBands().
+                'ages'     => $this->childAgeBands(),
             ],
             // available(), not balance(): the signup grant is made lazily on
             // the first generation, so a verified account that has never
@@ -312,6 +315,59 @@ class TripPlannerController extends BaseController
             // falls back to the code itself rather than an empty chip.
             'name' => ucfirst(str_replace('_', ' ', $code)),
         ], $codes));
+    }
+
+    /**
+     * Age bands for the youngest child.
+     *
+     * WHY THESE ARE SERVED AND NOT DRAWN BY THE APP.
+     *
+     * The trip types are served so a new one needs no release. These are
+     * served for a harder reason: the only boundary that changes a plan is
+     * `pacing_young_child_age`, and that number is editable. Ship "6 to 9"
+     * in the app, have an admin move the threshold to 7, and one tap now
+     * means two different paces depending on which child in the band is
+     * yours — a band that straddles the threshold is a question with no
+     * answer. Built here, every band falls wholly on one side of it, and
+     * `test_no_age_band_straddles_the_pacing_threshold` says so for every
+     * threshold an admin might set.
+     *
+     * Each band sends the age at its FLOOR. The number is a guess whichever
+     * end is taken; the floor guesses towards more care, which is the
+     * direction the rest of the pacing design already leans.
+     *
+     * @return array<int,array<string,int|string|null>>
+     */
+    private function childAgeBands(): array
+    {
+        // Clamped to 17 because that is where the request's own definition of
+        // a child ends. A threshold above it would otherwise generate a band
+        // offering ages no child can be, and a `value` the request rejects.
+        $young = min(17, max(1, (int) AiConfig::get('pacing_young_child_age', 8)));
+
+        // The young side is split in two. Both halves pace identically — the
+        // split is for the model's prose, where a toddler and a six-year-old
+        // want different notes about the same waterfall.
+        $split = (int) ceil($young / 2);
+
+        $bands = [];
+
+        if ($split >= 2) {
+            $bands[] = ['code' => 'under', 'from' => 0, 'to' => $split - 1, 'value' => 0];
+            $bands[] = ['code' => 'mid', 'from' => $split, 'to' => $young, 'value' => $split];
+        } else {
+            // A threshold of 1 leaves nothing to split: "under 1" and "1 to
+            // 1" is two chips for one answer. One young band instead.
+            $bands[] = ['code' => 'mid', 'from' => 0, 'to' => $young, 'value' => 0];
+        }
+
+        // Omitted when the threshold reaches the top of childhood: there is
+        // no older band left to offer.
+        if ($young < 17) {
+            $bands[] = ['code' => 'over', 'from' => $young + 1, 'to' => null, 'value' => $young + 1];
+        }
+
+        return $bands;
     }
 
     /** Copy the app shows for each refusal. */

@@ -69,7 +69,13 @@ final class Pacing
         $group    = (array) data_get($filters, 'group', []);
         $adults   = max(0, (int) ($group['adults'] ?? 0));
         $children = max(0, (int) ($group['children'] ?? 0));
-        $youngest = $group['youngest_age'] ?? null;
+        // Ignored when nobody said a child was coming. The form only asks
+        // the age once children is at least one, but a stale age left in a
+        // saved filter set — or any other client — would otherwise pace two
+        // adults at a toddler's speed off an answer about a child who is not
+        // on the trip. Two answers that contradict each other are resolved
+        // in favour of the count, which is the one the traveller set last.
+        $youngest = $children > 0 ? ($group['youngest_age'] ?? null) : null;
         $type     = (string) data_get($filters, 'trip_type', '');
 
         $ceilings = [$base->maxPerDay];
@@ -120,9 +126,13 @@ final class Pacing
         }
 
         return array_filter([
-            'adults'       => $adults ?: null,
-            'children'     => $children ?: null,
-            'youngest_age' => $group['youngest_age'] ?? null,
+            'adults'   => $adults ?: null,
+            'children' => $children ?: null,
+            // Dropped with no children, for the reason forFilters() gives —
+            // and the two must agree, or the model would be told about a
+            // child who changes nothing, and two trips that pace the same
+            // would miss each other's cache.
+            'youngest_age' => $children > 0 ? ($group['youngest_age'] ?? null) : null,
             'type'         => $type ?: null,
         ], fn ($v) => $v !== null);
     }

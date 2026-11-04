@@ -217,6 +217,10 @@ cache does not collide (below); an unknown `trip_type` degrades rather than
    `share_token` and `is_public`. Decide whether group composition travels
    with a shared plan. The default should be that it does not.
 
+   Partly addressed: what is stored is a band's floor, not an exact age, so
+   "0" means *under four* and not *a newborn*. That is a smaller disclosure,
+   not no disclosure — the share question is still open.
+
 ## 7. Effort
 
 | | |
@@ -233,8 +237,20 @@ cache does not collide (below); an unknown `trip_type` degrades rather than
 
 - Is **solo** a trip type, or is it group size 1? They overlap and the form
   should not ask twice.
-- Do children's ages matter, or is a count enough? Ages give better pacing and
-  are more sensitive to store.
+- ~~Do children's ages matter, or is a count enough?~~ **Answered: ages, as
+  bands.** The form asks once there is a child to ask about, and the bands are
+  built by the server from `pacing_young_child_age` rather than shipped in the
+  app. That is not the usual "config without a release" argument: the only
+  boundary that changes a plan is the threshold itself, so a band hardcoded in
+  the app can end up straddling it after an admin edits one number — and then
+  a single tap means two different paces with no way for the traveller to tell
+  which they asked for. A band also stores less than an exact age, which is
+  the privacy half of this question below.
+
+  Each band sends its floor, so the guess leans towards the gentler pace. An
+  age with no children is ignored, in `forFilters` and `groupFor` alike: a
+  stale age on a trip whose child came back off it would otherwise pace two
+  adults like a toddler.
 - Should group size travel into a shared trip, or be stripped on share?
 - Is this wanted on the express ("choose for me") path too, or only the
   stepper? Express currently sends filters straight to `planTrip`.

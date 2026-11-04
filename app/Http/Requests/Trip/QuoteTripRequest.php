@@ -15,7 +15,7 @@ class QuoteTripRequest extends CartRequest
 {
     public function rules(): array
     {
-        return [
+        return $this->groupRules() + [
             'town_site_ids'   => 'required|array|min:1|max:' . (int) AiConfig::get('max_towns', 3),
             'town_site_ids.*' => 'integer|exists:sites,id',
 
@@ -24,19 +24,6 @@ class QuoteTripRequest extends CartRequest
             // validation error it cannot explain to anyone.
             'category_codes'   => 'nullable|array|max:20',
             'category_codes.*' => 'string|max:64',
-
-            // Who is going. Everything optional: the form defaults to two
-            // adults and a traveller who answers nothing gets today's plan.
-            'group'              => 'nullable|array',
-            'group.adults'       => 'nullable|integer|min:1|max:30',
-            'group.children'     => 'nullable|integer|min:0|max:20',
-            'group.youngest_age' => 'nullable|integer|min:0|max:17',
-
-            // No `in:` on the type, for the same reason the category codes
-            // carry no `exists`: a stale app sending a type that has since
-            // been retired should get the ordinary pace, not a validation
-            // error it cannot explain to anyone.
-            'trip_type' => 'nullable|string|max:32',
 
             'days'      => 'nullable|integer|min:1|max:' . (int) AiConfig::get('max_days', 7),
             'radius_km' => 'nullable|numeric|min:5|max:120',

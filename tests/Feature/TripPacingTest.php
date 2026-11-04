@@ -390,4 +390,148 @@ class TripPacingTest extends ApiTestCase
             $cache->key(...$args, group: null)
         );
     }
+
+    // ── The youngest child's age ─────────────────────────────────────────────
+
+    /** The bands the form is served, so a test reads the real contract. */
+    private function ageBands(): array
+    {
+        return $this->actingAs($this->traveller, 'api')
+            ->postJson('/api/v2/trip/questionSet')
+            ->assertOk()
+            ->json('data.group.ages');
+    }
+
+    public function test_the_form_offers_the_age_bands(): void
+    {
+        $bands = $this->ageBands();
+
+        $this->assertSame(['under', 'mid', 'over'], array_column($bands, 'code'));
+
+        // "Under 4", "4 to 8", "9 or older" — the server owns the numbers,
+        // the app owns the sentence they sit in.
+        $this->assertSame([0, 4, 9], array_column($bands, 'from'));
+        $this->assertSame([3, 8, null], array_map(fn ($b) => $b['to'], $bands));
+
+        // Each band sends its floor: the guess leans towards more care.
+        $this->assertSame([0, 4, 9], array_column($bands, 'value'));
+    }
+
+    public function test_no_age_band_straddles_the_pacing_threshold(): void
+    {
+        // The guard this whole design exists for. A band is ONE tap, so
+        // every age inside it has to pace the same way — otherwise "my
+        // youngest is 6 to 9" means two different trips and the traveller
+        // cannot tell which one they asked for. The bands are generated from
+        // the threshold precisely so this holds as an admin moves it, and
+        // this test is what says it still does.
+        foreach ([1, 2, 3, 5, 8, 11, 16, 17, 20] as $threshold) {
+            AiConfig::set('pacing_young_child_age', $threshold);
+
+            $bands = $this->ageBands();
+            $this->assertNotEmpty($bands, "Threshold {$threshold} offered no bands at all");
+
+            foreach ($bands as $band) {
+                $expected = $this->maxForAge($band['value']);
+
+                for ($age = $band['from']; $age <= ($band['to'] ?? 17); $age++) {
+                    $this->assertSame(
+                        $expected,
+                        $this->maxForAge($age),
+                        "Threshold {$threshold}: a {$age}-year-old paces unlike the rest of band '{$band['code']}'"
+                    );
+                }
+
+                $this->assertGreaterThanOrEqual(0, $band['value']);
+                $this->assertLessThanOrEqual(
+                    17,
+                    $band['value'],
+                    "Threshold {$threshold}: band '{$band['code']}' sends an age the request rejects"
+                );
+            }
+        }
+    }
+
+    private function maxForAge(int $age): int
+    {
+        return Pacing::forFilters([
+            'group' => ['adults' => 2, 'children' => 1, 'youngest_age' => $age],
+        ])->maxPerDay;
+    }
+
+    public function test_an_age_with_no_children_changes_nothing(): void
+    {
+        // Two answers contradicting each other, resolved in favour of the
+        // count — the one the traveller set last. A saved filter set whose
+        // child came back off the trip must stop pacing like a toddler's.
+        $filters = ['group' => ['adults' => 2, 'children' => 0, 'youngest_age' => 2]];
+
+        $this->assertSame(5, Pacing::forFilters($filters)->maxPerDay);
+
+        // And the model is not told about a child who is not coming, or it
+        // writes the notes for them.
+        $this->assertArrayNotHasKey('youngest_age', Pacing::groupFor($filters) ?? []);
+    }
+
+    public function test_two_families_whose_youngest_differ_do_not_share_a_cached_plan(): void
+    {
+        $cache = app(\App\Services\Trip\ItineraryCache::class);
+
+        $args = [
+            'categoryCodes' => ['beach'],
+            'days'          => 2,
+            'lat'           => 16.06,
+            'lng'           => 73.47,
+            'radiusKm'      => 40.0,
+            'stay'          => 'suggest',
+            'arrival'       => null,
+        ];
+
+        $key = fn (int $age) => $cache->key(...$args, group: Pacing::groupFor([
+            'trip_type' => 'family',
+            'group'     => ['adults' => 2, 'children' => 2, 'youngest_age' => $age],
+        ]));
+
+        // Same towns, same days, same family size — and a plan written for a
+        // two-year-old is not the plan for a fifteen-year-old.
+        $this->assertNotSame($key(2), $key(15));
+    }
+
+    public function test_the_stepper_save_path_validates_the_group_like_the_express_path(): void
+    {
+        // Two doors into one planner. The express path validates
+        // `group.adults`; the stepper saves the same answers one level down
+        // as `filters.group.adults` — and `UpdateCartRequest` had no rule
+        // for any of them, although its own comment promised "the same shape
+        // the quote accepts". So the stepper could store a group the quote
+        // would have refused, and TripPlanner reads both through the same
+        // code. Both lists come from CartRequest::groupRules() now; this is
+        // what says they have not drifted apart again.
+        $trip = SavedTrip::create([
+            'user_id'      => $this->traveller->id,
+            'status'       => 'draft',
+            'days'         => 2,
+            'base_site_id' => $this->base->id,
+        ]);
+
+        $save = fn (array $group) => $this->actingAs($this->traveller, 'api')
+            ->postJson('/api/v2/trip/updateCart', [
+                'trip_id' => $trip->id,
+                'filters' => ['group' => $group, 'trip_type' => 'family'],
+            ]);
+
+        $this->assertApiFailure($save(['adults' => 9999]));
+        $this->assertApiFailure($save(['children' => -1]));
+        $this->assertApiFailure($save(['youngest_age' => 40]));
+
+        // And a real answer still lands on the trip, age and all, which is
+        // what planFromCart reads back.
+        $this->assertApiSuccess($save(['adults' => 2, 'children' => 2, 'youngest_age' => 4]));
+
+        $this->assertSame(
+            ['adults' => 2, 'children' => 2, 'youngest_age' => 4],
+            (array) data_get($trip->fresh()->filters, 'group')
+        );
+        $this->assertSame('family', data_get($trip->fresh()->filters, 'trip_type'));
+    }
 }
