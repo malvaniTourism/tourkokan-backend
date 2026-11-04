@@ -127,6 +127,20 @@ class TripPlannerController extends BaseController
             ],
             'max_towns' => (int) AiConfig::get('max_towns', 3),
             'radius_km' => (float) AiConfig::get('default_radius_km', 40),
+
+            // Who is going. The vocabulary is served, not shipped in the
+            // app, exactly as the interests are: adding "pilgrimage" later
+            // is then a config edit rather than a release, and no app
+            // version can be asked to draw a type it has never heard of.
+            //
+            // Solo is deliberately NOT a type — it is one adult. Asking the
+            // same thing twice in one form is how the two answers end up
+            // contradicting each other.
+            'group' => [
+                'adults'   => ['min' => 1, 'max' => 30, 'default' => 2],
+                'children' => ['min' => 0, 'max' => 20, 'default' => 0],
+                'types'    => $this->tripTypes(),
+            ],
             // available(), not balance(): the signup grant is made lazily on
             // the first generation, so a verified account that has never
             // planned reads 0 here and is then handed three the moment they
@@ -276,6 +290,28 @@ class TripPlannerController extends BaseController
             in_array('airport', $codes, true) ? 'flight' : null,
             in_array('msrtc', $codes, true) ? 'bus' : null,
         ]));
+    }
+
+    /**
+     * The trip types on offer, from config so an admin can change them
+     * without a deploy — the backend runs Octane, and a deploy is a reload
+     * and a wait.
+     *
+     * @return array<int,array<string,string>>
+     */
+    private function tripTypes(): array
+    {
+        $codes = array_filter(array_map('trim', explode(',', (string) AiConfig::get(
+            'trip_types',
+            'family,friends,couple,work'
+        ))));
+
+        return array_values(array_map(fn ($code) => [
+            'code' => $code,
+            // The app translates; the server names. A code it does not know
+            // falls back to the code itself rather than an empty chip.
+            'name' => ucfirst(str_replace('_', ' ', $code)),
+        ], $codes));
     }
 
     /** Copy the app shows for each refusal. */

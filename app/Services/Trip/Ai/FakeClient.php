@@ -25,7 +25,11 @@ class FakeClient implements AiClient
 
         $payload   = $prompt['payload'] ?? [];
         $days      = max(1, (int) ($prompt['days'] ?? 1));
-        $maxPerDay = (int) AiConfig::get('max_stops_per_day', 5);
+        // From the prompt, not the global: the assembler enforces the range
+        // this trip was given, and a stand-in that arranges to a different
+        // one produces plans its own validator rejects.
+        $maxPerDay = $prompt['pacing']->maxPerDay
+            ?? (int) AiConfig::get('max_stops_per_day', 5);
 
         // Picked first — the traveller's own choices must all appear, and the
         // slice below used to be able to cut them, which broke the promise in

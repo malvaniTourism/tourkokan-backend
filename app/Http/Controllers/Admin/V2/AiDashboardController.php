@@ -40,6 +40,14 @@ class AiDashboardController extends BaseController
         'min_cart_places'       => 'integer|min:1|max:20',
         'min_stops_per_day'     => 'integer|min:1|max:10',
         'max_stops_per_day'     => 'integer|min:1|max:12',
+        // Per-group ceilings. The lowest that applies wins, so these are
+        // reductions on max_stops_per_day rather than a separate scale.
+        'pacing_max_family'      => 'integer|min:1|max:12',
+        'pacing_max_young_child' => 'integer|min:1|max:12',
+        'pacing_max_large_group' => 'integer|min:1|max:12',
+        'pacing_young_child_age' => 'integer|min:0|max:17',
+        'pacing_large_group_size' => 'integer|min:2|max:60',
+        'trip_types'             => 'string|max:255',
         'max_days'              => 'integer|min:1|max:30',
         'max_towns'             => 'integer|min:1|max:10',
         'default_radius_km'     => 'numeric|min:5|max:200',

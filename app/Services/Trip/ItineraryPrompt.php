@@ -25,10 +25,15 @@ class ItineraryPrompt
         array $legs,
         int $days,
         ?string $freeText = null,
-        ?array $arrival = null
+        ?array $arrival = null,
+        ?Pacing $pacing = null,
+        ?array $group = null
     ): array {
-        $maxPerDay = (int) AiConfig::get('max_stops_per_day', 5);
-        $minPerDay = (int) AiConfig::get('min_stops_per_day', 2);
+        // Handed in, not read here. The assembler enforces the same range and
+        // the two must not be able to disagree — see Pacing.
+        $pacing    = $pacing ?? Pacing::default();
+        $maxPerDay = $pacing->maxPerDay;
+        $minPerDay = $pacing->minPerDay;
 
         $system = implode("\n", [
             'You arrange travel itineraries for the Konkan coast of Maharashtra.',
@@ -92,6 +97,13 @@ class ItineraryPrompt
             $payload['arrival'] = $arrival;
         }
 
+        // Who is going. Facts about the party, not instructions — the model
+        // writes for them ("the shallow end is safer for children") and
+        // orders the day around them; it is never told to obey anything here.
+        if ($group !== null && $group !== []) {
+            $payload['group'] = $group;
+        }
+
         if ($freeText !== null && trim($freeText) !== '') {
             $payload['traveller_note'] = trim($freeText);
         }
@@ -114,6 +126,9 @@ class ItineraryPrompt
             ))),
             'days'    => $days,
             'arrival' => $arrival,
+            // So FakeClient arranges to the SAME ceiling the assembler will
+            // enforce, instead of reading the global and disagreeing with it.
+            'pacing'  => $pacing,
         ];
     }
 
@@ -133,6 +148,12 @@ class ItineraryPrompt
             $prompt['days'],
             $ids,
             $prompt['arrival'] ?? null,
+            // The same places for two adults is a different question from the
+            // same places for two adults and a toddler: different pace,
+            // different prose. Left out of the fingerprint, the second
+            // traveller is silently served the first one's plan.
+            $prompt['payload']['group'] ?? null,
+            [$prompt['pacing']->minPerDay ?? null, $prompt['pacing']->maxPerDay ?? null],
         ]));
     }
 }

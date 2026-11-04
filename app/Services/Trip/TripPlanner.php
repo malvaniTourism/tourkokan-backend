@@ -69,7 +69,8 @@ class TripPlanner
         // traveller "that did not come out right" when the truth is "that is
         // more places than three days can hold".
         $days     = max(1, (int) $trip->days);
-        $capacity = $days * (int) AiConfig::get('max_stops_per_day', 5);
+        $pacing   = Pacing::forFilters((array) $trip->filters);
+        $capacity = $days * $pacing->maxPerDay;
 
         if ($picked->count() + $custom->count() > $capacity) {
             return $this->refuse('cart_too_big');
@@ -268,7 +269,7 @@ class TripPlanner
         $maxDays = (int) AiConfig::get('max_days', 7);
         $days    = max(1, min($maxDays, (int) ($filters['days'] ?? 2)));
         $radius  = (float) ($filters['radius_km'] ?? AiConfig::get('default_radius_km', 40));
-        $needed  = $days * (int) AiConfig::get('min_stops_per_day', 2);
+        $needed  = $days * Pacing::forFilters($filters)->minPerDay;
 
         $empty = collect();
         // Anchors go through the town rule, not the destination one: a taluka
@@ -506,12 +507,20 @@ class TripPlanner
         $pickedRows    = $this->candidates->project($picked);
         $suggestedRows = $this->candidates->project($suggested);
 
+        // ONE resolution per generation. Everything below — the prompt that
+        // states the range, the assembler that enforces it, the stand-in
+        // driver that arranges to it — is handed this same object, because
+        // six independent reads of the same config is how they drift.
+        $pacing = Pacing::forFilters($filters);
+
         $prompt = $this->prompts->build(
             picked: $pickedRows,
             suggested: $suggestedRows,
             legs: $this->legs->legsFor($picked),
             days: $days,
             arrival: $arrival,
+            pacing: $pacing,
+            group: Pacing::groupFor($filters),
         );
 
         $log = [
@@ -529,7 +538,9 @@ class TripPlanner
         // already-answered question keeps working even when spending has
         // stopped for the day.
         if ($cacheKey !== null && $entry = $this->cache->get($cacheKey)) {
-            $served = $this->serveCached($entry, $prompt, $days, $requiredIds, $log, $arrival);
+            $served = $this->serveCached(
+                $entry, $prompt, $days, $requiredIds, $log, $arrival, $pacing
+            );
 
             if ($served !== null) {
                 return $served;
@@ -603,6 +614,7 @@ class TripPlanner
             requiredSiteIds: $requiredIds,
             arrivalStart: $arrival['earliest_start'] ?? null,
             extraSites: $extraSites,
+            pacing: $pacing,
         );
 
         $row = $this->write($log + [
@@ -670,7 +682,8 @@ class TripPlanner
         int $days,
         array $requiredIds,
         array $log,
-        ?array $arrival = null
+        ?array $arrival = null,
+        ?Pacing $pacing = null
     ): ?array {
         $started = microtime(true);
 
@@ -680,6 +693,7 @@ class TripPlanner
             days: $days,
             requiredSiteIds: $requiredIds,
             arrivalStart: $arrival['earliest_start'] ?? null,
+            pacing: $pacing,
         );
 
         if (!$result['ok']) {

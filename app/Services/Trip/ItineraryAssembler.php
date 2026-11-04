@@ -43,9 +43,15 @@ class ItineraryAssembler
         ?string $arrivalStart = null,
         /** Site models that were never saved — the traveller's own pins. */
         $extraSites = null,
+        /** The range this group can manage. Must be the one the prompt stated. */
+        ?Pacing $pacing = null,
     ): array {
-        $minPerDay = (int) AiConfig::get('min_stops_per_day', 2);
-        $maxPerDay = (int) AiConfig::get('max_stops_per_day', 5);
+        // Handed in by the planner, which gave the prompt the same object.
+        // Reading the config here instead is how the enforcer and the
+        // instruction drift apart — see Pacing.
+        $pacing    = $pacing ?? Pacing::default();
+        $minPerDay = $pacing->minPerDay;
+        $maxPerDay = $pacing->maxPerDay;
 
         $allowed = array_flip($allowedSiteIds);
         $dropped = [];
