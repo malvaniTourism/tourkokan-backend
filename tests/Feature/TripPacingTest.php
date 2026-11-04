@@ -327,4 +327,67 @@ class TripPacingTest extends ApiTestCase
         // end up contradicting each other.
         $this->assertNotContains('solo', array_column($data['types'], 'code'));
     }
+
+    // ── The two gaps the device walk found ───────────────────────────────────
+
+    public function test_the_form_path_carries_the_group_to_the_planner(): void
+    {
+        // resolveFilters() REBUILDS the filter array from a fixed key list,
+        // and that array is the only thing the planner ever sees. A key
+        // missing from it is a question the traveller answered and nobody
+        // read — which is what happened here: the stepper worked, because it
+        // stores its filters whole, and the form path silently dropped the
+        // group on the floor.
+        for ($i = 0; $i < 8; $i++) {
+            $this->site("Beach {$i}", 16.05 + ($i / 200), 73.47);
+        }
+
+        app(TripPlanner::class)->planFromForm($this->traveller, [
+            'town_site_ids'  => [$this->base->id],
+            'category_codes' => ['beach'],
+            'days'           => 2,
+            'group'          => ['adults' => 2, 'children' => 2, 'youngest_age' => 3],
+            'trip_type'      => 'family',
+        ]);
+
+        $filters = (array) \App\Models\AiLog::latest('id')->first()->input_filters;
+
+        $this->assertSame(
+            ['adults' => 2, 'children' => 2, 'youngest_age' => 3],
+            $filters['group'] ?? null,
+            'The planner never saw who the trip was for'
+        );
+        $this->assertSame('family', $filters['trip_type'] ?? null);
+    }
+
+    public function test_the_stored_answer_cache_is_keyed_on_the_group_too(): void
+    {
+        // A SECOND cache, separate from the prompt fingerprint, and the one
+        // the express path actually uses — it only engages when nothing has
+        // been picked, which is exactly the express case. Keyed without the
+        // group, a family is handed the five-stop plan written for a couple.
+        $cache = app(\App\Services\Trip\ItineraryCache::class);
+
+        $args = [
+            'categoryCodes' => ['beach'],
+            'days'          => 2,
+            'lat'           => 16.06,
+            'lng'           => 73.47,
+            'radiusKm'      => 40.0,
+            'stay'          => 'suggest',
+            'arrival'       => null,
+        ];
+
+        $couple = $cache->key(...$args, group: ['adults' => 2, 'type' => 'couple']);
+        $family = $cache->key(...$args, group: ['adults' => 2, 'children' => 2, 'type' => 'family']);
+
+        $this->assertNotSame($couple, $family);
+
+        // And an unanswered form still shares with another unanswered form,
+        // or the cache stops earning its keep.
+        $this->assertSame(
+            $cache->key(...$args, group: null),
+            $cache->key(...$args, group: null)
+        );
+    }
 }

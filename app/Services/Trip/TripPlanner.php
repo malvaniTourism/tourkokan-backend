@@ -251,6 +251,11 @@ class TripPlanner
             radiusKm: (float) $set['filters']['radius_km'],
             stay: (string) $set['filters']['stay'],
             arrival: $set['arrival'],
+            // The prompt's own fingerprint carries this too. Both caches
+            // need it: one keys the stored answer, the other keys the
+            // question, and either alone would hand a family the plan
+            // written for a couple.
+            group: Pacing::groupFor($set['filters']),
         );
     }
 
@@ -332,6 +337,13 @@ class TripPlanner
                 'town_site_ids'  => $anchors->pluck('id')->map(fn ($v) => (int) $v)->all(),
                 'category_codes' => $codes,
                 'radius_km'      => $radius,
+                // Carried through, not rebuilt. This array is the ONLY thing
+                // the planner sees, so a key missing here is a filter the
+                // traveller answered and nobody ever read — which is exactly
+                // what happened to the group on the form path while the
+                // stepper, which stores its filters whole, worked.
+                'group'          => $filters['group'] ?? null,
+                'trip_type'      => $filters['trip_type'] ?? null,
                 'stay'           => $filters['stay'] ?? 'suggest',
                 'stay_site_id'   => $picked->isNotEmpty() ? (int) $picked->first()->id : null,
                 'arrival'        => $arrival === null ? null : [

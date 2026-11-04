@@ -38,7 +38,8 @@ class ItineraryCache
         float $lng,
         float $radiusKm,
         string $stay = 'suggest',
-        ?array $arrival = null
+        ?array $arrival = null,
+        ?array $group = null
     ): string {
         $codes = array_values(array_unique($categoryCodes));
         sort($codes);
@@ -59,6 +60,11 @@ class ItineraryCache
                 'from' => $arrival['site_id'] ?? null,
                 'hour' => substr((string) ($arrival['at'] ?? ''), 0, 2),
             ],
+            // Who is going reshapes every day, not just the first: a family
+            // with a toddler is held to fewer stops and is written for
+            // differently. Two parties only share an answer when they would
+            // have been given the same one.
+            'group' => $group,
         ]));
     }
 
