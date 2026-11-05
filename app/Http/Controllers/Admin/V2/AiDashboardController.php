@@ -270,12 +270,25 @@ class AiDashboardController extends BaseController
                 'valid_sites_used', 'days_generated', 'failure_reason',
                 'is_flagged', 'admin_reviewed', 'input_filters', 'created_at',
             ])
+            // Eager-loaded rather than calling userStub() per row: that helper
+            // is a find() each time, which is one query per generation on a
+            // screen built to show thirty of them. Encrypted columns decrypt
+            // from themselves, so naming them here is safe.
+            ->with('user:id,name,email')
             ->latest('id')
             ->paginateSafe();
 
         $logs->getCollection()->transform(fn (AiLog $log) => [
             'id'         => $log->id,
             'user_id'    => $log->user_id,
+            // An id is not an answer to "who was this?". The detail panel has
+            // named the traveller since it was written; the list it opens from
+            // could only show the number.
+            'user'       => $log->user ? [
+                'id'    => $log->user->id,
+                'name'  => $log->user->name,
+                'email' => $log->user->email,
+            ] : null,
             'trip_id'    => $log->trip_id,
             'type'       => $log->type,
             'status'     => $log->status,
