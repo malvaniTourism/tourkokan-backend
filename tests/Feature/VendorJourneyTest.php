@@ -188,4 +188,40 @@ class VendorJourneyTest extends ApiTestCase
             $this->actingAs($unverified->fresh(), 'api')->postJson('/api/v2/mySites')
         );
     }
+
+    /**
+     * The clients gate their vendor UI on the role codes of the signed-in user, and
+     * `user-profile` is what they re-read on a page load.
+     *
+     * Nothing in `AuthController::userProfile` asks for roles. They are there because
+     * `PreMiddleware` eager-loads them onto the authenticated user on every session
+     * endpoint, and the controller serialises that same instance. That is load-bearing
+     * for the web vendor dashboard and invisible at the call site, so it is pinned here:
+     * trimming `PreMiddleware`'s `load(['roles'])` as an over-fetch would sign every
+     * vendor out of their dashboard on the next refresh, with nothing in this controller
+     * to suggest why.
+     */
+    public function test_user_profile_returns_the_role_codes_a_client_gates_on(): void
+    {
+        $vendor = $this->userWithRole('vendor');
+
+        $profile = $this->assertApiSuccess(
+            $this->actingAs($vendor, 'api')->postJson('/api/v2/user-profile')
+        );
+
+        $this->assertSame(
+            ['vendor'],
+            $profile->json('data.roles.*.code'),
+            'the vendor role must survive a profile refresh, not only the login response'
+        );
+
+        // An ordinary user comes back with an empty list, not a missing key: a client has to
+        // be able to tell "not a vendor" from "roles were never sent", and an absent key is
+        // how a page ends up guessing — which is what the old 401/403-probing did.
+        $plain = $this->assertApiSuccess(
+            $this->actingAs(User::factory()->create(), 'api')->postJson('/api/v2/user-profile')
+        );
+
+        $this->assertSame([], $plain->json('data.roles'), 'an ordinary user has no role codes');
+    }
 }
