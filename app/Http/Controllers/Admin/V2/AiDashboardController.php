@@ -48,6 +48,9 @@ class AiDashboardController extends BaseController
         'pacing_young_child_age' => 'integer|min:0|max:17',
         'pacing_large_group_size' => 'integer|min:2|max:60',
         'trip_types'             => 'string|max:255',
+        // 0 switches the free-text note box off entirely — the one lever
+        // worth having over a field that reaches the model.
+        'max_note_chars'         => 'integer|min:0|max:2000',
         'max_days'              => 'integer|min:1|max:30',
         'max_towns'             => 'integer|min:1|max:10',
         'default_radius_km'     => 'numeric|min:5|max:200',

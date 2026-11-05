@@ -15,7 +15,7 @@ class QuoteTripRequest extends CartRequest
 {
     public function rules(): array
     {
-        return $this->groupRules() + [
+        return $this->sharedFilterRules() + [
             'town_site_ids'   => 'required|array|min:1|max:' . (int) AiConfig::get('max_towns', 3),
             'town_site_ids.*' => 'integer|exists:sites,id',
 

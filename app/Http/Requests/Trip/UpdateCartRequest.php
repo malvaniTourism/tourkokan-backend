@@ -9,7 +9,7 @@ class UpdateCartRequest extends CartRequest
         // Prefixed, because the stepper stores the same answers one level
         // down. Without these the stepper could save a group the express
         // path would have refused, and the planner reads both.
-        return $this->groupRules('filters.') + [
+        return $this->sharedFilterRules('filters.') + [
             'trip_id'      => 'required|integer|exists:saved_trips,id',
             'days'         => 'nullable|integer|min:1|max:14',
             'base_site_id' => 'nullable|integer|exists:sites,id',

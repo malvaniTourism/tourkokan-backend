@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Trip;
 
+use App\Models\AiConfig;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -31,7 +32,12 @@ abstract class CartRequest extends FormRequest
     }
 
     /**
-     * Who is going, as both paths into the planner must accept it.
+     * The filter fields both paths into the planner must accept identically.
+     *
+     * Named for the job and not for the group any more: it validates a free
+     * text note too, and a list called `groupRules` that quietly decides
+     * what a traveller may type is exactly how the next field added here
+     * gets missed.
      *
      * Stated once and prefixed, rather than written out twice. The express
      * path validates `group.adults`; the stepper saves the same answers onto
@@ -46,8 +52,15 @@ abstract class CartRequest extends FormRequest
      *
      * @return array<string,string>
      */
-    protected function groupRules(string $prefix = ''): array
+    protected function sharedFilterRules(string $prefix = ''): array
     {
+        // A ceiling of zero switches the note box off without a deploy. It
+        // is the one lever worth having over a free-text field that reaches
+        // a model: during an abuse spike you want a form submission, not a
+        // release, which is the same argument the config endpoint itself
+        // rests on.
+        $maxNote = (int) AiConfig::get('max_note_chars', 500);
+
         return [
             $prefix . 'group'              => 'nullable|array',
             $prefix . 'group.adults'       => 'nullable|integer|min:1|max:30',
@@ -61,6 +74,14 @@ abstract class CartRequest extends FormRequest
             // been retired should get the ordinary pace, not a validation
             // error it cannot explain to anyone.
             $prefix . 'trip_type' => 'nullable|string|max:32',
+
+            // Anything else they want the plan to know. Optional, bounded,
+            // and treated as data the whole way down — see
+            // `ItineraryPrompt::build()`, which delimits it inside the
+            // payload rather than concatenating it into the instructions.
+            $prefix . 'traveller_note' => $maxNote > 0
+                ? 'nullable|string|max:' . $maxNote
+                : 'nullable|prohibited',
         ];
     }
 }

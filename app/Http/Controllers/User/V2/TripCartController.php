@@ -303,10 +303,22 @@ class TripCartController extends BaseController
 
         // Merged, not replaced. The stepper saves step 1 and step 2 in
         // separate calls, so a replace would have the second wipe the first.
+        //
+        // Merged on the KEYS THE CLIENT SENT, not on which values happen to
+        // be non-null. The two look equivalent and are not: Laravel's
+        // `ConvertEmptyStringsToNull` runs before any of this, so a field
+        // the traveller cleared arrives as null, a null-stripping merge
+        // skips it, and the value they just deleted is written straight
+        // back. No string filter could be cleared at all — a trip type
+        // stayed set once chosen, and a deleted note would still have been
+        // read out to the model.
+        //
+        // A key the client leaves out is still left alone, which is the
+        // whole point of merging here, so the two-call stepper is unchanged.
         if ($request->has('filters')) {
             $trip->filters = array_replace(
                 (array) $trip->filters,
-                array_filter((array) $request->input('filters'), fn ($v) => $v !== null)
+                (array) $request->input('filters')
             );
         }
 

@@ -505,7 +505,7 @@ class TripPacingTest extends ApiTestCase
         // for any of them, although its own comment promised "the same shape
         // the quote accepts". So the stepper could store a group the quote
         // would have refused, and TripPlanner reads both through the same
-        // code. Both lists come from CartRequest::groupRules() now; this is
+        // code. Both lists come from CartRequest::sharedFilterRules() now; this is
         // what says they have not drifted apart again.
         $trip = SavedTrip::create([
             'user_id'      => $this->traveller->id,

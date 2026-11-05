@@ -256,6 +256,10 @@ class TripPlanner
             // question, and either alone would hand a family the plan
             // written for a couple.
             group: Pacing::groupFor($set['filters']),
+            // And this one. The express path is the only path that caches,
+            // so a note left out here is a note that changes the plan the
+            // first traveller is sold and changes nothing for the second.
+            travellerNote: $set['filters']['traveller_note'] ?? null,
         );
     }
 
@@ -344,6 +348,10 @@ class TripPlanner
                 // stepper, which stores its filters whole, worked.
                 'group'          => $filters['group'] ?? null,
                 'trip_type'      => $filters['trip_type'] ?? null,
+                // Normalised once, here, so the prompt, its fingerprint and
+                // the stored-answer cache all read the same string and a
+                // box that was tabbed through counts as no note at all.
+                'traveller_note' => ItineraryPrompt::note($filters['traveller_note'] ?? null),
                 'stay'           => $filters['stay'] ?? 'suggest',
                 'stay_site_id'   => $picked->isNotEmpty() ? (int) $picked->first()->id : null,
                 'arrival'        => $arrival === null ? null : [
@@ -530,6 +538,10 @@ class TripPlanner
             suggested: $suggestedRows,
             legs: $this->legs->legsFor($picked),
             days: $days,
+            // What they typed, if anything. Data in the payload, never a
+            // line in the instructions — the system prompt says so in as
+            // many words, and `build()` is where that promise is kept.
+            freeText: $filters['traveller_note'] ?? null,
             arrival: $arrival,
             pacing: $pacing,
             group: Pacing::groupFor($filters),

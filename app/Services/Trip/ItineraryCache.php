@@ -39,12 +39,13 @@ class ItineraryCache
         float $radiusKm,
         string $stay = 'suggest',
         ?array $arrival = null,
-        ?array $group = null
+        ?array $group = null,
+        ?string $travellerNote = null
     ): string {
         $codes = array_values(array_unique($categoryCodes));
         sort($codes);
 
-        return hash('sha256', json_encode([
+        $parts = [
             'codes'  => $codes,
             'days'   => $days,
             'lat'    => round($lat, 2),
@@ -65,7 +66,25 @@ class ItineraryCache
             // differently. Two parties only share an answer when they would
             // have been given the same one.
             'group' => $group,
-        ]));
+        ];
+
+        // Anything they typed. Almost every note is unique, so a trip that
+        // carries one will usually miss — correct, not a regression: the
+        // answer it would have hit was written for someone who said
+        // something else.
+        //
+        // ADDED ONLY WHEN THERE IS ONE, rather than as a permanent `null`
+        // member of the array. A new key with a null value still changes the
+        // encoded string, so every entry already in the table would become
+        // unreachable the moment this deployed — a silent, paid-for cache
+        // flush for a field most travellers will never fill in. This way a
+        // note-less trip hashes byte-identically to the way it hashed
+        // before the field existed.
+        if (($note = ItineraryPrompt::note($travellerNote)) !== null) {
+            $parts['note'] = $note;
+        }
+
+        return hash('sha256', json_encode($parts));
     }
 
     /**

@@ -104,8 +104,8 @@ class ItineraryPrompt
             $payload['group'] = $group;
         }
 
-        if ($freeText !== null && trim($freeText) !== '') {
-            $payload['traveller_note'] = trim($freeText);
+        if (($note = self::note($freeText)) !== null) {
+            $payload['traveller_note'] = $note;
         }
 
         $user = "Plan this trip.\n\n<trip_data>\n"
@@ -133,6 +133,23 @@ class ItineraryPrompt
     }
 
     /**
+     * The traveller's note, as everything downstream must see it.
+     *
+     * One function because three things have to agree on it: the payload the
+     * model reads, the prompt fingerprint below, and `ItineraryCache::key()`.
+     * A note that is blank — or blank once trimmed, which is what a tabbed-
+     * through box gives you — is NOT a note. It has to normalise to null, or
+     * a traveller who typed nothing stops sharing the cache with everyone
+     * else who typed nothing, and the cache quietly stops paying for itself.
+     */
+    public static function note(?string $text): ?string
+    {
+        $text = trim((string) $text);
+
+        return $text === '' ? null : $text;
+    }
+
+    /**
      * A stable fingerprint of what was asked, for the result cache and for
      * grouping identical requests in the logs.
      */
@@ -154,6 +171,12 @@ class ItineraryPrompt
             // traveller is silently served the first one's plan.
             $prompt['payload']['group'] ?? null,
             [$prompt['pacing']->minPerDay ?? null, $prompt['pacing']->maxPerDay ?? null],
+            // The note is the whole reason one traveller's plan should not be
+            // handed to another: "we are walking everywhere" and "we have a
+            // car" are the same places in a different order. Read off the
+            // payload rather than normalised again here, so the fingerprint
+            // cannot disagree with what the model was actually sent.
+            $prompt['payload']['traveller_note'] ?? null,
         ]));
     }
 }

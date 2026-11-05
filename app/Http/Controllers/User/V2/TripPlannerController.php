@@ -168,6 +168,17 @@ class TripPlannerController extends BaseController
                 ])->all(),
             ],
 
+            // The free-text note. Served with its own ceiling so the app
+            // can show the counter the server will actually enforce, and
+            // `available: false` when an admin has set the ceiling to zero
+            // — the kill switch for a field that reaches the model. The app
+            // hides the box rather than offering one every submission would
+            // then refuse.
+            'note' => [
+                'available' => ($maxNote = (int) AiConfig::get('max_note_chars', 500)) > 0,
+                'max'       => $maxNote,
+            ],
+
             // Deliberately advertised as not ready. Prices exist for one
             // product in the whole database, so a budget filter would match
             // nothing while looking like it worked.
