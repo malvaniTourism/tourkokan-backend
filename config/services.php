@@ -41,17 +41,20 @@ return [
          * token was minted for one of OUR clients — otherwise an id_token from
          * any unrelated app would log its owner in here.
          *
-         * Android and iOS sign-in live in separate Google projects, so each has
-         * its own web client; the website reuses the Android project's. Set
-         * GOOGLE_ALLOWED_AUDIENCES (comma separated) to override without a
-         * deploy if a client id is ever added or rotated.
+         * Comma separated, and set per environment in .env (see env.example):
+         * the website, Android and iOS each sign in through a different OAuth
+         * client, so every one still in use must be listed. An Android client
+         * authorises by package name and certificate fingerprint and has no
+         * JavaScript origins, which is why the browser needs a client of its own
+         * rather than reusing the app's.
+         *
+         * Empty is not a safe default, so there is none: googleAuth refuses
+         * outright and logs when this is unset, rather than accepting a token
+         * minted for anyone.
          */
         'allowed_audiences' => array_values(array_filter(array_map('trim', explode(
             ',',
-            (string) env(
-                'GOOGLE_ALLOWED_AUDIENCES',
-                '203571229982-e04hpgiu5k11ff4qg8oamlm6hruvqj2i.apps.googleusercontent.com,941471956439-bbglsl9ok9o1h2cr82hv9uob1cc7he0d.apps.googleusercontent.com'
-            )
+            (string) env('GOOGLE_ALLOWED_AUDIENCES', '')
         )))),
     ],
 
